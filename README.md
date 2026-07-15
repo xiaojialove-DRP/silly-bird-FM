@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/icon.svg" width="120" height="120" alt="silly bird fm icon" />
+</p>
+
 # silly bird FM 🐦
 
 一个朋友之间的声音电台。
