@@ -1,0 +1,175 @@
+:root {
+  --paper: #e7ddc0;   /* warm ivory papercut */
+  --ink:   #1b2a9e;   /* deep cobalt (UI / text) */
+  --night: #1f31cc;   /* vivid cobalt ground (from reference) */
+  --soft:  rgba(27,42,158,.6);
+  --accent: var(--ink);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0; min-height: 100vh; overflow: hidden;
+  display: grid; place-items: center;
+  font-family: "Space Mono", ui-monospace, monospace;
+  color: var(--ink);
+  background: #d7d3c8;   /* neutral desk — no color; transparent later in Tauri */
+  -webkit-font-smoothing: antialiased;
+}
+/* paper-cut / print grain */
+body::after {
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 9999;
+  opacity: .06; mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------- draggable floating unit ---------- */
+.sbfm { position: fixed; left: calc(50% - 138px); top: 60px; z-index: 10; }
+.sbfm.collapsed .radio { display: none; }
+.sbfm:not(.collapsed) .perch { display: none; }
+
+/* ---------- collapsed: black chip + white bird ---------- */
+.perch { border: none; background: transparent; cursor: grab; padding: 0; }
+.perch:active { cursor: grabbing; }
+.chip {
+  display: grid; place-items: center; width: 78px; height: 78px;
+  background: var(--night); border: 2.5px solid var(--night); border-radius: 16px;
+}
+.chip .bird { width: 62px; height: 54px; }
+
+/* ---------- the little radio ---------- */
+.radio {
+  width: 276px;
+  background: var(--paper);
+  border: 2.5px solid var(--ink);
+  border-radius: 13px;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* woodcut striped title bar */
+.titlebar {
+  position: relative; height: 24px; cursor: grab;
+  display: flex; align-items: center; justify-content: center;
+  border-bottom: 2px dotted var(--ink);
+  background: var(--paper);
+}
+.deco { color: var(--accent); font-size: 9px; font-style: normal; vertical-align: 1px; }
+.titlebar:active { cursor: grabbing; }
+.brand {
+  background: var(--paper); padding: 0 10px; z-index: 1;
+  font-family: "Fraunces", Georgia, serif; font-style: italic; font-weight: 600;
+  font-size: 15px; color: var(--ink);
+}
+.brand em {
+  font-style: normal; font-family: "Space Mono", monospace; font-size: 9px;
+  text-transform: uppercase; letter-spacing: 1px;
+  background: var(--accent); color: var(--paper); padding: 1px 4px; border-radius: 2px; margin-left: 2px; vertical-align: 1.5px;
+}
+.wb {
+  width: 15px; height: 15px; border: 2px solid var(--ink); border-radius: 3px;
+  background: var(--paper); display: grid; place-items: center;
+  font-family: "Space Mono", monospace; font-size: 11px; line-height: 1; color: var(--ink); cursor: pointer; padding: 0;
+}
+.winbtns { position: absolute; left: 7px; z-index: 1; }
+.wb.close { cursor: default; }
+.wb.min { position: absolute; right: 7px; z-index: 1; padding-bottom: 3px; }
+.wb.min:hover { background: var(--ink); color: var(--paper); }
+
+/* ---------- the black screen ---------- */
+.screen {
+  position: relative; margin: 9px; height: 128px;
+  background: var(--night); border: 2.5px solid var(--ink); border-radius: 8px;
+  display: grid; place-items: center; overflow: hidden;
+}
+.screen::after {
+  content: ""; position: absolute; inset: 9px; border-radius: 4px;
+  border: 2px dotted var(--paper); opacity: .35; pointer-events: none;
+}
+.screen::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 2;
+  background:
+    radial-gradient(circle 6px at 6px 0,    var(--paper) 5px, #0000 5.5px) top/12px 9px repeat-x,
+    radial-gradient(circle 6px at 6px 100%, var(--paper) 5px, #0000 5.5px) bottom/12px 9px repeat-x,
+    radial-gradient(circle 6px at 0 6px,    var(--paper) 5px, #0000 5.5px) left/9px 12px repeat-y,
+    radial-gradient(circle 6px at 100% 6px, var(--paper) 5px, #0000 5.5px) right/9px 12px repeat-y;
+}
+.bird { overflow: visible; }
+.screen .bird { width: 124px; height: 124px; }
+.silh { fill: var(--paper); }
+.silh2 { fill: var(--paper); }
+.belly { fill: var(--ink); }
+.eye-w { fill: var(--paper); stroke: var(--ink); stroke-width: 2.5; }
+.eye-p { fill: var(--ink); }
+.branch { fill: none; stroke: var(--paper); stroke-width: 4; stroke-linecap: round; }
+.legs2 { fill: none; stroke: var(--paper); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
+.chirp { fill: none; stroke: var(--paper); stroke-width: 3; stroke-linecap: round; }
+.cut { fill: var(--night); }
+.scallop { fill: none; stroke: var(--ink); stroke-width: 2.5; stroke-linecap: round; }
+.eye-g { fill: var(--paper); }
+.lash { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; }
+.legs { fill: none; stroke: var(--paper); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+.hp-oline { fill: none; stroke: var(--ink); stroke-width: 13; stroke-linecap: round; }
+.hp-ocup { fill: var(--ink); }
+.hp-band { fill: none; stroke: var(--paper); stroke-width: 6; stroke-linecap: round; }
+.hp-cup { fill: var(--paper); }
+.bird-body { transform-origin: 100px 150px; }
+.radio.playing .bird-body { animation: bob .8s ease-in-out infinite; }
+@keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+
+/* dial strip (channel switch + readout) */
+.dial { display: flex; align-items: center; gap: 6px; margin: 0 9px 3px; padding: 3px 6px; border: 2px solid var(--ink); border-radius: 6px; background: var(--paper); }
+.dial .ch { border: none; background: transparent; color: var(--ink); opacity: .5; font-size: 12px; cursor: pointer; padding: 2px 5px; }
+.dial .ch:hover { opacity: 1; }
+.dial-txt { flex: 1; text-align: center; font-family: "Space Mono", monospace; font-size: 11px; color: var(--ink); letter-spacing: .5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dial-txt b { font-weight: 700; }
+.dial-txt .fm { font-size: 8px; opacity: .55; margin: 0 6px 0 3px; }
+.dial-txt #sname { opacity: .78; }
+
+.note { position: absolute; top: 40px; font-size: 15px; color: var(--paper); opacity: 0; pointer-events: none; }
+.n1 { left: 34%; } .n2 { left: 58%; font-size: 18px; }
+.radio.playing .n1 { animation: noteFloat 1.8s ease-in infinite; }
+.radio.playing .n2 { animation: noteFloat 1.8s ease-in .7s infinite; }
+@keyframes noteFloat { 0%{opacity:0;transform:translateY(6px)} 25%{opacity:.9} 100%{opacity:0;transform:translateY(-30px) rotate(14deg)} }
+.screen { cursor: pointer; }
+.screenhint {
+  position: absolute; inset: 0; display: grid; place-items: center; z-index: 4;
+  color: var(--paper); font-size: 11px; letter-spacing: .5px;
+  background: rgba(18,22,52,.6); opacity: 0; pointer-events: none; transition: opacity .12s;
+}
+.screen.dragging .screenhint { opacity: 1; }
+.screen.dragging { outline: 2px dashed var(--paper); outline-offset: -8px; }
+
+/* ---------- readout ---------- */
+.readout { display: flex; align-items: center; gap: 10px; padding: 3px 14px 8px; }
+.meta { min-width: 0; flex: 1; }
+.cover { width: 42px; height: 42px; flex: none; border: 2px solid var(--ink); border-radius: 4px; background-size: cover; background-position: center; display: none; }
+.cover.show { display: block; }
+.title { font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: 15px; line-height: 1.2; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sub { font-size: 10px; color: var(--soft); margin-top: 3px; text-transform: uppercase; letter-spacing: .4px; }
+.sub b { color: var(--ink); font-weight: 700; }
+
+/* ---------- progress ---------- */
+.progress { display: flex; align-items: center; gap: 8px; padding: 0 14px 10px; }
+.time { font-family: "Space Mono", monospace; font-size: 9.5px; color: var(--soft); width: 26px; }
+.time:last-child { text-align: right; }
+.bar { flex: 1; height: 6px; border: 2px solid var(--ink); border-radius: 4px; background: var(--paper); overflow: hidden; cursor: pointer; }
+.fill { height: 100%; width: 0%; background: var(--ink); }
+
+/* ---------- controls ---------- */
+.controls { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 0 14px 13px; }
+.btn { width: 34px; height: 34px; border: 2.5px solid var(--ink); border-radius: 50%; background: var(--paper); color: var(--ink); display: grid; place-items: center; cursor: pointer; padding: 0; transition: transform .07s ease; }
+.btn:active { transform: translate(1px,1px); }
+.btn svg { width: 16px; height: 16px; fill: currentColor; }
+.btn.play { width: 46px; height: 46px; background: var(--ink); color: var(--paper); }
+.btn.play svg { width: 20px; height: 20px; }
+.i-pause { display: none; }
+.radio.playing .i-play { display: none; }
+.radio.playing .i-pause { display: block; }
+
+.vol { display: flex; align-items: center; gap: 5px; margin-left: 2px; }
+.vol-ico { width: 15px; height: 15px; fill: var(--soft); }
+#vol { -webkit-appearance: none; appearance: none; width: 48px; height: 6px; border: 2px solid var(--ink); border-radius: 4px; cursor: pointer; background: linear-gradient(90deg, var(--ink) 0 72%, var(--paper) 72% 100%); }
+#vol::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--paper); border: 2px solid var(--ink); }
+
+@media (prefers-reduced-motion: reduce) { .bird-body, .note { animation: none !important; } }

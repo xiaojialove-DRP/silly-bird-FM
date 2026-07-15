@@ -1,0 +1,15 @@
+# 音频文件 —— 不进仓库（体积大 / 版权）
+*.mp3
+*.flac
+*.m4a
+*.aac
+*.wav
+*.ogg
+*.ncm
+*.wma
+
+# 系统 / 依赖 / 构建
+.DS_Store
+node_modules/
+dist/
+src-tauri/target/

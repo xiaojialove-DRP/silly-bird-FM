@@ -1,0 +1,16 @@
+{
+  "id": "dj-record-id",
+  "title": "唱片名 / 电台名",
+  "dj": {
+    "name": "DJ 名字",
+    "handle": "@可选",
+    "blurb": "一句话介绍这位 DJ 的品味"
+  },
+  "vibe": "lo-fi / 深夜 / 专注",
+  "cover": "cover.jpg",
+  "source": "网易云歌单链接（仅记录出处，不用于播放）",
+  "tracks": [
+    { "file": "01 - Artist - Title.mp3" },
+    { "file": "02 - Artist - Title.mp3", "title": "可选：手动覆盖歌名", "artist": "可选：手动覆盖歌手" }
+  ]
+}

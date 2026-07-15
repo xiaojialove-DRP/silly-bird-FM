@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>silly bird FM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <div class="sbfm" id="sbfm">
+
+    <!-- collapsed: a little black chip with the bird, sitting on the desktop -->
+    <button class="perch" id="perch" title="打开 silly bird fm">
+      <span class="chip">
+        <svg class="bird sm" viewBox="0 0 200 172" aria-hidden="true">
+          <path class="silh2" d="M64 96 L22 82 L38 100 L18 108 L40 116 L24 134 L66 120 Z" />
+          <ellipse class="silh2" cx="94" cy="104" rx="44" ry="40" />
+          <circle class="silh2" cx="126" cy="64" r="26" />
+          <path class="silh2" d="M148 62 L170 67 L148 75 Z" />
+          <path class="chirp" d="M174 61 Q181 68 174 75 M182 56 Q192 68 182 80" />
+          <path class="silh2" d="M116 42 L112 29 L122 40 Z M126 40 L127 26 L135 39 Z M137 42 L144 31 L145 44 Z" />
+          <path class="cut" d="M90 96 C85 87 72 90 75 101 C77 111 90 120 90 120 C90 120 103 111 105 101 C108 90 95 87 90 96 Z" />
+          <path class="legs2" d="M85 143 L82 160 M103 143 L107 160" />
+          <path class="branch" d="M66 158 L122 154" />
+          <ellipse class="eye-p" cx="132" cy="60" rx="4.6" ry="5.6" />
+          <circle class="eye-g" cx="133.6" cy="58" r="1.7" />
+        </svg>
+      </span>
+    </button>
+
+    <!-- expanded: the little radio -->
+    <section class="radio" id="player">
+      <header class="titlebar" id="drag">
+        <span class="brand">silly&nbsp;bird <em>fm</em></span>
+        <button class="wb min" id="min" title="收回成小鸟">–</button>
+      </header>
+
+      <div class="screen">
+        <svg class="bird lg" viewBox="0 0 200 200" aria-label="silly bird">
+          <defs>
+            <filter id="rough" x="-12%" y="-12%" width="124%" height="124%">
+              <feTurbulence type="fractalNoise" baseFrequency="0.022" numOctaves="2" seed="4" result="n" />
+              <feDisplacementMap in="SourceGraphic" in2="n" scale="2.5" xChannelSelector="R" yChannelSelector="G" />
+            </filter>
+          </defs>
+          <g class="bird-body">
+            <g filter="url(#rough)">
+              <path class="branch" d="M46 170 Q96 160 154 168 q10 1 12 -6" />
+              <path class="legs2" d="M86 150 L83 168 M106 150 L109 168" />
+              <path class="silh2" d="M64 106 L22 92 L38 110 L18 118 L40 126 L24 144 L66 130 Z" />
+              <ellipse class="silh2" cx="94" cy="114" rx="44" ry="40" />
+              <circle class="silh2" cx="126" cy="74" r="26" />
+              <path class="silh2" d="M148 72 L170 77 L148 85 Z" />
+              <path class="silh2" d="M116 52 L112 39 L122 50 Z M126 50 L127 36 L135 49 Z M137 52 L144 41 L145 54 Z" />
+              <path class="cut" d="M90 106 C85 97 72 100 75 111 C77 121 90 130 90 130 C90 130 103 121 105 111 C108 100 95 97 90 106 Z" />
+              <path class="scallop" d="M70 120 q9 7 18 1 M70 130 q9 7 18 1" />
+              <path class="chirp" d="M174 71 Q181 78 174 85 M182 66 Q192 78 182 90" />
+            </g>
+            <ellipse class="eye-p" cx="132" cy="70" rx="4.6" ry="5.6" />
+            <circle class="eye-g" cx="133.6" cy="68" r="1.7" />
+            <path class="lash" d="M136 65 q5 -2 7 0" />
+          </g>
+        </svg>
+        <span class="note n1">♪</span>
+        <span class="note n2">♫</span>
+        <div class="screenhint" id="screenhint">松手&nbsp;·&nbsp;放进小鸟的电台&nbsp;♪</div>
+      </div>
+
+      <div class="dial">
+        <button class="ch tprev" id="tprev" aria-label="prev channel">◁</button>
+        <div class="dial-txt"><b id="freq">88.2</b><span class="fm">FM</span><span id="sname">—</span></div>
+        <button class="ch tnext" id="tnext" aria-label="next channel">▷</button>
+      </div>
+
+      <div class="readout">
+        <div class="cover" id="cover"></div>
+        <div class="meta">
+          <div class="title" id="title">—</div>
+          <div class="sub"><span class="kind" id="artist">—</span>&nbsp;·&nbsp;<b id="dj">—</b></div>
+        </div>
+      </div>
+
+      <div class="progress">
+        <span class="time" id="cur">0:00</span>
+        <div class="bar" id="bar"><div class="fill" id="fill"></div></div>
+        <span class="time" id="dur">0:00</span>
+      </div>
+
+      <div class="controls">
+        <button class="btn" id="prev" aria-label="prev"><svg viewBox="0 0 24 24"><path d="M7 6v12M19 6 9 12l10 6z"/></svg></button>
+        <button class="btn play" id="play" aria-label="play">
+          <svg class="i-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          <svg class="i-pause" viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>
+        </button>
+        <button class="btn" id="next" aria-label="next"><svg viewBox="0 0 24 24"><path d="M17 6v12M5 6l10 6L5 18z"/></svg></button>
+      </div>
+    </section>
+  </div>
+
+  <input type="file" id="filepick" accept="audio/*" multiple hidden />
+  <script src="https://cdn.jsdelivr.net/npm/jsmediatags@3.9.7/dist/jsmediatags.min.js"></script>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
