@@ -1,17 +1,26 @@
 :root {
-  --paper: #e7ddc0;   /* warm ivory papercut */
+  --paper: #f8f4ea;   /* paper white — Andersen's cuts are white paper on colored mounts */
   --ink:   #1b2a9e;   /* deep cobalt (UI / text) */
   --night: #1f31cc;   /* vivid cobalt ground (from reference) */
   --soft:  rgba(27,42,158,.6);
   --accent: var(--ink);
 }
 
+/* ---------- channel themes (Andersen-papercut mount colors) ---------- */
+[data-theme="blue"]  { --ink: #1b2a9e; --night: #1f31cc; --soft: rgba(27,42,158,.6); }
+[data-theme="black"] { --ink: #211d18; --night: #161616; --soft: rgba(33,29,24,.6); }
+[data-theme="rust"]  { --ink: #7a3018; --night: #af4a26; --soft: rgba(122,48,24,.6); }
+[data-theme="green"] { --ink: #1c4531; --night: #276b46; --soft: rgba(28,69,49,.6); }
+[data-theme="plum"]  { --ink: #44214d; --night: #5b2d66; --soft: rgba(68,33,77,.6); }
+[data-theme="ochre"] { --ink: #64450a; --night: #8a5f0e; --soft: rgba(100,69,10,.6); }
+[data-theme="crimson"] { --ink: #701521; --night: #9c1f2d; --soft: rgba(112,21,33,.6); }
+
 * { box-sizing: border-box; }
 
 body {
   margin: 0; min-height: 100vh; overflow: hidden;
   display: grid; place-items: center;
-  font-family: "Space Mono", ui-monospace, monospace;
+  font-family: "Space Mono", "Noto Serif SC", ui-monospace, monospace;
   color: var(--ink);
   background: #d7d3c8;   /* neutral desk — no color; transparent later in Tauri */
   -webkit-font-smoothing: antialiased;
@@ -23,13 +32,36 @@ body::after {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* ---------- draggable floating unit ---------- */
-.sbfm { position: fixed; left: calc(50% - 138px); top: 60px; z-index: 10; }
-.sbfm.collapsed .radio { display: none; }
-.sbfm:not(.collapsed) .perch { display: none; }
+/* ---------- floating papercut windows (Poolsuite-style, each draggable) ---------- */
+.win { position: fixed; z-index: 10; }
+.win[hidden] { display: none; }
+#winMain    { left: calc(50% - 138px); top: 60px; }
+#winStation { left: calc(50% + 158px); top: 76px; }
+#winLook    { left: calc(50% + 178px); top: 320px; }
+#sbfm.collapsed .win { display: none; }
+#sbfm:not(.collapsed) .perch { display: none; }
+
+/* hand-cut scalloped paper edge behind the whole radio (doily) */
+.lace {
+  position: absolute; inset: -8px; z-index: -1; pointer-events: none;
+  filter: url(#roughF);
+  background:
+    radial-gradient(circle 10px at 10px 10px,                            var(--paper) 9.5px, #0000 10px) top left     / 20px 20px no-repeat,
+    radial-gradient(circle 10px at calc(100% - 10px) 10px,               var(--paper) 9.5px, #0000 10px) top right    / 20px 20px no-repeat,
+    radial-gradient(circle 10px at 10px calc(100% - 10px),               var(--paper) 9.5px, #0000 10px) bottom left  / 20px 20px no-repeat,
+    radial-gradient(circle 10px at calc(100% - 10px) calc(100% - 10px),  var(--paper) 9.5px, #0000 10px) bottom right / 20px 20px no-repeat,
+    radial-gradient(circle 8px at 50% 8px,              var(--paper) 7.6px, #0000 8px) top    / 17px 16px repeat-x,
+    radial-gradient(circle 8px at 50% calc(100% - 8px), var(--paper) 7.6px, #0000 8px) bottom / 17px 16px repeat-x,
+    radial-gradient(circle 8px at 8px 50%,              var(--paper) 7.6px, #0000 8px) left   / 16px 17px repeat-y,
+    radial-gradient(circle 8px at calc(100% - 8px) 50%, var(--paper) 7.6px, #0000 8px) right  / 16px 17px repeat-y,
+    linear-gradient(var(--paper), var(--paper)) center / calc(100% - 16px) calc(100% - 16px) no-repeat;
+}
 
 /* ---------- collapsed: black chip + white bird ---------- */
-.perch { border: none; background: transparent; cursor: grab; padding: 0; }
+.perch {
+  position: fixed; left: calc(50% - 138px); top: 60px; z-index: 10;
+  border: none; background: transparent; cursor: grab; padding: 0;
+}
 .perch:active { cursor: grabbing; }
 .chip {
   display: grid; place-items: center; width: 78px; height: 78px;
@@ -37,8 +69,8 @@ body::after {
 }
 .chip .bird { width: 62px; height: 54px; }
 
-/* ---------- the little radio ---------- */
-.radio {
+/* ---------- papercut cards: the radio + the two panels ---------- */
+.radio, .panel {
   width: 276px;
   background: var(--paper);
   border: 2.5px solid var(--ink);
@@ -46,6 +78,7 @@ body::after {
   overflow: hidden;
   user-select: none;
 }
+.panel .brand { font-size: 13px; }
 
 /* woodcut striped title bar */
 .titlebar {
@@ -58,7 +91,7 @@ body::after {
 .titlebar:active { cursor: grabbing; }
 .brand {
   background: var(--paper); padding: 0 10px; z-index: 1;
-  font-family: "Fraunces", Georgia, serif; font-style: italic; font-weight: 600;
+  font-family: "Fraunces", "Noto Serif SC", Georgia, serif; font-style: italic; font-weight: 600;
   font-size: 15px; color: var(--ink);
 }
 .brand em {
@@ -71,10 +104,11 @@ body::after {
   background: var(--paper); display: grid; place-items: center;
   font-family: "Space Mono", monospace; font-size: 11px; line-height: 1; color: var(--ink); cursor: pointer; padding: 0;
 }
-.winbtns { position: absolute; left: 7px; z-index: 1; }
-.wb.close { cursor: default; }
+.wb.close { position: absolute; right: 7px; z-index: 1; }
 .wb.min { position: absolute; right: 7px; z-index: 1; padding-bottom: 3px; }
-.wb.min:hover { background: var(--ink); color: var(--paper); }
+.wb.look { position: absolute; left: 7px; z-index: 1; font-size: 9px; }
+.wb.min:hover, .wb.close:hover, .wb.look:hover { background: var(--ink); color: var(--paper); }
+.hd { color: var(--ink); font-size: 8px; font-style: normal; vertical-align: 2px; opacity: .85; }
 
 /* ---------- the black screen ---------- */
 .screen {
@@ -83,17 +117,22 @@ body::after {
   display: grid; place-items: center; overflow: hidden;
 }
 .screen::after {
-  content: ""; position: absolute; inset: 9px; border-radius: 4px;
-  border: 2px dotted var(--paper); opacity: .35; pointer-events: none;
+  content: ""; position: absolute; inset: 14px; border-radius: 4px;
+  border: 2px dotted var(--paper); opacity: .28; pointer-events: none;
 }
+/* papercut sawtooth frame, hand-cut by the same rough filter as the forest */
 .screen::before {
   content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 2;
+  filter: url(#roughF);
   background:
-    radial-gradient(circle 6px at 6px 0,    var(--paper) 5px, #0000 5.5px) top/12px 9px repeat-x,
-    radial-gradient(circle 6px at 6px 100%, var(--paper) 5px, #0000 5.5px) bottom/12px 9px repeat-x,
-    radial-gradient(circle 6px at 0 6px,    var(--paper) 5px, #0000 5.5px) left/9px 12px repeat-y,
-    radial-gradient(circle 6px at 100% 6px, var(--paper) 5px, #0000 5.5px) right/9px 12px repeat-y;
+    conic-gradient(from 135deg at 50% 0,    var(--paper) 90deg, #0000 0) top/18px 9px repeat-x,
+    conic-gradient(from -45deg at 50% 100%, var(--paper) 90deg, #0000 0) bottom/18px 9px repeat-x,
+    conic-gradient(from 45deg at 0 50%,     var(--paper) 90deg, #0000 0) left/9px 18px repeat-y,
+    conic-gradient(from 225deg at 100% 50%, var(--paper) 90deg, #0000 0) right/9px 18px repeat-y;
 }
+/* papercut forest: firs + sparkles flanking the bird */
+.forest { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+.forest-cut { fill: var(--paper); }
 .bird { overflow: visible; }
 .screen .bird { width: 124px; height: 124px; }
 .silh { fill: var(--paper); }
@@ -121,10 +160,23 @@ body::after {
 .dial { display: flex; align-items: center; gap: 6px; margin: 0 9px 3px; padding: 3px 6px; border: 2px solid var(--ink); border-radius: 6px; background: var(--paper); }
 .dial .ch { border: none; background: transparent; color: var(--ink); opacity: .5; font-size: 12px; cursor: pointer; padding: 2px 5px; }
 .dial .ch:hover { opacity: 1; }
-.dial-txt { flex: 1; text-align: center; font-family: "Space Mono", monospace; font-size: 11px; color: var(--ink); letter-spacing: .5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dial-txt b { font-weight: 700; }
-.dial-txt .fm { font-size: 8px; opacity: .55; margin: 0 6px 0 3px; }
-.dial-txt #sname { opacity: .78; }
+.dial-mid {
+  flex: 1; min-width: 0; text-align: center; font-family: "Space Mono", "Noto Serif SC", monospace; font-size: 11px;
+  color: var(--ink); letter-spacing: .5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  background: none; border: none; cursor: pointer; padding: 3px 0; border-radius: 4px;
+}
+.dial-mid:hover { background: rgba(0,0,0,.06); }
+.dial-mid b { font-weight: 700; }
+.dial-mid .fm { font-size: 8px; opacity: .55; margin: 0 6px 0 3px; }
+.dial-mid #sname { opacity: .78; }
+.dial-mid.cta b, .dial-mid.cta .fm { display: none; }   /* pre-creation CTA hides ★ FM */
+
+/* one-line station intro under the dial */
+.tagline {
+  text-align: center; font-size: 9.5px; letter-spacing: .5px; color: var(--soft);
+  margin: 0 20px 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tagline[hidden] { display: none; }
 
 .note { position: absolute; top: 40px; font-size: 15px; color: var(--paper); opacity: 0; pointer-events: none; }
 .n1 { left: 34%; } .n2 { left: 58%; font-size: 18px; }
@@ -145,7 +197,7 @@ body::after {
 .meta { min-width: 0; flex: 1; }
 .cover { width: 42px; height: 42px; flex: none; border: 2px solid var(--ink); border-radius: 4px; background-size: cover; background-position: center; display: none; }
 .cover.show { display: block; }
-.title { font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: 15px; line-height: 1.2; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.title { font-family: "Fraunces", "Noto Serif SC", Georgia, serif; font-weight: 600; font-size: 15px; line-height: 1.2; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sub { font-size: 10px; color: var(--soft); margin-top: 3px; text-transform: uppercase; letter-spacing: .4px; }
 .sub b { color: var(--ink); font-weight: 700; }
 
@@ -161,15 +213,43 @@ body::after {
 .btn { width: 34px; height: 34px; border: 2.5px solid var(--ink); border-radius: 50%; background: var(--paper); color: var(--ink); display: grid; place-items: center; cursor: pointer; padding: 0; transition: transform .07s ease; }
 .btn:active { transform: translate(1px,1px); }
 .btn svg { width: 16px; height: 16px; fill: currentColor; }
-.btn.play { width: 46px; height: 46px; background: var(--ink); color: var(--paper); }
+.btn.play { width: 46px; height: 46px; background: var(--ink); color: var(--paper); outline: 2px dotted var(--ink); outline-offset: 3px; }
 .btn.play svg { width: 20px; height: 20px; }
 .i-pause { display: none; }
 .radio.playing .i-play { display: none; }
 .radio.playing .i-pause { display: block; }
 
-.vol { display: flex; align-items: center; gap: 5px; margin-left: 2px; }
-.vol-ico { width: 15px; height: 15px; fill: var(--soft); }
-#vol { -webkit-appearance: none; appearance: none; width: 48px; height: 6px; border: 2px solid var(--ink); border-radius: 4px; cursor: pointer; background: linear-gradient(90deg, var(--ink) 0 72%, var(--paper) 72% 100%); }
+.vol { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+.vol-ico { width: 16px; height: 16px; flex: none; fill: var(--soft); }
+#vol { -webkit-appearance: none; appearance: none; flex: 1; width: auto; height: 6px; border: 2px solid var(--ink); border-radius: 4px; cursor: pointer; background: linear-gradient(90deg, var(--ink) 0 72%, var(--paper) 72% 100%); }
 #vol::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--paper); border: 2px solid var(--ink); }
+
+/* ---------- panel bodies (station / look windows) ---------- */
+.panel-body { padding: 12px 14px 14px; }
+.chsetup-label { font-size: 9.5px; text-transform: uppercase; letter-spacing: .5px; color: var(--soft); margin-bottom: 5px; }
+.chsetup-input {
+  width: 100%; box-sizing: border-box; font-family: "Space Mono", "Noto Serif SC", monospace; font-size: 12px;
+  padding: 7px 9px; margin-bottom: 12px; border: 2px solid var(--ink); border-radius: 6px;
+  background: rgba(255,255,255,.4); color: var(--ink);
+}
+.chsetup-input:focus { outline: none; }
+.swatches { display: flex; justify-content: space-between; margin-bottom: 14px; }
+.swatch { width: 28px; height: 28px; border-radius: 50%; border: 2.5px solid var(--ink); background: var(--sw); cursor: pointer; padding: 0; position: relative; }
+.swatch.active::after {
+  content: "✓"; position: absolute; inset: 0; display: grid; place-items: center;
+  color: #fff; font-size: 12px; text-shadow: 0 1px 2px rgba(0,0,0,.5);
+}
+.chsetup-upload {
+  width: 100%; padding: 7px; margin-bottom: 12px;
+  border: 2px dashed var(--ink); border-radius: 6px; background: transparent;
+  color: var(--ink); font-family: "Space Mono", "Noto Serif SC", monospace; font-size: 11px; cursor: pointer;
+}
+.chsetup-upload:hover { background: rgba(0,0,0,.05); }
+.chsetup-save {
+  width: 100%; padding: 8px; border: 2.5px solid var(--ink); border-radius: 7px;
+  background: var(--ink); color: var(--paper); font-family: "Space Mono", "Noto Serif SC", monospace;
+  font-size: 12px; font-weight: 700; letter-spacing: .5px; cursor: pointer;
+}
+.chsetup-save:active { transform: translate(1px,1px); }
 
 @media (prefers-reduced-motion: reduce) { .bird-body, .note { animation: none !important; } }

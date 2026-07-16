@@ -6,13 +6,13 @@
   <title>silly bird FM</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,600&family=Space+Mono:wght@400;700&family=Noto+Serif+SC:wght@500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/src/style.css" />
 </head>
 <body>
-  <div class="sbfm" id="sbfm">
+  <div id="sbfm">
 
-    <!-- collapsed: a little black chip with the bird, sitting on the desktop -->
+    <!-- collapsed: the little bird perched on the desktop -->
     <button class="perch" id="perch" title="打开 silly bird fm">
       <span class="chip">
         <svg class="bird sm" viewBox="0 0 200 172" aria-hidden="true">
@@ -33,73 +33,143 @@
       </span>
     </button>
 
-    <!-- expanded: the little radio -->
-    <section class="radio" id="player">
-      <header class="titlebar" id="drag">
-        <span class="brand">silly&nbsp;bird <em>fm</em></span>
-        <button class="wb min" id="min" title="收回成小鸟">–</button>
-      </header>
+    <!-- window 1 · the radio -->
+    <div class="win" id="winMain">
+      <div class="lace" aria-hidden="true"></div>
+      <section class="radio" id="player">
+        <header class="titlebar" id="dragMain">
+          <button class="wb look" id="lookBtn" title="外观与音量">❋</button>
+          <span class="brand"><i class="hd">♥</i>&nbsp;silly&nbsp;bird <em>fm</em>&nbsp;<i class="hd">♥</i></span>
+          <button class="wb min" id="min" title="收回成小鸟">–</button>
+        </header>
 
-      <div class="screen">
-        <svg class="bird lg" viewBox="0 0 200 200" aria-label="silly bird">
-          <defs>
-            <filter id="rough" x="-12%" y="-12%" width="124%" height="124%">
-              <feTurbulence type="fractalNoise" baseFrequency="0.022" numOctaves="2" seed="4" result="n" />
-              <feDisplacementMap in="SourceGraphic" in2="n" scale="2.5" xChannelSelector="R" yChannelSelector="G" />
-            </filter>
-          </defs>
-          <g class="bird-body">
-            <g filter="url(#rough)">
-              <path class="branch" d="M46 170 Q96 160 154 168 q10 1 12 -6" />
-              <path class="legs2" d="M86 150 L83 168 M106 150 L109 168" />
-              <path class="silh2" d="M64 106 L22 92 L38 110 L18 118 L40 126 L24 144 L66 130 Z" />
-              <ellipse class="silh2" cx="94" cy="114" rx="44" ry="40" />
-              <circle class="silh2" cx="126" cy="74" r="26" />
-              <path class="silh2" d="M148 72 L170 77 L148 85 Z" />
-              <path class="silh2" d="M116 52 L112 39 L122 50 Z M126 50 L127 36 L135 49 Z M137 52 L144 41 L145 54 Z" />
-              <path class="cut" d="M90 106 C85 97 72 100 75 111 C77 121 90 130 90 130 C90 130 103 121 105 111 C108 100 95 97 90 106 Z" />
-              <path class="scallop" d="M70 120 q9 7 18 1 M70 130 q9 7 18 1" />
-              <path class="chirp" d="M174 71 Q181 78 174 85 M182 66 Q192 78 182 90" />
+        <div class="screen">
+          <svg class="bird lg" viewBox="0 0 200 200" aria-label="silly bird">
+            <defs>
+              <filter id="rough" x="-12%" y="-12%" width="124%" height="124%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.028" numOctaves="3" seed="4" result="n" />
+                <feDisplacementMap in="SourceGraphic" in2="n" scale="5" xChannelSelector="R" yChannelSelector="G" />
+              </filter>
+            </defs>
+            <g class="bird-body">
+              <g filter="url(#rough)">
+                <path class="branch" d="M46 170 Q96 160 154 168 q10 1 12 -6" />
+                <path class="legs2" d="M86 150 L83 168 M106 150 L109 168" />
+                <path class="silh2" d="M64 106 L22 92 L38 110 L18 118 L40 126 L24 144 L66 130 Z" />
+                <ellipse class="silh2" cx="94" cy="114" rx="44" ry="40" />
+                <circle class="silh2" cx="126" cy="74" r="26" />
+                <path class="silh2" d="M148 72 L170 77 L148 85 Z" />
+                <path class="silh2" d="M116 52 L112 39 L122 50 Z M126 50 L127 36 L135 49 Z M137 52 L144 41 L145 54 Z" />
+                <path class="cut" d="M90 106 C85 97 72 100 75 111 C77 121 90 130 90 130 C90 130 103 121 105 111 C108 100 95 97 90 106 Z" />
+                <path class="scallop" d="M70 120 q9 7 18 1 M70 130 q9 7 18 1" />
+                <path class="chirp" d="M174 71 Q181 78 174 85 M182 66 Q192 78 182 90" />
+              </g>
+              <ellipse class="eye-p" cx="132" cy="70" rx="4.6" ry="5.6" />
+              <circle class="eye-g" cx="133.6" cy="68" r="1.7" />
+              <path class="lash" d="M136 65 q5 -2 7 0" />
             </g>
-            <ellipse class="eye-p" cx="132" cy="70" rx="4.6" ry="5.6" />
-            <circle class="eye-g" cx="133.6" cy="68" r="1.7" />
-            <path class="lash" d="M136 65 q5 -2 7 0" />
-          </g>
-        </svg>
-        <span class="note n1">♪</span>
-        <span class="note n2">♫</span>
-        <div class="screenhint" id="screenhint">松手&nbsp;·&nbsp;放进小鸟的电台&nbsp;♪</div>
-      </div>
-
-      <div class="dial">
-        <button class="ch tprev" id="tprev" aria-label="prev channel">◁</button>
-        <div class="dial-txt"><b id="freq">88.2</b><span class="fm">FM</span><span id="sname">—</span></div>
-        <button class="ch tnext" id="tnext" aria-label="next channel">▷</button>
-      </div>
-
-      <div class="readout">
-        <div class="cover" id="cover"></div>
-        <div class="meta">
-          <div class="title" id="title">—</div>
-          <div class="sub"><span class="kind" id="artist">—</span>&nbsp;·&nbsp;<b id="dj">—</b></div>
+          </svg>
+          <svg class="forest" viewBox="0 0 253 123" aria-hidden="true">
+            <defs>
+              <filter id="roughF" x="-10%" y="-10%" width="120%" height="120%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="2" seed="9" result="n" />
+                <feDisplacementMap in="SourceGraphic" in2="n" scale="3.5" xChannelSelector="R" yChannelSelector="G" />
+              </filter>
+            </defs>
+            <g class="forest-cut" filter="url(#roughF)">
+              <path d="M22 2 Q30 14 34 23 L27 21 Q35 36 39 47 L31 45 Q39 60 44 73 L26 71 L26 101 L18 101 L18 71 L0 73 Q5 60 13 45 L5 47 Q9 36 17 21 L10 23 Q14 14 22 2 Z" transform="translate(4,12) scale(1.12)" />
+              <path d="M22 2 Q30 14 34 23 L27 21 Q35 36 39 47 L31 45 Q39 60 44 73 L26 71 L26 101 L18 101 L18 71 L0 73 Q5 60 13 45 L5 47 Q9 36 17 21 L10 23 Q14 14 22 2 Z" transform="translate(249,12) scale(-1.12,1.12)" />
+              <path d="M0 -6 L1.6 -1.6 L6 0 L1.6 1.6 L0 6 L-1.6 1.6 L-6 0 L-1.6 -1.6 Z" transform="translate(72,16)" />
+              <path d="M0 -6 L1.6 -1.6 L6 0 L1.6 1.6 L0 6 L-1.6 1.6 L-6 0 L-1.6 -1.6 Z" transform="translate(183,14) scale(0.8)" />
+            </g>
+          </svg>
+          <span class="note n1">♪</span>
+          <span class="note n2">♫</span>
+          <div class="screenhint" id="screenhint">松手&nbsp;·&nbsp;放进小鸟的电台&nbsp;♪</div>
         </div>
-      </div>
 
-      <div class="progress">
-        <span class="time" id="cur">0:00</span>
-        <div class="bar" id="bar"><div class="fill" id="fill"></div></div>
-        <span class="time" id="dur">0:00</span>
-      </div>
+        <div class="dial">
+          <button class="ch tprev" id="tprev" aria-label="prev channel">◁</button>
+          <button class="dial-mid" id="dialMid" title="打开我的电台">
+            <b id="freq">88.2</b><span class="fm">FM</span><span id="sname">—</span>
+          </button>
+          <button class="ch tnext" id="tnext" aria-label="next channel">▷</button>
+        </div>
+        <div class="tagline" id="tagline" hidden></div>
 
-      <div class="controls">
-        <button class="btn" id="prev" aria-label="prev"><svg viewBox="0 0 24 24"><path d="M7 6v12M19 6 9 12l10 6z"/></svg></button>
-        <button class="btn play" id="play" aria-label="play">
-          <svg class="i-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-          <svg class="i-pause" viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>
-        </button>
-        <button class="btn" id="next" aria-label="next"><svg viewBox="0 0 24 24"><path d="M17 6v12M5 6l10 6L5 18z"/></svg></button>
-      </div>
-    </section>
+        <div class="readout">
+          <div class="cover" id="cover"></div>
+          <div class="meta">
+            <div class="title" id="title">—</div>
+            <div class="sub"><span class="kind" id="artist">—</span>&nbsp;·&nbsp;<b id="dj">—</b></div>
+          </div>
+        </div>
+
+        <div class="progress">
+          <span class="time" id="cur">0:00</span>
+          <div class="bar" id="bar"><div class="fill" id="fill"></div></div>
+          <span class="time" id="dur">0:00</span>
+        </div>
+
+        <div class="controls">
+          <button class="btn" id="prev" aria-label="prev"><svg viewBox="0 0 24 24"><path d="M7 6v12M19 6 9 12l10 6z"/></svg></button>
+          <button class="btn play" id="play" aria-label="play">
+            <svg class="i-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            <svg class="i-pause" viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>
+          </button>
+          <button class="btn" id="next" aria-label="next"><svg viewBox="0 0 24 24"><path d="M17 6v12M5 6l10 6L5 18z"/></svg></button>
+        </div>
+      </section>
+    </div>
+
+    <!-- window 2 · my station: name it, introduce it, upload programs -->
+    <div class="win" id="winStation" hidden>
+      <div class="lace" aria-hidden="true"></div>
+      <section class="panel">
+        <header class="titlebar" id="dragStation">
+          <span class="brand">我的电台</span>
+          <button class="wb close" id="stationClose" title="关闭">×</button>
+        </header>
+        <div class="panel-body">
+          <div class="chsetup-label">电台名</div>
+          <input class="chsetup-input" id="chNameInput" maxlength="24" placeholder="给你的电台取个名字" />
+          <div class="chsetup-label">一句话介绍</div>
+          <input class="chsetup-input" id="chIntroInput" maxlength="40" placeholder="比如：睡不着的夜里，说给你听" />
+          <div class="chsetup-label">节目</div>
+          <button class="chsetup-upload" id="chUpload">⊕&nbsp;上传音频 · 可多选</button>
+          <button class="chsetup-save" id="stationSave">完成</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- window 3 · look & volume: YOUR ui color + sound level -->
+    <div class="win" id="winLook" hidden>
+      <div class="lace" aria-hidden="true"></div>
+      <section class="panel">
+        <header class="titlebar" id="dragLook">
+          <span class="brand">外观</span>
+          <button class="wb close" id="lookClose" title="关闭">×</button>
+        </header>
+        <div class="panel-body">
+          <div class="chsetup-label">界面颜色 · 你的偏好</div>
+          <div class="swatches">
+            <button class="swatch" data-theme="crimson" style="--sw:#9c1f2d" aria-label="绛红"></button>
+            <button class="swatch" data-theme="rust"    style="--sw:#af4a26" aria-label="赤陶"></button>
+            <button class="swatch" data-theme="ochre"   style="--sw:#8a5f0e" aria-label="蜜赭"></button>
+            <button class="swatch" data-theme="green"   style="--sw:#276b46" aria-label="墨绿"></button>
+            <button class="swatch" data-theme="blue"    style="--sw:#1f31cc" aria-label="蓝"></button>
+            <button class="swatch" data-theme="plum"    style="--sw:#5b2d66" aria-label="梅紫"></button>
+            <button class="swatch" data-theme="black"   style="--sw:#161616" aria-label="黑"></button>
+          </div>
+          <div class="chsetup-label">音量</div>
+          <div class="vol">
+            <svg viewBox="0 0 24 24" class="vol-ico"><path d="M4 9v6h4l5 4V5L8 9z"/></svg>
+            <input type="range" id="vol" min="0" max="100" value="72" />
+          </div>
+        </div>
+      </section>
+    </div>
+
   </div>
 
   <input type="file" id="filepick" accept="audio/*" multiple hidden />
