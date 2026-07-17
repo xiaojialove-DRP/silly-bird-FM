@@ -7,12 +7,8 @@
 //     Cloud is config-gated: fill CLOUD below (see README «分享» section).
 window.__SBFM = "p0p1";
 
-// ---- cloud config (fill these two to enable sharing; bucket must be public) ----
-const CLOUD = {
-  url: "",        // e.g. "https://xxxx.supabase.co"
-  anonKey: "",    // Supabase anon public key
-  bucket: "stations",
-};
+// ---- cloud config lives in src/cloud-config.js (gitignored; copy cloud-config.example.js) ----
+const CLOUD = window.SBFM_CLOUD || { url: "", anonKey: "", bucket: "stations" };
 
 const PLACEHOLDER = { title: "还没有节目", kind: "拖入音频，或点上面创建电台", dur: 0, placeholder: true };
 
@@ -235,7 +231,7 @@ function cloudPut(path, blob) {
     method: "POST",
     headers: {
       Authorization: `Bearer ${CLOUD.anonKey}`, apikey: CLOUD.anonKey,
-      "x-upsert": "true", "Content-Type": blob.type || "application/octet-stream",
+      "Content-Type": blob.type || "application/octet-stream",
     },
     body: blob,
   }).then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); });

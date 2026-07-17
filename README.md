@@ -39,7 +39,7 @@
 1. 注册 Supabase，新建一个项目（免费档即可）
 2. 左侧 **Storage** → 新建 bucket，名字填 `stations`，勾选 **Public**
 3. 项目设置（Settings → API）里复制 **Project URL** 和 **anon public key**
-4. 打开 [`src/main.js`](src/main.js) 顶部的 `CLOUD`，把两个值填进去
+4. 把 [`src/cloud-config.example.js`](src/cloud-config.example.js) 复制为 `src/cloud-config.js`，填入这两个值（该文件不会被提交进仓库）
 5. 打开「我的电台」→ **✉ 生成分享链接** → 链接已自动复制，发给朋友
 
 想先本地试试收听模式长什么样：启动本地服务后访问 `/?listen=http://localhost:5174/demo-station`（仓库自带一条测试电波）。
