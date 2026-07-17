@@ -399,9 +399,9 @@ makeDraggable(perch, perch, () => sbfm.classList.remove("collapsed"));
   } catch {}
   paintSwatches();
   wireMediaSession();
-  renderChannel();
 
-  // restore my persisted tracks
+  // restore my persisted tracks (before the first render, so the landing-channel
+  // decision below sees the final MY.created state)
   try {
     await idb.open();
     const rows = await idb.all();
@@ -412,9 +412,15 @@ makeDraggable(perch, perch, () => sbfm.classList.remove("collapsed"));
         src: URL.createObjectURL(r.blob), blob: r.blob, dbId: r.id,
       })));
       MY.created = true;
-      if (channel() === MY) renderChannel();
     }
   } catch (e) { console.warn("idb restore failed:", e); }
+
+  // turning the radio on should land you on a station that's already playing —
+  // like a real radio, not a blank "make your own broadcast" screen. First-time
+  // visitors land on a friend's channel; once you've made your own, you come back
+  // to it. (A ?listen= link below still wins over both.)
+  if (!MY.created) ci = 1;
+  renderChannel();
 
   // a friend's link?
   await loadGuestStation();
