@@ -253,3 +253,36 @@ body::after {
 .chsetup-save:active { transform: translate(1px,1px); }
 
 @media (prefers-reduced-motion: reduce) { .bird-body, .note { animation: none !important; } }
+
+/* ═══════════ EXPERIMENT · 整张剪纸皮肤（未提交试验：git restore 即回滚） ═══════════
+   The window IS a cut sheet: scalloped silhouette + punched holes via border-image;
+   inner UI de-boxed — stitched dotted rules, bare glyph buttons, punched-hole play. */
+.lace { display: none; }
+.radio, .panel {
+  width: 300px;
+  background: none;
+  border: 20px solid transparent;
+  border-radius: 0;
+  overflow: visible;
+  border-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cdefs%3E%3Cmask id='m'%3E%3Crect width='120' height='120' fill='black'/%3E%3Crect x='12' y='12' width='96' height='96' fill='white'/%3E%3Ccircle cx='15' cy='15' r='11' fill='white'/%3E%3Ccircle cx='105' cy='15' r='11' fill='white'/%3E%3Ccircle cx='15' cy='105' r='11' fill='white'/%3E%3Ccircle cx='105' cy='105' r='11' fill='white'/%3E%3Ccircle cx='35' cy='12.5' r='8.5' fill='white'/%3E%3Ccircle cx='55' cy='14' r='9.5' fill='white'/%3E%3Ccircle cx='75' cy='12.5' r='8' fill='white'/%3E%3Ccircle cx='35' cy='107.5' r='8.5' fill='white'/%3E%3Ccircle cx='55' cy='106' r='9.5' fill='white'/%3E%3Ccircle cx='75' cy='107.5' r='8' fill='white'/%3E%3Ccircle cx='12.5' cy='35' r='8.5' fill='white'/%3E%3Ccircle cx='14' cy='55' r='9.5' fill='white'/%3E%3Ccircle cx='12.5' cy='75' r='8' fill='white'/%3E%3Ccircle cx='107.5' cy='35' r='8.5' fill='white'/%3E%3Ccircle cx='106' cy='55' r='9.5' fill='white'/%3E%3Ccircle cx='107.5' cy='75' r='8' fill='white'/%3E%3Ccircle cx='40' cy='24' r='2' fill='black'/%3E%3Ccircle cx='60' cy='24' r='2.2' fill='black'/%3E%3Ccircle cx='80' cy='24' r='2' fill='black'/%3E%3Ccircle cx='40' cy='96' r='2' fill='black'/%3E%3Ccircle cx='60' cy='96' r='2.2' fill='black'/%3E%3Ccircle cx='80' cy='96' r='2' fill='black'/%3E%3Ccircle cx='24' cy='40' r='2' fill='black'/%3E%3Ccircle cx='24' cy='60' r='2.2' fill='black'/%3E%3Ccircle cx='24' cy='80' r='2' fill='black'/%3E%3Ccircle cx='96' cy='40' r='2' fill='black'/%3E%3Ccircle cx='96' cy='60' r='2.2' fill='black'/%3E%3Ccircle cx='96' cy='80' r='2' fill='black'/%3E%3C/mask%3E%3C/defs%3E%3Crect width='120' height='120' fill='%23f8f4ea' mask='url(%23m)'/%3E%3C/svg%3E") 30 fill / 20px round;
+}
+#winMain { left: calc(50% - 150px); }
+.titlebar { background: none; border-bottom: 2px dotted var(--soft); }
+.brand { background: none; }
+.wb { border: none; background: none; width: 18px; height: 18px; font-size: 13px; }
+.wb.min:hover, .wb.close:hover, .wb.look:hover { background: none; color: var(--ink); opacity: .55; }
+.screen { border: none; margin: 8px 0; border-radius: 3px; }
+.dial { border: none; border-radius: 0; background: none; margin: 0 0 3px; padding: 3px 0; border-top: 2px dotted var(--soft); border-bottom: 2px dotted var(--soft); }
+.dial-mid:hover { background: none; opacity: .7; }
+.readout { padding: 2px 6px 8px; }
+.progress { padding: 0 6px 10px; }
+.bar { border: none; background: none; position: relative; height: 6px; overflow: visible; }
+.bar::before { content: ""; position: absolute; left: 0; right: 0; top: 2px; border-top: 2px dotted var(--soft); }
+.fill { position: relative; height: 4px; margin-top: 1px; border-radius: 2px; background: var(--ink); }
+.controls { padding: 0 6px 8px; gap: 12px; }
+.btn { border: none; background: none; box-shadow: none; }
+.btn svg { width: 22px; height: 22px; }
+.btn.play { background: var(--ink); outline: none; width: 44px; height: 44px; }
+.panel-body { padding: 6px 4px 8px; }
+.chsetup-input { background: none; border: none; border-bottom: 2px dotted var(--ink); border-radius: 0; padding: 5px 2px 7px; margin-bottom: 13px; }
+.chsetup-upload { background: none; }

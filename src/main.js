@@ -196,24 +196,30 @@ filepick.addEventListener("change", () => { importFiles(filepick.files); filepic
 chUpload.addEventListener("click", () => filepick.click());
 
 // ---- windows: open / close / first-open placement beside the main radio ----
-function placeBeside(win, dy) {
+function placeBeside(win, topOf) {
   if (win.dataset.placed) return;
   const r = winMain.getBoundingClientRect();
-  const fitsRight = r.right + 16 + 276 < window.innerWidth;
+  const w = win.offsetWidth || 340;
+  const fitsRight = r.right + 16 + w < window.innerWidth;
   win.style.left = (fitsRight ? r.right + 16 : Math.max(8, r.left + 36)) + "px";
-  win.style.top = Math.max(8, r.top + dy + (fitsRight ? 0 : 36)) + "px";
+  win.style.top = Math.max(8, (topOf ? topOf() : r.top) + (fitsRight ? 0 : 36)) + "px";
   win.dataset.placed = "1";
 }
-function toggleWin(win, dy) {
-  if (win.hidden) { placeBeside(win, dy); win.hidden = false; }
+function toggleWin(win, topOf) {
+  if (win.hidden) { win.hidden = false; placeBeside(win, topOf); }
   else win.hidden = true;
 }
 dialMid.addEventListener("click", () => {
   if (winStation.hidden) { chNameInput.value = MY.name; chIntroInput.value = MY.intro; }
-  toggleWin(winStation, 0);
+  toggleWin(winStation);
 });
 lookBtn.addEventListener("mousedown", (e) => e.stopPropagation());
-lookBtn.addEventListener("click", () => { paintSwatches(); toggleWin(winLook, 292); });
+lookBtn.addEventListener("click", () => {
+  paintSwatches();
+  // first open: sit below the station panel if it's out, else align with the radio
+  toggleWin(winLook, () => (winStation.hidden ? winMain.getBoundingClientRect().top
+                                              : winStation.getBoundingClientRect().bottom + 26));
+});
 stationClose.addEventListener("click", () => (winStation.hidden = true));
 lookClose.addEventListener("click", () => (winLook.hidden = true));
 
