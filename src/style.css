@@ -1,3 +1,10 @@
+/* self-hosted latin faces (fontsource); Chinese rides native Song serifs (Songti SC / SimSun) */
+@font-face { font-family: "Fraunces"; font-style: normal; font-weight: 500; font-display: swap; src: url("/assets/fonts/fraunces-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "Fraunces"; font-style: normal; font-weight: 600; font-display: swap; src: url("/assets/fonts/fraunces-latin-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "Fraunces"; font-style: italic; font-weight: 600; font-display: swap; src: url("/assets/fonts/fraunces-latin-600-italic.woff2") format("woff2"); }
+@font-face { font-family: "Space Mono"; font-style: normal; font-weight: 400; font-display: swap; src: url("/assets/fonts/space-mono-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Space Mono"; font-style: normal; font-weight: 700; font-display: swap; src: url("/assets/fonts/space-mono-latin-700-normal.woff2") format("woff2"); }
+
 :root {
   --paper: #f8f4ea;   /* paper white — Andersen's cuts are white paper on colored mounts */
   --ink:   #1b2a9e;   /* deep cobalt (UI / text) */
@@ -20,7 +27,7 @@
 body {
   margin: 0; min-height: 100vh; overflow: hidden;
   display: grid; place-items: center;
-  font-family: "Space Mono", "Noto Serif SC", ui-monospace, monospace;
+  font-family: "Space Mono", "Songti SC", "STSong", "SimSun", ui-monospace, monospace;
   color: var(--ink);
   background: #d7d3c8;   /* neutral desk — no color; transparent later in Tauri */
   -webkit-font-smoothing: antialiased;
@@ -91,7 +98,7 @@ body::after {
 .titlebar:active { cursor: grabbing; }
 .brand {
   background: var(--paper); padding: 0 10px; z-index: 1;
-  font-family: "Fraunces", "Noto Serif SC", Georgia, serif; font-style: italic; font-weight: 600;
+  font-family: "Fraunces", "Songti SC", "STSong", "SimSun", Georgia, serif; font-style: italic; font-weight: 600;
   font-size: 15px; color: var(--ink);
 }
 .brand em {
@@ -161,7 +168,7 @@ body::after {
 .dial .ch { border: none; background: transparent; color: var(--ink); opacity: .5; font-size: 12px; cursor: pointer; padding: 2px 5px; }
 .dial .ch:hover { opacity: 1; }
 .dial-mid {
-  flex: 1; min-width: 0; text-align: center; font-family: "Space Mono", "Noto Serif SC", monospace; font-size: 11px;
+  flex: 1; min-width: 0; text-align: center; font-family: "Space Mono", "Songti SC", "STSong", "SimSun", monospace; font-size: 11px;
   color: var(--ink); letter-spacing: .5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   background: none; border: none; cursor: pointer; padding: 3px 0; border-radius: 4px;
 }
@@ -197,7 +204,7 @@ body::after {
 .meta { min-width: 0; flex: 1; }
 .cover { width: 42px; height: 42px; flex: none; border: 2px solid var(--ink); border-radius: 4px; background-size: cover; background-position: center; display: none; }
 .cover.show { display: block; }
-.title { font-family: "Fraunces", "Noto Serif SC", Georgia, serif; font-weight: 600; font-size: 15px; line-height: 1.2; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.title { font-family: "Fraunces", "Songti SC", "STSong", "SimSun", Georgia, serif; font-weight: 600; font-size: 15px; line-height: 1.2; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sub { font-size: 10px; color: var(--soft); margin-top: 3px; text-transform: uppercase; letter-spacing: .4px; }
 .sub b { color: var(--ink); font-weight: 700; }
 
@@ -228,7 +235,7 @@ body::after {
 .panel-body { padding: 12px 14px 14px; }
 .chsetup-label { font-size: 9.5px; text-transform: uppercase; letter-spacing: .5px; color: var(--soft); margin-bottom: 5px; }
 .chsetup-input {
-  width: 100%; box-sizing: border-box; font-family: "Space Mono", "Noto Serif SC", monospace; font-size: 12px;
+  width: 100%; box-sizing: border-box; font-family: "Space Mono", "Songti SC", "STSong", "SimSun", monospace; font-size: 12px;
   padding: 7px 9px; margin-bottom: 12px; border: 2px solid var(--ink); border-radius: 6px;
   background: rgba(255,255,255,.4); color: var(--ink);
 }
@@ -242,12 +249,16 @@ body::after {
 .chsetup-upload {
   width: 100%; padding: 7px; margin-bottom: 12px;
   border: 2px dashed var(--ink); border-radius: 6px; background: transparent;
-  color: var(--ink); font-family: "Space Mono", "Noto Serif SC", monospace; font-size: 11px; cursor: pointer;
+  color: var(--ink); font-family: "Space Mono", "Songti SC", "STSong", "SimSun", monospace; font-size: 11px; cursor: pointer;
 }
 .chsetup-upload:hover { background: rgba(0,0,0,.05); }
+.chsetup-upload.share { margin: 10px 0 0; }
+.chsetup-upload[disabled] { opacity: .5; cursor: wait; }
+.share-out { margin-top: 8px; font-size: 10px; line-height: 1.6; color: var(--soft); word-break: break-all; white-space: pre-wrap; }
+.share-out[hidden] { display: none; }
 .chsetup-save {
   width: 100%; padding: 8px; border: 2.5px solid var(--ink); border-radius: 7px;
-  background: var(--ink); color: var(--paper); font-family: "Space Mono", "Noto Serif SC", monospace;
+  background: var(--ink); color: var(--paper); font-family: "Space Mono", "Songti SC", "STSong", "SimSun", monospace;
   font-size: 12px; font-weight: 700; letter-spacing: .5px; cursor: pointer;
 }
 .chsetup-save:active { transform: translate(1px,1px); }

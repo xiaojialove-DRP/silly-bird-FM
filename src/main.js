@@ -1,13 +1,18 @@
 // silly bird FM — player core
-// Three floating papercut windows, Poolsuite-style, each draggable by its titlebar:
-//   1. winMain    — the radio: tune (◁ ▷), what's playing, progress, transport.
-//   2. winStation — 我的电台: name it, one-line intro, upload programs. Opened from the dial.
-//   3. winLook    — 外观: YOUR ui color (personal preference, localStorage) + volume.
-//      Opened from the ❋ button in the main titlebar.
-// The perched bird collapses/reopens the whole flock; each window remembers being open.
-// Real audio via <audio>; ID3 title/artist/cover via jsmediatags. Tracks are objectURLs
-// (not persisted across reloads — cloud storage is the next phase).
-window.__SBFM = "three-windows";
+// Three floating papercut windows (radio / my-station / look), draggable, Poolsuite-style.
+// P0: imports persist in IndexedDB (survive reload); MediaSession (system media keys);
+//     self-hosted fonts (see style.css).
+// P1: share = upload your station to cloud storage → send friends a ?listen= link;
+//     opening such a link tunes a read-only copy of that station in first position.
+//     Cloud is config-gated: fill CLOUD below (see README «分享» section).
+window.__SBFM = "p0p1";
+
+// ---- cloud config (fill these two to enable sharing; bucket must be public) ----
+const CLOUD = {
+  url: "",        // e.g. "https://xxxx.supabase.co"
+  anonKey: "",    // Supabase anon public key
+  bucket: "stations",
+};
 
 const PLACEHOLDER = { title: "还没有节目", kind: "拖入音频，或点上面创建电台", dur: 0, placeholder: true };
 
@@ -52,6 +57,7 @@ const player = $("player"), screenEl = document.querySelector(".screen");
 const minBtn = $("min"), lookBtn = $("lookBtn"), stationClose = $("stationClose"), lookClose = $("lookClose");
 const dialMid = $("dialMid"), elTagline = $("tagline");
 const chNameInput = $("chNameInput"), chIntroInput = $("chIntroInput"), chUpload = $("chUpload"), stationSave = $("stationSave");
+const shareBtn = $("shareBtn"), shareOut = $("shareOut");
 const swatches = [...document.querySelectorAll(".swatch")];
 const elTitle = $("title"), elKind = $("artist"), elDj = $("dj"), elFreq = $("freq"), elSname = $("sname");
 const elCur = $("cur"), elDur = $("dur"), elFill = $("fill"), elBar = $("bar"), elCover = $("cover"), elVol = $("vol");
@@ -62,7 +68,28 @@ const hasAudio = () => !!piece() && !!piece().src;
 const fmt = (s) => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
 const trackDur = () => (hasAudio() && isFinite(audio.duration) && audio.duration ? audio.duration : (piece() ? piece().dur : 0));
 
-// ---- personal theme (UI color is the LISTENER's preference, not the channel's) ----
+// ---- tiny IndexedDB layer: my tracks survive reloads ----
+const idb = {
+  db: null,
+  open: () => new Promise((res, rej) => {
+    const r = indexedDB.open("sbfm", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("tracks", { keyPath: "id", autoIncrement: true });
+    r.onsuccess = () => res((idb.db = r.result));
+    r.onerror = () => rej(r.error);
+  }),
+  put: (rec) => new Promise((res, rej) => {
+    const rq = idb.db.transaction("tracks", "readwrite").objectStore("tracks").put(rec);
+    rq.onsuccess = () => res(rq.result);
+    rq.onerror = () => rej(rq.error);
+  }),
+  all: () => new Promise((res, rej) => {
+    const rq = idb.db.transaction("tracks").objectStore("tracks").getAll();
+    rq.onsuccess = () => res(rq.result);
+    rq.onerror = () => rej(rq.error);
+  }),
+};
+
+// ---- personal theme (the LISTENER's preference, not the channel's) ----
 function applyTheme(t) {
   document.documentElement.setAttribute("data-theme", t);
   try { localStorage.setItem("sbfm-theme", t); } catch {}
@@ -96,12 +123,33 @@ function renderPiece() {
   cur = 0;
   if (hasAudio()) audio.src = p.src;
   updateProgress();
+  syncMediaSession();
 }
 function updateProgress() {
   const d = trackDur();
   elFill.style.width = (d ? (cur / d) * 100 : 0) + "%";
   elCur.textContent = fmt(cur);
   elDur.textContent = fmt(d);
+}
+
+// ---- system media keys / now-playing (MediaSession) ----
+function syncMediaSession() {
+  if (!("mediaSession" in navigator)) return;
+  const p = piece();
+  if (!p) return;
+  try {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: p.title || "",
+      artist: p.artist || p.kind || "",
+      album: `${channel().name} · silly bird FM`,
+      artwork: p.cover ? [{ src: p.cover, sizes: "512x512" }] : [],
+    });
+  } catch {}
+}
+function wireMediaSession() {
+  if (!("mediaSession" in navigator)) return;
+  const on = (a, fn) => { try { navigator.mediaSession.setActionHandler(a, fn); } catch {} };
+  on("play", play); on("pause", pause); on("previoustrack", prev); on("nexttrack", next);
 }
 
 // real audio drives progress for imported tracks
@@ -126,6 +174,7 @@ function applyPlay() {
   else if (playing)               { audio.pause(); lastTs = 0; stopTimer(); raf = requestAnimationFrame(tick); }
   else                            { audio.pause(); stopTimer(); }
   player.classList.toggle("playing", playing);
+  if ("mediaSession" in navigator) { try { navigator.mediaSession.playbackState = playing ? "playing" : "paused"; } catch {} }
 }
 function play()  { playing = true;  applyPlay(); }
 function pause() { playing = false; applyPlay(); }
@@ -137,7 +186,7 @@ function prev() { if (cur > 3) return seek(0); goPiece(pi - 1); }
 function seek(t) { cur = Math.max(0, Math.min(t, trackDur() || t)); if (hasAudio()) audio.currentTime = cur; updateProgress(); }
 function tune(d) { ci = (ci + d + CHANNELS.length) % CHANNELS.length; pi = 0; renderChannel(); applyPlay(); }
 
-// ---- import: files land in MY station (drag-drop on the radio, or upload from the panel) ----
+// ---- import: files land in MY station and persist in IndexedDB ----
 const AUDIO_RE = /\.(mp3|m4a|wav|flac|ogg|aac|opus)$/i;
 function importFiles(list) {
   const files = [...list].filter((f) => (f.type && f.type.startsWith("audio/")) || AUDIO_RE.test(f.name));
@@ -146,13 +195,18 @@ function importFiles(list) {
   const start = MY.pieces.length;
   const pieces = files.map((f) => ({
     title: f.name.replace(/\.[^.]+$/, ""), artist: "未知", dur: 0,
-    src: URL.createObjectURL(f), cover: null,
+    src: URL.createObjectURL(f), cover: null, blob: f,
   }));
   MY.pieces.push(...pieces);
   MY.created = true;
-  ci = 0; pi = start;
+  ci = CHANNELS.indexOf(MY); pi = start;
   renderChannel();
   play();
+  pieces.forEach((p) => {
+    idb.put({ title: p.title, artist: p.artist, cover: null, blob: p.blob, t: Date.now() })
+      .then((id) => { p.dbId = id; })
+      .catch(() => {});
+  });
   files.forEach((f, i) => readTags(f, pieces[i]));
 }
 function readTags(file, p) {
@@ -167,10 +221,71 @@ function readTags(file, p) {
         for (let i = 0; i < data.length; i++) s += String.fromCharCode(data[i]);
         p.cover = `data:${format};base64,${btoa(s)}`;
       }
+      if (p.dbId) idb.put({ id: p.dbId, title: p.title, artist: p.artist, cover: p.cover, blob: p.blob, t: Date.now() }).catch(() => {});
       if (piece() === p) renderPiece();
     },
     onError: () => {},
   });
+}
+
+// ---- P1 · share my station: upload to cloud, hand friends a ?listen= link ----
+function say(msg) { shareOut.hidden = false; shareOut.textContent = msg; }
+function cloudPut(path, blob) {
+  return fetch(`${CLOUD.url}/storage/v1/object/${CLOUD.bucket}/${path}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${CLOUD.anonKey}`, apikey: CLOUD.anonKey,
+      "x-upsert": "true", "Content-Type": blob.type || "application/octet-stream",
+    },
+    body: blob,
+  }).then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); });
+}
+async function shareStation() {
+  const tracks = MY.pieces.filter((p) => p.blob);
+  if (!tracks.length) return say("先拖入或上传至少一段声音");
+  if (!CLOUD.url || !CLOUD.anonKey) return say("还没配置云端 · 打开 src/main.js 顶部 CLOUD，照 README「分享」两分钟填好");
+  shareBtn.disabled = true;
+  try {
+    const token = crypto.randomUUID();
+    const manifest = { v: 1, name: MY.name, owner: MY.name, intro: MY.intro, pieces: [] };
+    for (let i = 0; i < tracks.length; i++) {
+      say(`上传中 ${i + 1} / ${tracks.length} …`);
+      const p = tracks[i];
+      const ext = ((p.blob.type.split("/")[1] || "bin").replace("mpeg", "mp3")).replace(/[^a-z0-9]/gi, "");
+      const fname = `track-${i + 1}.${ext || "bin"}`;
+      await cloudPut(`${token}/${fname}`, p.blob);
+      manifest.pieces.push({ title: p.title, artist: p.artist, cover: p.cover, file: fname });
+    }
+    await cloudPut(`${token}/station.json`, new Blob([JSON.stringify(manifest)], { type: "application/json" }));
+    const base = `${CLOUD.url}/storage/v1/object/public/${CLOUD.bucket}/${token}`;
+    const link = location.origin + location.pathname + "?listen=" + encodeURIComponent(base);
+    try { await navigator.clipboard.writeText(link); say("✂ 链接已复制，发给朋友吧：\n" + link); }
+    catch { say(link); }
+  } catch (e) {
+    say("上传失败：" + (e && e.message ? e.message : e));
+  }
+  shareBtn.disabled = false;
+}
+
+// ---- P1 · listen mode: ?listen=<public folder URL> tunes a friend's station ----
+async function loadGuestStation() {
+  const raw = new URLSearchParams(location.search).get("listen");
+  if (!raw) return;
+  let base;
+  try { base = new URL(raw).toString().replace(/\/+$/, ""); } catch { return; }
+  if (!/^https?:/.test(base)) return;
+  try {
+    const st = await (await fetch(`${base}/station.json`)).json();
+    const pieces = (st.pieces || []).map((p) => ({
+      title: p.title || "未命名", artist: p.artist || "", dur: 0, cover: p.cover || null,
+      src: /^(data|https?):/.test(p.file) ? p.file : `${base}/${p.file}`,
+    }));
+    if (!pieces.length) return;
+    const ch = { freq: "✦", name: st.name || "朋友的电台", owner: st.owner || st.name || "朋友", intro: st.intro || "", guest: true, pieces };
+    CHANNELS.unshift(ch);
+    ci = 0; pi = 0;
+    renderChannel();
+  } catch (e) { console.warn("listen link failed:", e); }
 }
 
 // ---- transport wiring ----
@@ -186,7 +301,7 @@ elVol.addEventListener("input", () => {
   elVol.style.background = `linear-gradient(90deg, var(--ink) 0 ${v}%, var(--paper) ${v}% 100%)`;
 });
 
-// ---- import wiring: drop zone + panel upload ----
+// ---- import wiring: drop zone + panel upload + share ----
 ["dragenter", "dragover"].forEach((ev) => player.addEventListener(ev, (e) => {
   if (e.dataTransfer && [...e.dataTransfer.types].includes("Files")) { e.preventDefault(); screenEl.classList.add("dragging"); }
 }));
@@ -194,12 +309,13 @@ player.addEventListener("dragleave", (e) => { if (!player.contains(e.relatedTarg
 player.addEventListener("drop", (e) => { e.preventDefault(); screenEl.classList.remove("dragging"); if (e.dataTransfer) importFiles(e.dataTransfer.files); });
 filepick.addEventListener("change", () => { importFiles(filepick.files); filepick.value = ""; });
 chUpload.addEventListener("click", () => filepick.click());
+shareBtn.addEventListener("click", shareStation);
 
 // ---- windows: open / close / first-open placement beside the main radio ----
 function placeBeside(win, topOf) {
   if (win.dataset.placed) return;
   const r = winMain.getBoundingClientRect();
-  const w = win.offsetWidth || 340;
+  const w = win.offsetWidth || 320;
   const fitsRight = r.right + 16 + w < window.innerWidth;
   win.style.left = (fitsRight ? r.right + 16 : Math.max(8, r.left + 36)) + "px";
   win.style.top = Math.max(8, (topOf ? topOf() : r.top) + (fitsRight ? 0 : 36)) + "px";
@@ -216,7 +332,6 @@ dialMid.addEventListener("click", () => {
 lookBtn.addEventListener("mousedown", (e) => e.stopPropagation());
 lookBtn.addEventListener("click", () => {
   paintSwatches();
-  // first open: sit below the station panel if it's out, else align with the radio
   toggleWin(winLook, () => (winStation.hidden ? winMain.getBoundingClientRect().top
                                               : winStation.getBoundingClientRect().bottom + 26));
 });
@@ -237,15 +352,15 @@ function saveStation() {
 stationSave.addEventListener("click", saveStation);
 [chNameInput, chIntroInput].forEach((el) => el.addEventListener("keydown", (e) => { if (e.key === "Enter") saveStation(); }));
 
-// ---- collapse / expand: the perch hides the whole flock; hidden state per-window survives ----
+// ---- collapse / expand ----
 minBtn.addEventListener("mousedown", (e) => e.stopPropagation());
 minBtn.addEventListener("click", (e) => { e.stopPropagation(); sbfm.classList.add("collapsed"); });
 
-// ---- dragging: any titlebar moves its own window; the perch drags itself ----
+// ---- dragging ----
 function makeDraggable(el, handle, onTap) {
   let start = null, moved = false;
   handle.addEventListener("mousedown", (e) => {
-    if (e.target.closest("button") && !onTap) return;   // window buttons stay clickable
+    if (e.target.closest("button") && !onTap) return;
     const r = el.getBoundingClientRect();
     start = { dx: e.clientX - r.left, dy: e.clientY - r.top };
     moved = false;
@@ -270,8 +385,15 @@ makeDraggable(winStation, $("dragStation"));
 makeDraggable(winLook, $("dragLook"));
 makeDraggable(perch, perch, () => sbfm.classList.remove("collapsed"));
 
-// ---- boot: restore personal theme + my station info ----
-(function boot() {
+// ---- boot ----
+(async function boot() {
+  // screenshot helper first (synchronous): ?shot=main|station|look isolates one window at 20,20
+  const shot = new URLSearchParams(location.search).get("shot");
+  if (shot) {
+    winMain.hidden = shot !== "main";
+    const tgt = { main: winMain, station: winStation, look: winLook }[shot];
+    if (tgt) { tgt.hidden = false; tgt.style.left = "20px"; tgt.style.top = "20px"; tgt.dataset.placed = "1"; }
+  }
   let theme = "blue";
   try { theme = localStorage.getItem("sbfm-theme") || "blue"; } catch {}
   document.documentElement.setAttribute("data-theme", theme);
@@ -280,5 +402,37 @@ makeDraggable(perch, perch, () => sbfm.classList.remove("collapsed"));
     if (saved) { if (saved.name) MY.name = saved.name; MY.intro = saved.intro || ""; MY.created = true; }
   } catch {}
   paintSwatches();
+  wireMediaSession();
   renderChannel();
+
+  // restore my persisted tracks
+  try {
+    await idb.open();
+    const rows = await idb.all();
+    if (rows.length) {
+      if (MY.pieces[0] && MY.pieces[0].placeholder) MY.pieces.length = 0;
+      MY.pieces.push(...rows.map((r) => ({
+        title: r.title, artist: r.artist || "", dur: 0, cover: r.cover || null,
+        src: URL.createObjectURL(r.blob), blob: r.blob, dbId: r.id,
+      })));
+      MY.created = true;
+      if (channel() === MY) renderChannel();
+    }
+  } catch (e) { console.warn("idb restore failed:", e); }
+
+  // a friend's link?
+  await loadGuestStation();
+
+  // dev helper: ?seed=1 imports a synthetic tone (used to e2e-test IDB persistence)
+  if (new URLSearchParams(location.search).has("seed")) {
+    const rate = 8000, n = rate;
+    const buf = new ArrayBuffer(44 + n * 2), dv = new DataView(buf);
+    const wr = (o, s) => { for (let i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i)); };
+    wr(0, "RIFF"); dv.setUint32(4, 36 + n * 2, true); wr(8, "WAVE"); wr(12, "fmt ");
+    dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+    dv.setUint32(24, rate, true); dv.setUint32(28, rate * 2, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
+    wr(36, "data"); dv.setUint32(40, n * 2, true);
+    for (let i = 0; i < n; i++) dv.setInt16(44 + i * 2, Math.sin(2 * Math.PI * 659 * i / rate) * 8000, true);
+    importFiles([new File([new Blob([buf], { type: "audio/wav" })], "示例音 E5.wav", { type: "audio/wav" })]);
+  }
 })();
