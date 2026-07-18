@@ -10,7 +10,7 @@ window.__SBFM = "p0p1";
 // ---- cloud config lives in src/cloud-config.js (gitignored; copy cloud-config.example.js) ----
 const CLOUD = window.SBFM_CLOUD || { url: "", anonKey: "", bucket: "stations" };
 
-const PLACEHOLDER = { title: "还没有节目", kind: "拖入音频，或点上面创建电台", dur: 0, placeholder: true };
+const PLACEHOLDER = { title: "还没有节目", kind: "点上面创建电台", dur: 0, placeholder: true };
 
 const CHANNELS = [
   { name: "我的电台", owner: "我", intro: "", mine: true, pieces: [{ ...PLACEHOLDER }] },
@@ -59,7 +59,7 @@ const trackList = $("trackList"), trackCountLabel = $("trackCountLabel");
 const openShareBtn = $("openShareBtn"), shareBtn = $("shareBtn"), shareOut = $("shareOut");
 const shareLinkBox = $("shareLinkBox"), shareLinkText = $("shareLinkText"), copyLinkBtn = $("copyLinkBtn");
 const swatches = [...document.querySelectorAll(".swatch")];
-const elTitle = $("title"), elKind = $("artist"), elDj = $("dj"), elFreq = $("freq"), elSname = $("sname");
+const elTitle = $("title"), elKind = $("artist"), elDj = $("dj"), elDjWrap = $("djWrap"), elFreq = $("freq"), elSname = $("sname");
 const elCur = $("cur"), elDur = $("dur"), elFill = $("fill"), elBar = $("bar"), elCover = $("cover"), elVol = $("vol");
 
 const channel  = () => CHANNELS[ci];
@@ -138,6 +138,7 @@ function renderPiece() {
   if (!p) return;
   elTitle.textContent = p.title;
   elKind.textContent = p.artist || p.kind || channel().name || "";
+  elDjWrap.hidden = !!p.placeholder;   // the "· owner" byline doesn't belong on an empty-state hint
   if (p.cover) { elCover.style.backgroundImage = `url("${p.cover}")`; elCover.classList.add("show"); }
   else { elCover.style.backgroundImage = ""; elCover.classList.remove("show"); }
   cur = 0;
