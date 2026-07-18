@@ -53,6 +53,7 @@ const player = $("player"), screenEl = document.querySelector(".screen");
 const minBtn = $("min"), lookBtn = $("lookBtn"), stationClose = $("stationClose"), lookClose = $("lookClose");
 const dialMid = $("dialMid"), elTagline = $("tagline");
 const chNameInput = $("chNameInput"), chIntroInput = $("chIntroInput"), chUpload = $("chUpload"), stationSave = $("stationSave");
+const trackList = $("trackList");
 const shareBtn = $("shareBtn"), shareOut = $("shareOut");
 const swatches = [...document.querySelectorAll(".swatch")];
 const elTitle = $("title"), elKind = $("artist"), elDj = $("dj"), elFreq = $("freq"), elSname = $("sname");
@@ -83,6 +84,11 @@ const idb = {
     rq.onsuccess = () => res(rq.result);
     rq.onerror = () => rej(rq.error);
   }),
+  remove: (id) => new Promise((res, rej) => {
+    const rq = idb.db.transaction("tracks", "readwrite").objectStore("tracks").delete(id);
+    rq.onsuccess = () => res();
+    rq.onerror = () => rej(rq.error);
+  }),
 };
 
 // ---- personal theme (the LISTENER's preference, not the channel's) ----
@@ -104,16 +110,19 @@ function renderChannel() {
   elFreq.textContent = ch.freq;
   elSname.textContent = isCta ? "点击创建我的电台" : ch.name;
   dialMid.classList.toggle("cta", isCta);
-  elDj.textContent = ch.owner;
-  elTagline.textContent = ch.intro || "";
-  elTagline.hidden = !ch.intro;
+  elDj.textContent = ch.owner || ch.name;
+  // on the empty CTA slot, the tagline line doubles as a legend for the ◁▷ tune
+  // buttons flanking it above — otherwise they read as acting on the CTA text itself
+  const text = isCta ? "◁ ▷ 先听听朋友的电台" : (ch.intro || "");
+  elTagline.textContent = text;
+  elTagline.hidden = !text;
   renderPiece();
 }
 function renderPiece() {
   const p = piece();
   if (!p) return;
   elTitle.textContent = p.title;
-  elKind.textContent = p.artist || p.kind || "";
+  elKind.textContent = p.artist || p.kind || channel().name || "";
   if (p.cover) { elCover.style.backgroundImage = `url("${p.cover}")`; elCover.classList.add("show"); }
   else { elCover.style.backgroundImage = ""; elCover.classList.remove("show"); }
   cur = 0;
@@ -190,13 +199,14 @@ function importFiles(list) {
   if (MY.pieces[0] && MY.pieces[0].placeholder) MY.pieces.length = 0;
   const start = MY.pieces.length;
   const pieces = files.map((f) => ({
-    title: f.name.replace(/\.[^.]+$/, ""), artist: "未知", dur: 0,
+    title: f.name.replace(/\.[^.]+$/, ""), artist: "", dur: 0,
     src: URL.createObjectURL(f), cover: null, blob: f,
   }));
   MY.pieces.push(...pieces);
   MY.created = true;
   ci = CHANNELS.indexOf(MY); pi = start;
   renderChannel();
+  renderTrackList();
   play();
   pieces.forEach((p) => {
     idb.put({ title: p.title, artist: p.artist, cover: null, blob: p.blob, t: Date.now() })
@@ -219,10 +229,36 @@ function readTags(file, p) {
       }
       if (p.dbId) idb.put({ id: p.dbId, title: p.title, artist: p.artist, cover: p.cover, blob: p.blob, t: Date.now() }).catch(() => {});
       if (piece() === p) renderPiece();
+      renderTrackList();
     },
     onError: () => {},
   });
 }
+
+// ---- track list inside "我的电台": the missing "did it actually work" feedback ----
+function renderTrackList() {
+  const real = MY.pieces.filter((p) => !p.placeholder);
+  trackList.hidden = !real.length;
+  trackList.innerHTML = real.map((p, i) => `
+    <div class="track-row" data-i="${i}">
+      <span class="track-name">${p.title.replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]))}</span>
+      <button class="track-remove" data-i="${i}" aria-label="移除" title="移除">×</button>
+    </div>`).join("");
+}
+trackList.addEventListener("click", (e) => {
+  const btn = e.target.closest(".track-remove");
+  if (!btn) return;
+  const real = MY.pieces.filter((p) => !p.placeholder);
+  const p = real[+btn.dataset.i];
+  if (!p) return;
+  const idx = MY.pieces.indexOf(p);
+  if (idx > -1) MY.pieces.splice(idx, 1);
+  if (p.dbId) idb.remove(p.dbId).catch(() => {});
+  if (p.src && p.src.startsWith("blob:")) URL.revokeObjectURL(p.src);
+  if (!MY.pieces.length) MY.pieces.push({ ...PLACEHOLDER });
+  if (channel() === MY) { if (pi >= MY.pieces.length) pi = 0; renderChannel(); }
+  renderTrackList();
+});
 
 // ---- P1 · share my station: upload to cloud, hand friends a ?listen= link ----
 function say(msg) { shareOut.hidden = false; shareOut.textContent = msg; }
@@ -255,8 +291,9 @@ async function shareStation() {
     await cloudPut(`${token}/station.json`, new Blob([JSON.stringify(manifest)], { type: "application/json" }));
     const base = `${CLOUD.url}/storage/v1/object/public/${CLOUD.bucket}/${token}`;
     const link = location.origin + location.pathname + "?listen=" + encodeURIComponent(base);
-    try { await navigator.clipboard.writeText(link); say("✂ 链接已复制，发给朋友吧：\n" + link); }
-    catch { say(link); }
+    const gift = `🐦 ${MY.name} 在等你收听\n${link}`;
+    try { await navigator.clipboard.writeText(gift); say("已复制 · 粘贴发给朋友就是一张分享卡 🐦"); }
+    catch { say("复制失败，链接在这里，手动发给朋友：\n" + link); }
   } catch (e) {
     say("上传失败：" + (e && e.message ? e.message : e));
   }
@@ -322,7 +359,7 @@ function toggleWin(win, topOf) {
   else win.hidden = true;
 }
 dialMid.addEventListener("click", () => {
-  if (winStation.hidden) { chNameInput.value = MY.name; chIntroInput.value = MY.intro; }
+  if (winStation.hidden) { chNameInput.value = MY.name; chIntroInput.value = MY.intro; renderTrackList(); }
   toggleWin(winStation);
 });
 lookBtn.addEventListener("mousedown", (e) => e.stopPropagation());
@@ -339,6 +376,7 @@ swatches.forEach((s) => s.addEventListener("click", () => applyTheme(s.dataset.t
 function saveStation() {
   const name = chNameInput.value.trim();
   if (name) MY.name = name;
+  MY.owner = MY.name;   // one identity, not two questions — your station name IS your byline
   MY.intro = chIntroInput.value.trim();
   MY.created = true;
   try { localStorage.setItem("sbfm-station", JSON.stringify({ name: MY.name, intro: MY.intro })); } catch {}
@@ -395,7 +433,7 @@ makeDraggable(perch, perch, () => sbfm.classList.remove("collapsed"));
   document.documentElement.setAttribute("data-theme", theme);
   try {
     const saved = JSON.parse(localStorage.getItem("sbfm-station") || "null");
-    if (saved) { if (saved.name) MY.name = saved.name; MY.intro = saved.intro || ""; MY.created = true; }
+    if (saved) { if (saved.name) MY.name = saved.name; MY.owner = MY.name; MY.intro = saved.intro || ""; MY.created = true; }
   } catch {}
   paintSwatches();
   wireMediaSession();

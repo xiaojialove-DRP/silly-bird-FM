@@ -256,6 +256,22 @@ body::after {
 .chsetup-upload[disabled] { opacity: .5; cursor: wait; }
 .share-out { margin-top: 8px; font-size: 10px; line-height: 1.6; color: var(--soft); word-break: break-all; white-space: pre-wrap; }
 .share-out[hidden] { display: none; }
+
+/* the "did it actually work" list — every track you've added to your own station */
+.track-list { margin: -4px 0 12px; max-height: 132px; overflow-y: auto; }
+.track-list[hidden] { display: none; }
+.track-row {
+  display: flex; align-items: center; gap: 8px; padding: 6px 2px;
+  border-bottom: 1.5px dotted rgba(0,0,0,.18);
+  font-family: "Space Mono", "Songti SC", "STSong", "SimSun", monospace; font-size: 11px; color: var(--ink);
+}
+.track-row:first-child { border-top: 1.5px dotted rgba(0,0,0,.18); }
+.track-name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.track-remove {
+  flex: none; width: 18px; height: 18px; border: none; background: none; cursor: pointer;
+  color: var(--soft); font-size: 13px; line-height: 1; padding: 0;
+}
+.track-remove:hover { color: var(--ink); }
 .chsetup-save {
   width: 100%; padding: 8px; border: 2.5px solid var(--ink); border-radius: 7px;
   background: var(--ink); color: var(--paper); font-family: "Space Mono", "Songti SC", "STSong", "SimSun", monospace;
