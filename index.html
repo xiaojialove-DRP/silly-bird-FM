@@ -151,9 +151,9 @@
             </button>
           </div>
           <div class="track-list" id="trackList" hidden></div>
+          <div class="share-out" id="recordOut" hidden></div>
           <button class="chsetup-save" id="stationSave">完成</button>
-          <button class="chsetup-upload share" id="shareBtn">✉&nbsp;生成分享链接</button>
-          <div class="share-out" id="shareOut" hidden></div>
+          <button class="chsetup-upload share" id="openShareBtn">✉&nbsp;分享我的电台</button>
         </div>
       </section>
     </div>
@@ -181,6 +181,26 @@
           <div class="vol">
             <svg viewBox="0 0 24 24" class="vol-ico"><path d="M4 9v6h4l5 4V5L8 9z"/></svg>
             <input type="range" id="vol" min="0" max="100" value="72" />
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- window 4 · share: a deliberate, occasional act — separate from ongoing editing -->
+    <div class="win" id="winShare" hidden>
+      <div class="lace" aria-hidden="true"></div>
+      <section class="panel">
+        <header class="titlebar" id="dragShare">
+          <span class="brand">分享</span>
+          <button class="wb close" id="shareClose" title="关闭">×</button>
+        </header>
+        <div class="panel-body">
+          <button class="chsetup-upload share" id="shareBtn">✉&nbsp;生成分享链接</button>
+          <div class="share-out" id="shareOut" hidden></div>
+          <div class="share-link-box" id="shareLinkBox" hidden>
+            <div class="chsetup-label">你的链接 · 编辑电台后再点一次生成即可更新</div>
+            <div class="share-link-text" id="shareLinkText"></div>
+            <button class="chsetup-upload" id="copyLinkBtn">复制链接</button>
           </div>
         </div>
       </section>

@@ -45,6 +45,7 @@ body::after {
 #winMain    { left: calc(50% - 138px); top: 60px; }
 #winStation { left: calc(50% + 158px); top: 76px; }
 #winLook    { left: calc(50% + 178px); top: 320px; }
+#winShare   { left: calc(50% + 178px); top: 76px; }
 #sbfm.collapsed .win { display: none; }
 #sbfm:not(.collapsed) .perch { display: none; }
 
@@ -268,6 +269,13 @@ body::after {
 @keyframes recPulse { 0%, 100% { opacity: 1; } 50% { opacity: .65; } }
 .share-out { margin-top: 8px; font-size: 10px; line-height: 1.6; color: var(--soft); word-break: break-all; white-space: pre-wrap; }
 .share-out[hidden] { display: none; }
+.share-link-box { margin-top: 14px; }
+.share-link-box[hidden] { display: none; }
+.share-link-text {
+  font-family: "Space Mono", monospace; font-size: 9.5px; line-height: 1.5; color: var(--ink);
+  word-break: break-all; padding: 8px; margin-bottom: 8px;
+  border: 1.5px dotted rgba(0,0,0,.3); border-radius: 6px; max-height: 72px; overflow-y: auto;
+}
 
 /* the "did it actually work" list — every track you've added to your own station */
 .track-list { margin: -4px 0 12px; max-height: 132px; overflow-y: auto; }

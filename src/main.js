@@ -48,14 +48,16 @@ audio.volume = 0.72;
 
 const $ = (id) => document.getElementById(id);
 const sbfm = $("sbfm"), perch = $("perch"), filepick = $("filepick");
-const winMain = $("winMain"), winStation = $("winStation"), winLook = $("winLook");
+const winMain = $("winMain"), winStation = $("winStation"), winLook = $("winLook"), winShare = $("winShare");
 const player = $("player"), screenEl = document.querySelector(".screen");
-const minBtn = $("min"), lookBtn = $("lookBtn"), stationClose = $("stationClose"), lookClose = $("lookClose");
+const minBtn = $("min"), lookBtn = $("lookBtn"), stationClose = $("stationClose"), lookClose = $("lookClose"), shareClose = $("shareClose");
 const dialMid = $("dialMid"), elTagline = $("tagline");
 const chNameInput = $("chNameInput"), chIntroInput = $("chIntroInput"), chUpload = $("chUpload"), stationSave = $("stationSave");
 const recordBtn = $("recordBtn"), recordIdle = document.querySelector(".record-idle"), recordLive = document.querySelector(".record-live"), recordTime = document.querySelector(".record-time");
+const recordOut = $("recordOut");
 const trackList = $("trackList");
-const shareBtn = $("shareBtn"), shareOut = $("shareOut");
+const openShareBtn = $("openShareBtn"), shareBtn = $("shareBtn"), shareOut = $("shareOut");
+const shareLinkBox = $("shareLinkBox"), shareLinkText = $("shareLinkText"), copyLinkBtn = $("copyLinkBtn");
 const swatches = [...document.querySelectorAll(".swatch")];
 const elTitle = $("title"), elKind = $("artist"), elDj = $("dj"), elFreq = $("freq"), elSname = $("sname");
 const elCur = $("cur"), elDur = $("dur"), elFill = $("fill"), elBar = $("bar"), elCover = $("cover"), elVol = $("vol");
@@ -296,7 +298,7 @@ trackList.addEventListener("click", (e) => {
 });
 
 // ---- P1 · share my station: upload to cloud, hand friends a ?listen= link ----
-function say(msg) { shareOut.hidden = false; shareOut.textContent = msg; }
+function say(msg, target = shareOut) { target.hidden = false; target.textContent = msg; }
 function cloudPut(path, blob) {
   return fetch(`${CLOUD.url}/storage/v1/object/${CLOUD.bucket}/${path}`, {
     method: "POST",
@@ -307,6 +309,15 @@ function cloudPut(path, blob) {
     },
     body: blob,
   }).then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); });
+}
+function shareLinkFor(token) {
+  const base = `${CLOUD.url}/storage/v1/object/public/${CLOUD.bucket}/${token}`;
+  return location.origin + location.pathname + "?listen=" + encodeURIComponent(base);
+}
+function renderShareLinkBox() {
+  if (!MY.shareToken) { shareLinkBox.hidden = true; return; }
+  shareLinkText.textContent = shareLinkFor(MY.shareToken);
+  shareLinkBox.hidden = false;
 }
 async function shareStation() {
   const tracks = MY.pieces.filter((p) => p.blob);
@@ -331,8 +342,8 @@ async function shareStation() {
       manifest.pieces.push({ title: p.title, artist: p.artist, kind: p.kind || "", cover: p.cover, file: fname });
     }
     await cloudPut(`${token}/station.json`, new Blob([JSON.stringify(manifest)], { type: "application/json" }));
-    const base = `${CLOUD.url}/storage/v1/object/public/${CLOUD.bucket}/${token}`;
-    const link = location.origin + location.pathname + "?listen=" + encodeURIComponent(base);
+    const link = shareLinkFor(token);
+    renderShareLinkBox();
     const gift = `${MY.name} 在等你收听\n${link}`;
     const successMsg = isUpdate ? "已更新 · 之前发过的链接会自动显示最新内容" : "已复制 · 粘贴发给朋友就是一张分享卡";
     try { await navigator.clipboard.writeText(gift); say(successMsg); }
@@ -412,7 +423,7 @@ async function startRecording() {
   try {
     recStream = await navigator.mediaDevices.getUserMedia({ audio: true });
   } catch {
-    say("没能打开麦克风 · 请检查浏览器/系统的麦克风权限");
+    say("没能打开麦克风 · 请检查浏览器/系统的麦克风权限", recordOut);
     return;
   }
   recChunks = [];
@@ -453,17 +464,17 @@ window.addEventListener("touchcancel", stopRecording);
 recordBtn.addEventListener("contextmenu", (e) => e.preventDefault());
 
 // ---- windows: open / close / first-open placement beside the main radio ----
-function placeBeside(win, topOf) {
+function placeBeside(win, topOf, refWin) {
   if (win.dataset.placed) return;
-  const r = winMain.getBoundingClientRect();
+  const r = (refWin || winMain).getBoundingClientRect();
   const w = win.offsetWidth || 320;
   const fitsRight = r.right + 16 + w < window.innerWidth;
   win.style.left = (fitsRight ? r.right + 16 : Math.max(8, r.left + 36)) + "px";
   win.style.top = Math.max(8, (topOf ? topOf() : r.top) + (fitsRight ? 0 : 36)) + "px";
   win.dataset.placed = "1";
 }
-function toggleWin(win, topOf) {
-  if (win.hidden) { win.hidden = false; placeBeside(win, topOf); }
+function toggleWin(win, topOf, refWin) {
+  if (win.hidden) { win.hidden = false; placeBeside(win, topOf, refWin); }
   else win.hidden = true;
 }
 dialMid.addEventListener("click", () => {
@@ -476,8 +487,18 @@ lookBtn.addEventListener("click", () => {
   toggleWin(winLook, () => (winStation.hidden ? winMain.getBoundingClientRect().top
                                               : winStation.getBoundingClientRect().bottom + 26));
 });
+openShareBtn.addEventListener("click", () => {
+  renderShareLinkBox();
+  toggleWin(winShare, () => winStation.getBoundingClientRect().top, winStation);
+});
 stationClose.addEventListener("click", () => { stopRecording(); winStation.hidden = true; });
 lookClose.addEventListener("click", () => (winLook.hidden = true));
+shareClose.addEventListener("click", () => (winShare.hidden = true));
+copyLinkBtn.addEventListener("click", async () => {
+  const link = shareLinkText.textContent;
+  try { await navigator.clipboard.writeText(`${MY.name} 在等你收听\n${link}`); say("已复制"); }
+  catch { say("复制失败，请手动选中上面的链接"); }
+});
 
 swatches.forEach((s) => s.addEventListener("click", () => applyTheme(s.dataset.theme)));
 
