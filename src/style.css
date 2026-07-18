@@ -273,10 +273,15 @@ body::after {
 }
 .track-remove:hover { color: var(--ink); }
 .track-tag {
-  flex: none; width: 20px; height: 20px; border: 1.5px dotted rgba(0,0,0,.3); border-radius: 50%;
-  background: none; cursor: pointer; font-size: 10px; line-height: 1; padding: 0; opacity: .55;
+  flex: none; max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-family: "Space Mono", "Songti SC", "STSong", "SimSun", monospace; font-size: 10px; color: var(--soft);
+  background: transparent; border: 1.5px dotted rgba(0,0,0,.3); border-radius: 10px;
+  padding: 3px 15px 3px 7px; cursor: pointer; margin-right: 2px;
+  -webkit-appearance: none; -moz-appearance: none; appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--soft) 50%), linear-gradient(135deg, var(--soft) 50%, transparent 50%);
+  background-position: right 8px center, right 4px center; background-size: 4px 4px, 4px 4px; background-repeat: no-repeat;
 }
-.track-tag:hover { opacity: 1; border-color: var(--ink); }
+.track-tag:hover, .track-tag:focus { color: var(--ink); border-color: var(--ink); outline: none; }
 .chsetup-save {
   width: 100%; padding: 8px; border: 2.5px solid var(--ink); border-radius: 7px;
   background: var(--ink); color: var(--paper); font-family: "Space Mono", "Songti SC", "STSong", "SimSun", monospace;

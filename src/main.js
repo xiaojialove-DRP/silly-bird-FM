@@ -236,9 +236,10 @@ function readTags(file, p) {
 }
 
 // ---- track list inside "我的电台": the missing "did it actually work" feedback ----
-// optional, tap-to-cycle flavor tag per track — a pick, never a blank field to fill in
+// optional flavor tag per track, picked from a real <select> — no hidden cycling to
+// discover, no hover-only tooltip that touch devices can never see
 const TRACK_KINDS = ["", "声音故事", "自己哼的", "环境音", "分享的歌"];
-const KIND_EMOJI = { "": "＋", "声音故事": "🎙️", "自己哼的": "🎵", "环境音": "🌧️", "分享的歌": "♪" };
+const KIND_LABEL = { "": "＋ 标签", "声音故事": "🎙️ 声音故事", "自己哼的": "🎵 自己哼的", "环境音": "🌧️ 环境音", "分享的歌": "♪ 分享的歌" };
 function esc(s) { return s.replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c])); }
 function renderTrackList() {
   const real = MY.pieces.filter((p) => !p.placeholder);
@@ -246,7 +247,9 @@ function renderTrackList() {
   trackList.innerHTML = real.map((p, i) => `
     <div class="track-row" data-i="${i}">
       <span class="track-name">${esc(p.title)}</span>
-      <button class="track-tag" data-i="${i}" aria-label="节目标签（可选）" title="${p.kind ? esc(p.kind) : "点一下加个标签（可选）"}">${KIND_EMOJI[p.kind || ""]}</button>
+      <select class="track-tag" data-i="${i}" aria-label="节目标签（可选）">
+        ${TRACK_KINDS.map((k) => `<option value="${esc(k)}"${(p.kind || "") === k ? " selected" : ""}>${esc(KIND_LABEL[k])}</option>`).join("")}
+      </select>
       <button class="track-remove" data-i="${i}" aria-label="移除" title="移除">×</button>
     </div>`).join("");
 }
@@ -254,19 +257,17 @@ function persistPiece(p) {
   if (!p.dbId) return;
   idb.put({ id: p.dbId, title: p.title, artist: p.artist, kind: p.kind || "", cover: p.cover, blob: p.blob, t: Date.now() }).catch(() => {});
 }
+trackList.addEventListener("change", (e) => {
+  const sel = e.target.closest(".track-tag");
+  if (!sel) return;
+  const real = MY.pieces.filter((p) => !p.placeholder);
+  const p = real[+sel.dataset.i];
+  if (!p) return;
+  p.kind = sel.value;
+  persistPiece(p);
+  if (channel() === MY && piece() === p) renderPiece();
+});
 trackList.addEventListener("click", (e) => {
-  const tagBtn = e.target.closest(".track-tag");
-  if (tagBtn) {
-    const real = MY.pieces.filter((p) => !p.placeholder);
-    const p = real[+tagBtn.dataset.i];
-    if (!p) return;
-    const next = (TRACK_KINDS.indexOf(p.kind || "") + 1) % TRACK_KINDS.length;
-    p.kind = TRACK_KINDS[next];
-    persistPiece(p);
-    renderTrackList();
-    if (channel() === MY && piece() === p) renderPiece();
-    return;
-  }
   const btn = e.target.closest(".track-remove");
   if (!btn) return;
   const real = MY.pieces.filter((p) => !p.placeholder);
