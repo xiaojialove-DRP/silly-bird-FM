@@ -210,7 +210,7 @@ function tune(d) { ci = (ci + d + CHANNELS.length) % CHANNELS.length; pi = 0; re
 // one station = one album, on purpose — a curated handful, not a dumping ground.
 // recording and uploading both funnel through here, so the cap covers both at once.
 const AUDIO_RE = /\.(mp3|m4a|wav|flac|ogg|aac|opus)$/i;
-const MAX_TRACKS = 11;
+const MAX_TRACKS = 7;
 function importFiles(list) {
   const files = [...list].filter((f) => (f.type && f.type.startsWith("audio/")) || AUDIO_RE.test(f.name));
   if (!files.length) return;
