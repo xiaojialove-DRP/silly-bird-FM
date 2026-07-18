@@ -13,9 +13,9 @@ const CLOUD = window.SBFM_CLOUD || { url: "", anonKey: "", bucket: "stations" };
 const PLACEHOLDER = { title: "还没有节目", kind: "拖入音频，或点上面创建电台", dur: 0, placeholder: true };
 
 const CHANNELS = [
-  { freq: "★", name: "我的电台", owner: "我", intro: "", mine: true, pieces: [{ ...PLACEHOLDER }] },
+  { name: "我的电台", owner: "我", intro: "", mine: true, pieces: [{ ...PLACEHOLDER }] },
   {
-    freq: "88.2", name: "深夜胡思乱想", owner: "小佳", intro: "睡不着的夜里，说给你听",
+    name: "深夜胡思乱想", owner: "小佳", intro: "睡不着的夜里，说给你听",
     pieces: [
       { title: "写代码写到凌晨三点", kind: "声音故事",   dur: 192 },
       { title: "最近单曲循环，哼给你听", kind: "自己哼的歌", dur: 108 },
@@ -23,14 +23,14 @@ const CHANNELS = [
     ],
   },
   {
-    freq: "92.7", name: "雨天限定", owner: "Wren", intro: "只在下雨天更新",
+    name: "雨天限定", owner: "Wren", intro: "只在下雨天更新",
     pieces: [
       { title: "阳台上的一整场雨", kind: "环境音",     dur: 484 },
       { title: "读了一段《海边的卡夫卡》", kind: "声音故事", dur: 390 },
     ],
   },
   {
-    freq: "101.5", name: "厨房迪斯科", owner: "Pomelo", intro: "一边做饭一边跳舞",
+    name: "厨房迪斯科", owner: "Pomelo", intro: "一边做饭一边跳舞",
     pieces: [
       { title: "边做饭边乱唱", kind: "自己哼的歌", dur: 170 },
       { title: "今天菜市场好热闹", kind: "环境音",   dur: 250 },
@@ -103,11 +103,20 @@ function paintSwatches() {
   swatches.forEach((s) => s.classList.toggle("active", s.dataset.theme === active));
 }
 
+// ---- every station's "frequency" is derived from its own name, not assigned by us —
+// same name always lands on the same number, real US FM stations only ever sit on
+// odd tenths (88.1, 88.3 … 107.9), so this reads as a real dial position, not a prop ----
+function stationFreq(name) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return (88.1 + (h % 100) * 0.2).toFixed(1);
+}
+
 // ---- render ----
 function renderChannel() {
   const ch = channel();
   const isCta = !!ch.mine && !MY.created;   // fresh users see an invitation, not a name
-  elFreq.textContent = ch.freq;
+  elFreq.textContent = isCta ? "★" : stationFreq(ch.name);
   elSname.textContent = isCta ? "点击创建我的电台" : ch.name;
   dialMid.classList.toggle("cta", isCta);
   elDj.textContent = ch.owner || ch.name;
@@ -336,7 +345,7 @@ async function loadGuestStation() {
       src: /^(data|https?):/.test(p.file) ? p.file : `${base}/${p.file}`,
     }));
     if (!pieces.length) return;
-    const ch = { freq: "✦", name: st.name || "朋友的电台", owner: st.owner || st.name || "朋友", intro: st.intro || "", guest: true, pieces };
+    const ch = { name: st.name || "朋友的电台", owner: st.owner || st.name || "朋友", intro: st.intro || "", guest: true, pieces };
     CHANNELS.unshift(ch);
     ci = 0; pi = 0;
     renderChannel();
