@@ -30,16 +30,18 @@
 - **系统媒体键**：键盘播放键 / 耳机线控直接控制小鸟（MediaSession）
 - **完全离线的资源**：字体与解析库全部自托管，零外部 CDN 依赖，弱网也稳
 
-## 分享给朋友（实验中）
+## 分享给朋友
 
-分享的原理：把你的电台（节目音频 + 一份 station.json 清单）上传到你自己的云存储，生成一条 `?listen=` 链接；朋友打开链接，小鸟会把你的电台调到第一个频道，直接收听。
+**朋友那边什么都不用装。** 点开你发的链接，按一下播放键，就在听了——跟打开一个普通网页一样，不用注册、不用装 App、不用知道这背后是什么。
 
-启用需要一个免费的 [Supabase](https://supabase.com) 项目（约两分钟）：
+**你（电台主人）这边**只需要做一次「通电」：把你的电台（节目音频 + 一份 station.json 清单）上传到你自己的云存储，之后每次点 **✉ 生成分享链接** 都会自动产出一条 `?listen=` 链接——朋友打开，小鸟直接把你的电台调到第一频道开始放。
+
+这份代码已经接好一个免费的 [Supabase](https://supabase.com) 项目作为云存储；如果你是拿这份代码自己重新部署一份（而不是使用已经配置好的这一份），才需要重新走一遍这五步：
 
 1. 注册 Supabase，新建一个项目（免费档即可）
 2. 左侧 **Storage** → 新建 bucket，名字填 `stations`，勾选 **Public**
 3. 项目设置（Settings → API）里复制 **Project URL** 和 **anon public key**
-4. 把 [`src/cloud-config.example.js`](src/cloud-config.example.js) 复制为 `src/cloud-config.js`，填入这两个值（该文件不会被提交进仓库）
+4. 把 [`src/cloud-config.example.js`](src/cloud-config.example.js) 复制为 `src/cloud-config.js`，填入这两个值
 5. 打开「我的电台」→ **✉ 生成分享链接** → 链接已自动复制，发给朋友
 
 想先本地试试收听模式长什么样：启动本地服务后访问 `/?listen=http://localhost:5174/demo-station`（仓库自带一条测试电波）。
