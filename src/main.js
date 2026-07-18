@@ -209,7 +209,7 @@ function importFiles(list) {
   renderTrackList();
   play();
   pieces.forEach((p) => {
-    idb.put({ title: p.title, artist: p.artist, cover: null, blob: p.blob, t: Date.now() })
+    idb.put({ title: p.title, artist: p.artist, kind: "", cover: null, blob: p.blob, t: Date.now() })
       .then((id) => { p.dbId = id; })
       .catch(() => {});
   });
@@ -227,7 +227,7 @@ function readTags(file, p) {
         for (let i = 0; i < data.length; i++) s += String.fromCharCode(data[i]);
         p.cover = `data:${format};base64,${btoa(s)}`;
       }
-      if (p.dbId) idb.put({ id: p.dbId, title: p.title, artist: p.artist, cover: p.cover, blob: p.blob, t: Date.now() }).catch(() => {});
+      if (p.dbId) persistPiece(p);
       if (piece() === p) renderPiece();
       renderTrackList();
     },
@@ -236,16 +236,37 @@ function readTags(file, p) {
 }
 
 // ---- track list inside "我的电台": the missing "did it actually work" feedback ----
+// optional, tap-to-cycle flavor tag per track — a pick, never a blank field to fill in
+const TRACK_KINDS = ["", "声音故事", "自己哼的", "环境音", "分享的歌"];
+const KIND_EMOJI = { "": "＋", "声音故事": "🎙️", "自己哼的": "🎵", "环境音": "🌧️", "分享的歌": "♪" };
+function esc(s) { return s.replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c])); }
 function renderTrackList() {
   const real = MY.pieces.filter((p) => !p.placeholder);
   trackList.hidden = !real.length;
   trackList.innerHTML = real.map((p, i) => `
     <div class="track-row" data-i="${i}">
-      <span class="track-name">${p.title.replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]))}</span>
+      <span class="track-name">${esc(p.title)}</span>
+      <button class="track-tag" data-i="${i}" aria-label="节目标签（可选）" title="${p.kind ? esc(p.kind) : "点一下加个标签（可选）"}">${KIND_EMOJI[p.kind || ""]}</button>
       <button class="track-remove" data-i="${i}" aria-label="移除" title="移除">×</button>
     </div>`).join("");
 }
+function persistPiece(p) {
+  if (!p.dbId) return;
+  idb.put({ id: p.dbId, title: p.title, artist: p.artist, kind: p.kind || "", cover: p.cover, blob: p.blob, t: Date.now() }).catch(() => {});
+}
 trackList.addEventListener("click", (e) => {
+  const tagBtn = e.target.closest(".track-tag");
+  if (tagBtn) {
+    const real = MY.pieces.filter((p) => !p.placeholder);
+    const p = real[+tagBtn.dataset.i];
+    if (!p) return;
+    const next = (TRACK_KINDS.indexOf(p.kind || "") + 1) % TRACK_KINDS.length;
+    p.kind = TRACK_KINDS[next];
+    persistPiece(p);
+    renderTrackList();
+    if (channel() === MY && piece() === p) renderPiece();
+    return;
+  }
   const btn = e.target.closest(".track-remove");
   if (!btn) return;
   const real = MY.pieces.filter((p) => !p.placeholder);
@@ -286,7 +307,7 @@ async function shareStation() {
       const ext = ((p.blob.type.split("/")[1] || "bin").replace("mpeg", "mp3")).replace(/[^a-z0-9]/gi, "");
       const fname = `track-${i + 1}.${ext || "bin"}`;
       await cloudPut(`${token}/${fname}`, p.blob);
-      manifest.pieces.push({ title: p.title, artist: p.artist, cover: p.cover, file: fname });
+      manifest.pieces.push({ title: p.title, artist: p.artist, kind: p.kind || "", cover: p.cover, file: fname });
     }
     await cloudPut(`${token}/station.json`, new Blob([JSON.stringify(manifest)], { type: "application/json" }));
     const base = `${CLOUD.url}/storage/v1/object/public/${CLOUD.bucket}/${token}`;
@@ -310,7 +331,7 @@ async function loadGuestStation() {
   try {
     const st = await (await fetch(`${base}/station.json`)).json();
     const pieces = (st.pieces || []).map((p) => ({
-      title: p.title || "未命名", artist: p.artist || "", dur: 0, cover: p.cover || null,
+      title: p.title || "未命名", artist: p.artist || "", kind: p.kind || "", dur: 0, cover: p.cover || null,
       src: /^(data|https?):/.test(p.file) ? p.file : `${base}/${p.file}`,
     }));
     if (!pieces.length) return;
@@ -446,7 +467,7 @@ makeDraggable(perch, perch, () => sbfm.classList.remove("collapsed"));
     if (rows.length) {
       if (MY.pieces[0] && MY.pieces[0].placeholder) MY.pieces.length = 0;
       MY.pieces.push(...rows.map((r) => ({
-        title: r.title, artist: r.artist || "", dur: 0, cover: r.cover || null,
+        title: r.title, artist: r.artist || "", kind: r.kind || "", dur: 0, cover: r.cover || null,
         src: URL.createObjectURL(r.blob), blob: r.blob, dbId: r.id,
       })));
       MY.created = true;

@@ -272,6 +272,11 @@ body::after {
   color: var(--soft); font-size: 13px; line-height: 1; padding: 0;
 }
 .track-remove:hover { color: var(--ink); }
+.track-tag {
+  flex: none; width: 20px; height: 20px; border: 1.5px dotted rgba(0,0,0,.3); border-radius: 50%;
+  background: none; cursor: pointer; font-size: 10px; line-height: 1; padding: 0; opacity: .55;
+}
+.track-tag:hover { opacity: 1; border-color: var(--ink); }
 .chsetup-save {
   width: 100%; padding: 8px; border: 2.5px solid var(--ink); border-radius: 7px;
   background: var(--ink); color: var(--paper); font-family: "Space Mono", "Songti SC", "STSong", "SimSun", monospace;
