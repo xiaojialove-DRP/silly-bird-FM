@@ -104,12 +104,15 @@ function paintSwatches() {
 }
 
 // ---- every station's "frequency" is derived from its own name, not assigned by us —
-// same name always lands on the same number, real US FM stations only ever sit on
-// odd tenths (88.1, 88.3 … 107.9), so this reads as a real dial position, not a prop ----
+// same name always lands on the same number. This is a papercut fairy-tale object, not
+// a broadcast-accurate tuner, so the only rule that matters is "looks like XX.X FM";
+// real-world FCC channel spacing would be invisible pedantry nobody could ever notice.
+// Free-range tenths across 88.0–107.9 (200 slots) also means fewer accidental frequency
+// collisions between friends than a stricter real-world-only band would allow.
 function stationFreq(name) {
   let h = 0;
   for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
-  return (88.1 + (h % 100) * 0.2).toFixed(1);
+  return (88.0 + (h % 200) * 0.1).toFixed(1);
 }
 
 // ---- render ----
