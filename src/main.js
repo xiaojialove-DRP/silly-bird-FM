@@ -562,7 +562,7 @@ makeDraggable(perch, perch, () => sbfm.classList.remove("collapsed"));
   const shot = new URLSearchParams(location.search).get("shot");
   if (shot) {
     winMain.hidden = shot !== "main";
-    const tgt = { main: winMain, station: winStation, look: winLook }[shot];
+    const tgt = { main: winMain, station: winStation, look: winLook, share: winShare }[shot];
     if (tgt) { tgt.hidden = false; tgt.style.left = "20px"; tgt.style.top = "20px"; tgt.dataset.placed = "1"; }
   }
   let theme = "blue";
@@ -604,8 +604,11 @@ makeDraggable(perch, perch, () => sbfm.classList.remove("collapsed"));
   // a friend's link?
   await loadGuestStation();
 
-  // dev helper: ?seed=1 imports a synthetic tone (used to e2e-test IDB persistence)
-  if (new URLSearchParams(location.search).has("seed")) {
+  // dev helper: ?seed=1 imports a synthetic tone (used to e2e-test IDB persistence and
+  // to populate demo content for README screenshots). Idempotent — a second load with
+  // the same flag (e.g. capturing several ?shot= screenshots in one warm profile) won't
+  // duplicate the track.
+  if (new URLSearchParams(location.search).has("seed") && !MY.pieces.some((p) => !p.placeholder)) {
     const rate = 8000, n = rate;
     const buf = new ArrayBuffer(44 + n * 2), dv = new DataView(buf);
     const wr = (o, s) => { for (let i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i)); };
@@ -614,6 +617,12 @@ makeDraggable(perch, perch, () => sbfm.classList.remove("collapsed"));
     dv.setUint32(24, rate, true); dv.setUint32(28, rate * 2, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
     wr(36, "data"); dv.setUint32(40, n * 2, true);
     for (let i = 0; i < n; i++) dv.setInt16(44 + i * 2, Math.sin(2 * Math.PI * 659 * i / rate) * 8000, true);
-    importFiles([new File([new Blob([buf], { type: "audio/wav" })], "示例音 E5.wav", { type: "audio/wav" })]);
+    MY.name = "小佳的深夜电台"; MY.owner = MY.name; MY.intro = "睡不着的夜里，说给你听"; MY.created = true;
+    importFiles([new File([new Blob([buf], { type: "audio/wav" })], "写代码写到凌晨三点.wav", { type: "audio/wav" })]);
+    setTimeout(() => { const p = MY.pieces[0]; if (p) { p.kind = "声音故事"; renderTrackList(); renderPiece(); } }, 50);
   }
+  // the ?shot=station debug path bypasses the normal dialMid-click open flow, which is
+  // what usually syncs these inputs from MY — sync them here too so the screenshot isn't
+  // stuck showing placeholder text
+  if (shot === "station") { chNameInput.value = MY.name; chIntroInput.value = MY.intro; }
 })();

@@ -11,11 +11,13 @@
 一只常驻屏幕角落的小鸟，点开它就是一台可以在朋友的频道间来回切台的小电台，陪你 vibe-coding 时不再是一个人。
 
 <p align="center">
-  <img src="assets/shot-main.png" width="31%" alt="主界面 · 收音机" />
+  <img src="assets/shot-main.png" width="23%" alt="主界面 · 收音机" />
   &nbsp;
-  <img src="assets/shot-station.png" width="31%" alt="我的电台 · 命名与上传" />
+  <img src="assets/shot-station.png" width="23%" alt="我的电台 · 命名、上传与录音" />
   &nbsp;
-  <img src="assets/shot-look.png" width="31%" alt="外观 · 颜色与音量" />
+  <img src="assets/shot-look.png" width="23%" alt="外观 · 颜色与音量" />
+  &nbsp;
+  <img src="assets/shot-share.png" width="23%" alt="分享 · 生成链接" />
 </p>
 
 ## 视觉
@@ -24,8 +26,8 @@
 
 ## 现在就能做
 
-- **三扇可拖动的剪纸小窗**：收音机 / 我的电台（命名 + 一句话介绍 + 上传节目）/ 外观（颜色 + 音量）；小鸟收起时停在桌面一角，点开恢复原样
-- **拖入即播**：把音频拖到小鸟身上（或从面板上传），歌名 / 歌手 / 封面自动从 ID3 标签读取
+- **四扇可拖动的剪纸小窗**：收音机 / 我的电台（命名 + 一句话介绍 + 上传或按住录音）/ 外观（颜色 + 音量）/ 分享（生成链接）；小鸟收起时停在桌面一角，点开恢复原样
+- **拖入即播**：把音频拖到小鸟身上（或从面板上传，也可按住录音），歌名 / 歌手 / 封面自动从 ID3 标签读取
 - **刷新不丢**：上传的节目保存在浏览器 IndexedDB 里，下次打开还在
 - **系统媒体键**：键盘播放键 / 耳机线控直接控制小鸟（MediaSession）
 - **完全离线的资源**：字体与解析库全部自托管，零外部 CDN 依赖，弱网也稳
