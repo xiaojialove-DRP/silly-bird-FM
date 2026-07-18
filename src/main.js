@@ -55,7 +55,7 @@ const dialMid = $("dialMid"), elTagline = $("tagline");
 const chNameInput = $("chNameInput"), chIntroInput = $("chIntroInput"), chUpload = $("chUpload"), stationSave = $("stationSave");
 const recordBtn = $("recordBtn"), recordIdle = document.querySelector(".record-idle"), recordLive = document.querySelector(".record-live"), recordTime = document.querySelector(".record-time");
 const recordOut = $("recordOut");
-const trackList = $("trackList");
+const trackList = $("trackList"), trackCountLabel = $("trackCountLabel");
 const openShareBtn = $("openShareBtn"), shareBtn = $("shareBtn"), shareOut = $("shareOut");
 const shareLinkBox = $("shareLinkBox"), shareLinkText = $("shareLinkText"), copyLinkBtn = $("copyLinkBtn");
 const swatches = [...document.querySelectorAll(".swatch")];
@@ -207,13 +207,21 @@ function seek(t) { cur = Math.max(0, Math.min(t, trackDur() || t)); if (hasAudio
 function tune(d) { ci = (ci + d + CHANNELS.length) % CHANNELS.length; pi = 0; renderChannel(); applyPlay(); }
 
 // ---- import: files land in MY station and persist in IndexedDB ----
+// one station = one album, on purpose — a curated handful, not a dumping ground.
+// recording and uploading both funnel through here, so the cap covers both at once.
 const AUDIO_RE = /\.(mp3|m4a|wav|flac|ogg|aac|opus)$/i;
+const MAX_TRACKS = 11;
 function importFiles(list) {
   const files = [...list].filter((f) => (f.type && f.type.startsWith("audio/")) || AUDIO_RE.test(f.name));
   if (!files.length) return;
   if (MY.pieces[0] && MY.pieces[0].placeholder) MY.pieces.length = 0;
+  const room = MAX_TRACKS - MY.pieces.length;
+  if (room <= 0) { say(`电台已经满了（最多 ${MAX_TRACKS} 首）· 删掉一首再加新的`, recordOut); return; }
+  const over = files.length > room;
+  const use = over ? files.slice(0, room) : files;
+  if (over) say(`电台最多 ${MAX_TRACKS} 首 · 这次加了前 ${use.length} 首，其余没加`, recordOut);
   const start = MY.pieces.length;
-  const pieces = files.map((f) => ({
+  const pieces = use.map((f) => ({
     title: f.name.replace(/\.[^.]+$/, ""), artist: "", dur: 0,
     src: URL.createObjectURL(f), cover: null, blob: f,
   }));
@@ -228,7 +236,7 @@ function importFiles(list) {
       .then((id) => { p.dbId = id; })
       .catch(() => {});
   });
-  files.forEach((f, i) => readTags(f, pieces[i]));
+  use.forEach((f, i) => readTags(f, pieces[i]));
 }
 function readTags(file, p) {
   if (!window.jsmediatags) return;
@@ -258,6 +266,7 @@ const kindLabel = (k) => k || "＋ 标签";
 function esc(s) { return s.replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c])); }
 function renderTrackList() {
   const real = MY.pieces.filter((p) => !p.placeholder);
+  trackCountLabel.textContent = real.length ? `节目 · ${real.length}/${MAX_TRACKS}` : "节目";
   trackList.hidden = !real.length;
   trackList.innerHTML = real.map((p, i) => `
     <div class="track-row" data-i="${i}">
@@ -420,6 +429,8 @@ function recTick() {
 }
 async function startRecording() {
   if (recRecorder) return;
+  const realCount = MY.pieces.filter((p) => !p.placeholder).length;
+  if (realCount >= MAX_TRACKS) { say(`电台已经满了（最多 ${MAX_TRACKS} 首）· 删掉一首再录新的`, recordOut); return; }
   try {
     recStream = await navigator.mediaDevices.getUserMedia({ audio: true });
   } catch {
@@ -647,5 +658,5 @@ makeDraggable(perch, perch, () => sbfm.classList.remove("collapsed"));
   // the ?shot=station debug path bypasses the normal dialMid-click open flow, which is
   // what usually syncs these inputs from MY — sync them here too so the screenshot isn't
   // stuck showing placeholder text
-  if (shot === "station") { chNameInput.value = MY.name; chIntroInput.value = MY.intro; }
+  if (shot === "station") { chNameInput.value = MY.name; chIntroInput.value = MY.intro; renderTrackList(); }
 })();
