@@ -467,10 +467,12 @@ recordBtn.addEventListener("contextmenu", (e) => e.preventDefault());
 function placeBeside(win, topOf, refWin) {
   if (win.dataset.placed) return;
   const r = (refWin || winMain).getBoundingClientRect();
-  const w = win.offsetWidth || 320;
+  const w = win.offsetWidth || 320, h = win.offsetHeight || 200;
   const fitsRight = r.right + 16 + w < window.innerWidth;
-  win.style.left = (fitsRight ? r.right + 16 : Math.max(8, r.left + 36)) + "px";
-  win.style.top = Math.max(8, (topOf ? topOf() : r.top) + (fitsRight ? 0 : 36)) + "px";
+  const left = fitsRight ? r.right + 16 : Math.max(8, r.left + 36);
+  const top = (topOf ? topOf() : r.top) + (fitsRight ? 0 : 36);
+  win.style.left = Math.max(8, Math.min(left, window.innerWidth - w - 8)) + "px";
+  win.style.top = Math.max(8, Math.min(top, window.innerHeight - h - 8)) + "px";
   win.dataset.placed = "1";
 }
 function toggleWin(win, topOf, refWin) {
@@ -526,28 +528,49 @@ stationSave.addEventListener("click", saveStation);
 minBtn.addEventListener("mousedown", (e) => e.stopPropagation());
 minBtn.addEventListener("click", (e) => { e.stopPropagation(); sbfm.classList.add("collapsed"); });
 
-// ---- dragging ----
+// ---- dragging (mouse + touch, so cards and the perch drag on phones too) ----
 function makeDraggable(el, handle, onTap) {
   let start = null, moved = false;
+  const begin = (x, y) => {
+    const r = el.getBoundingClientRect();
+    start = { dx: x - r.left, dy: y - r.top };
+    moved = false;
+  };
+  const move = (x, y) => {
+    moved = true;
+    const maxLeft = Math.max(0, window.innerWidth - el.offsetWidth);
+    const maxTop = Math.max(0, window.innerHeight - el.offsetHeight);
+    el.style.left = Math.min(maxLeft, Math.max(0, x - start.dx)) + "px";
+    el.style.top = Math.min(maxTop, Math.max(0, y - start.dy)) + "px";
+  };
   handle.addEventListener("mousedown", (e) => {
     if (e.target.closest("button") && !onTap) return;
-    const r = el.getBoundingClientRect();
-    start = { dx: e.clientX - r.left, dy: e.clientY - r.top };
-    moved = false;
     e.preventDefault();
-    const move = (ev) => {
-      moved = true;
-      el.style.left = (ev.clientX - start.dx) + "px";
-      el.style.top = Math.max(0, ev.clientY - start.dy) + "px";
-    };
-    const up = () => {
-      window.removeEventListener("mousemove", move);
-      window.removeEventListener("mouseup", up);
+    begin(e.clientX, e.clientY);
+    const onMove = (ev) => move(ev.clientX, ev.clientY);
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
       start = null;
     };
-    window.addEventListener("mousemove", move);
-    window.addEventListener("mouseup", up);
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
   });
+  handle.addEventListener("touchstart", (e) => {
+    if (e.target.closest("button") && !onTap) return;
+    const t = e.touches[0];
+    begin(t.clientX, t.clientY);
+    const onMove = (ev) => { move(ev.touches[0].clientX, ev.touches[0].clientY); ev.preventDefault(); };
+    const onEnd = () => {
+      window.removeEventListener("touchmove", onMove);
+      window.removeEventListener("touchend", onEnd);
+      window.removeEventListener("touchcancel", onEnd);
+      start = null;
+    };
+    window.addEventListener("touchmove", onMove, { passive: false });
+    window.addEventListener("touchend", onEnd);
+    window.addEventListener("touchcancel", onEnd);
+  }, { passive: true });
   if (onTap) handle.addEventListener("click", () => { if (!moved) onTap(); moved = false; });
 }
 makeDraggable(winMain, $("dragMain"));
