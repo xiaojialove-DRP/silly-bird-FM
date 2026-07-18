@@ -405,6 +405,14 @@ elVol.addEventListener("input", () => {
   audio.volume = v / 100;
   elVol.style.background = `linear-gradient(90deg, var(--ink) 0 ${v}%, var(--paper) ${v}% 100%)`;
 });
+// native range inputs only move when you drag the thumb precisely — mobile browsers
+// (iOS Safari notably) don't jump the value on a plain tap elsewhere on the track. The
+// progress bar above already solves this with its own click-to-seek; do the same here.
+elVol.addEventListener("click", (e) => {
+  const r = elVol.getBoundingClientRect();
+  elVol.value = Math.round(Math.min(100, Math.max(0, ((e.clientX - r.left) / r.width) * 100)));
+  elVol.dispatchEvent(new Event("input", { bubbles: true }));
+});
 
 // ---- import wiring: drop zone + panel upload + share ----
 ["dragenter", "dragover"].forEach((ev) => player.addEventListener(ev, (e) => {
