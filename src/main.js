@@ -329,7 +329,15 @@ async function shareStation() {
     try { await navigator.clipboard.writeText(gift); say("已复制 · 粘贴发给朋友就是一张分享卡 🐦"); }
     catch { say("复制失败，链接在这里，手动发给朋友：\n" + link); }
   } catch (e) {
-    say("上传失败：" + (e && e.message ? e.message : e));
+    // fetch() only rejects with a TypeError when the request never got a response at
+    // all (DNS/connection/CORS-level failure) — Safari says "Load failed", Chrome says
+    // "Failed to fetch". An HTTP error status (403/500/…) resolves normally instead and
+    // is thrown separately below as a plain Error, so this check reliably tells apart
+    // "can't reach the server" from "server responded but rejected it".
+    const unreachable = e instanceof TypeError;
+    say(unreachable
+      ? "上传失败：连不上云端服务器。Supabase 是海外服务，国内网络偶尔连不稳——挂个 VPN 再点一次「生成分享链接」试试；已经开着 VPN 的话，换个节点再试一次。"
+      : "上传失败：" + (e && e.message ? e.message : e));
   }
   shareBtn.disabled = false;
 }
