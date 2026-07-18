@@ -553,6 +553,7 @@ function makeDraggable(el, handle, onTap) {
 makeDraggable(winMain, $("dragMain"));
 makeDraggable(winStation, $("dragStation"));
 makeDraggable(winLook, $("dragLook"));
+makeDraggable(winShare, $("dragShare"));
 makeDraggable(perch, perch, () => sbfm.classList.remove("collapsed"));
 
 // ---- boot ----
