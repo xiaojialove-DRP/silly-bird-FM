@@ -53,6 +53,7 @@ const player = $("player"), screenEl = document.querySelector(".screen");
 const minBtn = $("min"), lookBtn = $("lookBtn"), stationClose = $("stationClose"), lookClose = $("lookClose");
 const dialMid = $("dialMid"), elTagline = $("tagline");
 const chNameInput = $("chNameInput"), chIntroInput = $("chIntroInput"), chUpload = $("chUpload"), stationSave = $("stationSave");
+const recordBtn = $("recordBtn"), recordIdle = document.querySelector(".record-idle"), recordLive = document.querySelector(".record-live"), recordTime = document.querySelector(".record-time");
 const trackList = $("trackList");
 const shareBtn = $("shareBtn"), shareOut = $("shareOut");
 const swatches = [...document.querySelectorAll(".swatch")];
@@ -250,8 +251,8 @@ function readTags(file, p) {
 // ---- track list inside "我的电台": the missing "did it actually work" feedback ----
 // optional flavor tag per track, picked from a real <select> — no hidden cycling to
 // discover, no hover-only tooltip that touch devices can never see
-const TRACK_KINDS = ["", "声音故事", "自己哼的", "环境音", "分享的歌"];
-const KIND_LABEL = { "": "＋ 标签", "声音故事": "🎙️ 声音故事", "自己哼的": "🎵 自己哼的", "环境音": "🌧️ 环境音", "分享的歌": "♪ 分享的歌" };
+const TRACK_KINDS = ["", "声音故事", "自己哼的歌", "环境音", "最近循环播放的歌"];
+const kindLabel = (k) => k || "＋ 标签";
 function esc(s) { return s.replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c])); }
 function renderTrackList() {
   const real = MY.pieces.filter((p) => !p.placeholder);
@@ -260,7 +261,7 @@ function renderTrackList() {
     <div class="track-row" data-i="${i}">
       <span class="track-name">${esc(p.title)}</span>
       <select class="track-tag" data-i="${i}" aria-label="节目标签（可选）">
-        ${TRACK_KINDS.map((k) => `<option value="${esc(k)}"${(p.kind || "") === k ? " selected" : ""}>${esc(KIND_LABEL[k])}</option>`).join("")}
+        ${TRACK_KINDS.map((k) => `<option value="${esc(k)}"${(p.kind || "") === k ? " selected" : ""}>${esc(kindLabel(k))}</option>`).join("")}
       </select>
       <button class="track-remove" data-i="${i}" aria-label="移除" title="移除">×</button>
     </div>`).join("");
@@ -301,6 +302,7 @@ function cloudPut(path, blob) {
     method: "POST",
     headers: {
       Authorization: `Bearer ${CLOUD.anonKey}`, apikey: CLOUD.anonKey,
+      "x-upsert": "true",   // re-sharing reuses the same path on purpose — must overwrite, not conflict
       "Content-Type": blob.type || "application/octet-stream",
     },
     body: blob,
@@ -312,7 +314,13 @@ async function shareStation() {
   if (!CLOUD.url || !CLOUD.anonKey) return say("还没配置云端 · 打开 src/main.js 顶部 CLOUD，照 README「分享」两分钟填好");
   shareBtn.disabled = true;
   try {
-    const token = crypto.randomUUID();
+    // same station → same token every time, so a link already sent to a friend keeps
+    // working and just shows whatever you've most recently shared — editing a station
+    // updates it in place instead of minting a new, disconnected link
+    const isUpdate = !!MY.shareToken;
+    const token = MY.shareToken || crypto.randomUUID();
+    MY.shareToken = token;
+    persistStationMeta();
     const manifest = { v: 1, name: MY.name, owner: MY.name, intro: MY.intro, pieces: [] };
     for (let i = 0; i < tracks.length; i++) {
       say(`上传中 ${i + 1} / ${tracks.length} …`);
@@ -326,7 +334,8 @@ async function shareStation() {
     const base = `${CLOUD.url}/storage/v1/object/public/${CLOUD.bucket}/${token}`;
     const link = location.origin + location.pathname + "?listen=" + encodeURIComponent(base);
     const gift = `${MY.name} 在等你收听\n${link}`;
-    try { await navigator.clipboard.writeText(gift); say("已复制 · 粘贴发给朋友就是一张分享卡"); }
+    const successMsg = isUpdate ? "已更新 · 之前发过的链接会自动显示最新内容" : "已复制 · 粘贴发给朋友就是一张分享卡";
+    try { await navigator.clipboard.writeText(gift); say(successMsg); }
     catch { say("复制失败，链接在这里，手动发给朋友：\n" + link); }
   } catch (e) {
     // fetch() only rejects with a TypeError when the request never got a response at
@@ -386,6 +395,63 @@ filepick.addEventListener("change", () => { importFiles(filepick.files); filepic
 chUpload.addEventListener("click", () => filepick.click());
 shareBtn.addEventListener("click", shareStation);
 
+// ---- press-and-hold recording: a second door into the exact same pipeline as
+// uploading a file — a held moment (street noise, a passing thought) is just as
+// valid a program as a carefully-picked one, so both land in the same track list ----
+let recStream = null, recRecorder = null, recChunks = [], recStartedAt = 0, recRaf = null;
+const canRecord = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
+if (!canRecord) recordBtn.hidden = true;
+
+function recTick() {
+  const s = Math.floor((Date.now() - recStartedAt) / 1000);
+  recordTime.textContent = Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+  recRaf = requestAnimationFrame(recTick);
+}
+async function startRecording() {
+  if (recRecorder) return;
+  try {
+    recStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch {
+    say("没能打开麦克风 · 请检查浏览器/系统的麦克风权限");
+    return;
+  }
+  recChunks = [];
+  const mime = ["audio/webm", "audio/mp4"].find((t) => MediaRecorder.isTypeSupported(t)) || "";
+  recRecorder = new MediaRecorder(recStream, mime ? { mimeType: mime } : undefined);
+  recRecorder.ondataavailable = (e) => { if (e.data.size > 0) recChunks.push(e.data); };
+  recRecorder.start();
+  recStartedAt = Date.now();
+  recordBtn.classList.add("recording");
+  recordIdle.hidden = true; recordLive.hidden = false;
+  recTick();
+}
+function stopRecording() {
+  if (!recRecorder) return;
+  cancelAnimationFrame(recRaf);
+  recordBtn.classList.remove("recording");
+  recordIdle.hidden = false; recordLive.hidden = true;
+  const heldMs = Date.now() - recStartedAt;
+  const mr = recRecorder;
+  recRecorder = null;
+  mr.addEventListener("stop", () => {
+    recStream.getTracks().forEach((t) => t.stop());
+    recStream = null;
+    if (heldMs < 500 || !recChunks.length) return;   // too brief to be intentional — discard, like a mis-tap
+    const mime = mr.mimeType || "audio/webm";
+    const ext = mime.split("/")[1]?.split(";")[0] || "webm";
+    const now = new Date();
+    const title = `录音 ${now.getMonth() + 1}-${now.getDate()} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    importFiles([new File([new Blob(recChunks, { type: mime })], `${title}.${ext}`, { type: mime })]);
+  }, { once: true });
+  mr.stop();
+}
+recordBtn.addEventListener("mousedown", (e) => { if (e.button === 0) startRecording(); });
+recordBtn.addEventListener("touchstart", (e) => { e.preventDefault(); startRecording(); }, { passive: false });
+window.addEventListener("mouseup", stopRecording);
+window.addEventListener("touchend", stopRecording);
+window.addEventListener("touchcancel", stopRecording);
+recordBtn.addEventListener("contextmenu", (e) => e.preventDefault());
+
 // ---- windows: open / close / first-open placement beside the main radio ----
 function placeBeside(win, topOf) {
   if (win.dataset.placed) return;
@@ -410,20 +476,27 @@ lookBtn.addEventListener("click", () => {
   toggleWin(winLook, () => (winStation.hidden ? winMain.getBoundingClientRect().top
                                               : winStation.getBoundingClientRect().bottom + 26));
 });
-stationClose.addEventListener("click", () => (winStation.hidden = true));
+stationClose.addEventListener("click", () => { stopRecording(); winStation.hidden = true; });
 lookClose.addEventListener("click", () => (winLook.hidden = true));
 
 swatches.forEach((s) => s.addEventListener("click", () => applyTheme(s.dataset.theme)));
 
+function persistStationMeta() {
+  try { localStorage.setItem("sbfm-station", JSON.stringify({ name: MY.name, intro: MY.intro, shareToken: MY.shareToken || null })); } catch {}
+}
 function saveStation() {
   const name = chNameInput.value.trim();
   if (name) MY.name = name;
   MY.owner = MY.name;   // one identity, not two questions — your station name IS your byline
   MY.intro = chIntroInput.value.trim();
   MY.created = true;
-  try { localStorage.setItem("sbfm-station", JSON.stringify({ name: MY.name, intro: MY.intro })); } catch {}
+  persistStationMeta();
   renderChannel();
-  winStation.hidden = true;
+  // stay open — the natural next click is 生成分享链接, right below this button
+  const original = stationSave.textContent;
+  stationSave.textContent = "✓ 已保存";
+  stationSave.disabled = true;
+  setTimeout(() => { stationSave.textContent = original; stationSave.disabled = false; }, 1100);
 }
 stationSave.addEventListener("click", saveStation);
 [chNameInput, chIntroInput].forEach((el) => el.addEventListener("keydown", (e) => { if (e.key === "Enter") saveStation(); }));
@@ -475,7 +548,11 @@ makeDraggable(perch, perch, () => sbfm.classList.remove("collapsed"));
   document.documentElement.setAttribute("data-theme", theme);
   try {
     const saved = JSON.parse(localStorage.getItem("sbfm-station") || "null");
-    if (saved) { if (saved.name) MY.name = saved.name; MY.owner = MY.name; MY.intro = saved.intro || ""; MY.created = true; }
+    if (saved) {
+      if (saved.name) MY.name = saved.name;
+      MY.owner = MY.name; MY.intro = saved.intro || ""; MY.created = true;
+      if (saved.shareToken) MY.shareToken = saved.shareToken;
+    }
   } catch {}
   paintSwatches();
   wireMediaSession();

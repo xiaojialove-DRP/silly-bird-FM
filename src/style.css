@@ -254,6 +254,18 @@ body::after {
 .chsetup-upload:hover { background: rgba(0,0,0,.05); }
 .chsetup-upload.share { margin: 10px 0 0; }
 .chsetup-upload[disabled] { opacity: .5; cursor: wait; }
+
+/* two equal ways to add a program: a carefully-picked file, or a held-down moment */
+.add-row { display: flex; gap: 8px; margin-bottom: 12px; }
+.add-row .chsetup-upload { margin-bottom: 0; }
+.record { touch-action: none; -webkit-user-select: none; user-select: none; }
+.record .record-live { color: inherit; }
+.record .record-time { font-variant-numeric: tabular-nums; }
+.record.recording {
+  background: var(--ink); color: var(--paper); border-style: solid;
+  animation: recPulse 1s ease-in-out infinite;
+}
+@keyframes recPulse { 0%, 100% { opacity: 1; } 50% { opacity: .65; } }
 .share-out { margin-top: 8px; font-size: 10px; line-height: 1.6; color: var(--soft); word-break: break-all; white-space: pre-wrap; }
 .share-out[hidden] { display: none; }
 

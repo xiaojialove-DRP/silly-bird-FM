@@ -143,7 +143,13 @@
           <div class="chsetup-label">一句话介绍</div>
           <input class="chsetup-input" id="chIntroInput" maxlength="40" placeholder="比如：睡不着的夜里，说给你听" />
           <div class="chsetup-label">节目</div>
-          <button class="chsetup-upload" id="chUpload">⊕&nbsp;上传音频 · 可多选</button>
+          <div class="add-row">
+            <button class="chsetup-upload" id="chUpload">⊕&nbsp;上传音频</button>
+            <button class="chsetup-upload record" id="recordBtn">
+              <span class="record-idle">●&nbsp;按住录音</span>
+              <span class="record-live" hidden>●&nbsp;<span class="record-time">0:00</span>&nbsp;松开完成</span>
+            </button>
+          </div>
           <div class="track-list" id="trackList" hidden></div>
           <button class="chsetup-save" id="stationSave">完成</button>
           <button class="chsetup-upload share" id="shareBtn">✉&nbsp;生成分享链接</button>
