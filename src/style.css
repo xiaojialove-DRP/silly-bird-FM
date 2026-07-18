@@ -227,17 +227,6 @@ body::after {
 .radio.playing .i-play { display: none; }
 .radio.playing .i-pause { display: block; }
 
-/* ---------- quiet invitation to make your own, visible on any channel until you have ---------- */
-.make-mine {
-  display: block; width: 100%; text-align: center; background: none; border: none;
-  border-top: 1.5px dotted var(--soft); cursor: pointer;
-  padding: 8px 14px 11px; margin: 0;
-  font-family: "Space Mono", "Songti SC", monospace; font-size: 10px; letter-spacing: .3px;
-  color: var(--soft);
-}
-.make-mine:hover { color: var(--ink); }
-.make-mine[hidden] { display: none; }
-
 .vol { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
 .vol-ico { width: 16px; height: 16px; flex: none; fill: var(--soft); }
 #vol { -webkit-appearance: none; appearance: none; flex: 1; width: auto; height: 6px; border: 2px solid var(--ink); border-radius: 4px; cursor: pointer; background: linear-gradient(90deg, var(--ink) 0 72%, var(--paper) 72% 100%); }

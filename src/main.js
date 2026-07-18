@@ -51,7 +51,7 @@ const sbfm = $("sbfm"), perch = $("perch"), filepick = $("filepick");
 const winMain = $("winMain"), winStation = $("winStation"), winLook = $("winLook"), winShare = $("winShare");
 const player = $("player"), screenEl = document.querySelector(".screen");
 const minBtn = $("min"), lookBtn = $("lookBtn"), stationClose = $("stationClose"), lookClose = $("lookClose"), shareClose = $("shareClose");
-const dialMid = $("dialMid"), elTagline = $("tagline"), makeMineHint = $("makeMineHint");
+const dialMid = $("dialMid"), elTagline = $("tagline");
 const chNameInput = $("chNameInput"), chIntroInput = $("chIntroInput"), chUpload = $("chUpload"), stationSave = $("stationSave");
 const recordBtn = $("recordBtn"), recordIdle = document.querySelector(".record-idle"), recordLive = document.querySelector(".record-live"), recordTime = document.querySelector(".record-time");
 const recordOut = $("recordOut");
@@ -123,7 +123,7 @@ function renderChannel() {
   const ch = channel();
   const isCta = !!ch.mine && !MY.created;   // fresh users see an invitation, not a name
   elFreq.textContent = isCta ? "★" : stationFreq(ch.name);
-  elSname.textContent = isCta ? "点击创建我的电台" : ch.name;
+  elSname.textContent = isCta ? "＋ 邀请你也做一个自己的电台" : ch.name;
   dialMid.classList.toggle("cta", isCta);
   elDj.textContent = ch.owner || ch.name;
   // on the empty CTA slot, the tagline line doubles as a legend for the ◁▷ tune
@@ -131,10 +131,6 @@ function renderChannel() {
   const text = isCta ? "◁ ▷ 先听听朋友的电台" : (ch.intro || "");
   elTagline.textContent = text;
   elTagline.hidden = !text;
-  // a friend's link (or any demo channel) shouldn't leave a first-time visitor with no
-  // way to find "make your own" — the big CTA only shows on your own empty slot, so this
-  // quiet line rides along on every other channel until you've actually created one
-  makeMineHint.hidden = MY.created || isCta;
   renderPiece();
 }
 function renderPiece() {
@@ -494,12 +490,10 @@ function toggleWin(win, topOf, refWin) {
   if (win.hidden) { win.hidden = false; placeBeside(win, topOf, refWin); }
   else win.hidden = true;
 }
-function openMyStation() {
+dialMid.addEventListener("click", () => {
   if (winStation.hidden) { chNameInput.value = MY.name; chIntroInput.value = MY.intro; renderTrackList(); }
   toggleWin(winStation);
-}
-dialMid.addEventListener("click", openMyStation);
-makeMineHint.addEventListener("click", openMyStation);
+});
 lookBtn.addEventListener("mousedown", (e) => e.stopPropagation());
 lookBtn.addEventListener("click", () => {
   paintSwatches();
