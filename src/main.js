@@ -325,8 +325,8 @@ async function shareStation() {
     await cloudPut(`${token}/station.json`, new Blob([JSON.stringify(manifest)], { type: "application/json" }));
     const base = `${CLOUD.url}/storage/v1/object/public/${CLOUD.bucket}/${token}`;
     const link = location.origin + location.pathname + "?listen=" + encodeURIComponent(base);
-    const gift = `🐦 ${MY.name} 在等你收听\n${link}`;
-    try { await navigator.clipboard.writeText(gift); say("已复制 · 粘贴发给朋友就是一张分享卡 🐦"); }
+    const gift = `${MY.name} 在等你收听\n${link}`;
+    try { await navigator.clipboard.writeText(gift); say("已复制 · 粘贴发给朋友就是一张分享卡"); }
     catch { say("复制失败，链接在这里，手动发给朋友：\n" + link); }
   } catch (e) {
     // fetch() only rejects with a TypeError when the request never got a response at
