@@ -594,8 +594,12 @@ function makeDraggable(el, handle, onTap) {
   if (onTap) handle.addEventListener("click", () => { if (!moved) onTap(); moved = false; });
 }
 // in the Tauri shell #dragMain is a native OS drag region (see index.html) —
-// wiring our own web-level drag on top of it would double-move the card
-if (!window.__TAURI_INTERNALS__) makeDraggable(winMain, $("dragMain"));
+// wiring our own web-level drag on top of it fights the native one, clamped
+// to the small window's own bounds. Reuse the same "in-tauri" signal the
+// transparent-background fix already proved reliable (set synchronously in
+// index.html before any other script runs), instead of re-checking the raw
+// Tauri global a second time here.
+if (!document.documentElement.classList.contains("in-tauri")) makeDraggable(winMain, $("dragMain"));
 makeDraggable(winStation, $("dragStation"));
 makeDraggable(winLook, $("dragLook"));
 makeDraggable(winShare, $("dragShare"));
