@@ -593,13 +593,18 @@ function makeDraggable(el, handle, onTap) {
   }, { passive: true });
   if (onTap) handle.addEventListener("click", () => { if (!moved) onTap(); moved = false; });
 }
-// in the Tauri shell #dragMain is a native OS drag region (see index.html) —
-// wiring our own web-level drag on top of it fights the native one, clamped
-// to the small window's own bounds. Reuse the same "in-tauri" signal the
-// transparent-background fix already proved reliable (set synchronously in
-// index.html before any other script runs), instead of re-checking the raw
-// Tauri global a second time here.
-if (!document.documentElement.classList.contains("in-tauri")) makeDraggable(winMain, $("dragMain"));
+// in the Tauri shell, dragging #dragMain moves the actual OS window via a
+// custom Rust command (declarative data-tauri-drag-region tracked the mouse
+// but stayed confined to the window's own small bounds) — everywhere else
+// (a normal browser tab) keeps the original web-level card dragging.
+if (document.documentElement.classList.contains("in-tauri")) {
+  $("dragMain").addEventListener("mousedown", (e) => {
+    if (e.target.closest("button")) return;
+    window.__TAURI__.core.invoke("start_drag");
+  });
+} else {
+  makeDraggable(winMain, $("dragMain"));
+}
 makeDraggable(winStation, $("dragStation"));
 makeDraggable(winLook, $("dragLook"));
 makeDraggable(winShare, $("dragShare"));
