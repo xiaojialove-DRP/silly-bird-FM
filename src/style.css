@@ -32,7 +32,11 @@ body {
   background: #d7d3c8;   /* neutral desk — no color; transparent later in Tauri */
   -webkit-font-smoothing: antialiased;
 }
-html.in-tauri body { background: transparent; }
+/* in the desktop shell the window is sized around the card, not a big
+   browser viewport — centering would leave a gap between the card's own
+   titlebar and the real (native) draggable area at the window's physical
+   top, so the card sits flush against the top instead */
+html.in-tauri body { background: transparent; place-items: start center; }
 /* paper-cut / print grain */
 body::after {
   content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 9999;
