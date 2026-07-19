@@ -295,7 +295,12 @@ body::after {
   font-family: "Space Mono", "Songti SC", "STSong", "SimSun", monospace; font-size: 11px; color: var(--ink);
 }
 .track-row:first-child { border-top: 1.5px dotted rgba(0,0,0,.18); }
-.track-name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.track-name {
+  flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font: inherit; color: inherit; background: none; padding: 0; margin: 0;
+  border: none; border-bottom: 1.5px dotted transparent; cursor: text;
+}
+.track-name:hover, .track-name:focus { border-bottom-color: var(--soft); outline: none; }
 .track-remove {
   flex: none; width: 18px; height: 18px; border: none; background: none; cursor: pointer;
   color: var(--soft); font-size: 13px; line-height: 1; padding: 0;

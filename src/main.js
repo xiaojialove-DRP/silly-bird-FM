@@ -264,14 +264,14 @@ function readTags(file, p) {
 // discover, no hover-only tooltip that touch devices can never see
 const TRACK_KINDS = ["", "声音故事", "自己哼的歌", "环境音", "最近循环播放的歌"];
 const kindLabel = (k) => k || "＋ 标签";
-function esc(s) { return s.replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c])); }
+function esc(s) { return s.replace(/[<>&"']/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&#39;" }[c])); }
 function renderTrackList() {
   const real = MY.pieces.filter((p) => !p.placeholder);
   trackCountLabel.textContent = real.length ? `节目 · ${real.length}/${MAX_TRACKS}` : "节目";
   trackList.hidden = !real.length;
   trackList.innerHTML = real.map((p, i) => `
     <div class="track-row" data-i="${i}">
-      <span class="track-name">${esc(p.title)}</span>
+      <input class="track-name" data-i="${i}" value="${esc(p.title)}" aria-label="节目名称" />
       <select class="track-tag" data-i="${i}" aria-label="节目标签（可选）">
         ${TRACK_KINDS.map((k) => `<option value="${esc(k)}"${(p.kind || "") === k ? " selected" : ""}>${esc(kindLabel(k))}</option>`).join("")}
       </select>
@@ -284,13 +284,26 @@ function persistPiece(p) {
 }
 trackList.addEventListener("change", (e) => {
   const sel = e.target.closest(".track-tag");
-  if (!sel) return;
+  const nameInput = e.target.closest(".track-name");
+  if (!sel && !nameInput) return;
   const real = MY.pieces.filter((p) => !p.placeholder);
-  const p = real[+sel.dataset.i];
+  const field = sel || nameInput;
+  const p = real[+field.dataset.i];
   if (!p) return;
-  p.kind = sel.value;
+  if (sel) {
+    p.kind = sel.value;
+  } else {
+    // uploaded files often carry ugly auto-generated names (WeChat-saved audio
+    // in particular) — this is the fix for that, not just a nicety
+    const next = nameInput.value.trim();
+    if (!next) { nameInput.value = p.title; return; }   // don't allow blanking the title out
+    p.title = next;
+  }
   persistPiece(p);
   if (channel() === MY && piece() === p) renderPiece();
+});
+trackList.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && e.target.closest(".track-name")) e.target.blur();
 });
 trackList.addEventListener("click", (e) => {
   const btn = e.target.closest(".track-remove");
