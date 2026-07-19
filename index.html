@@ -1,7 +1,22 @@
 <!doctype html>
 <html lang="zh">
 <head>
-  <script>if (window.__TAURI_INTERNALS__) document.documentElement.classList.add("in-tauri");</script>
+  <script>
+    if (window.__TAURI_INTERNALS__) document.documentElement.classList.add("in-tauri");
+    (function () {
+      var ti = window.__TAURI_INTERNALS__;
+      var msg = "EARLY: internals=" + typeof ti + " invoke=" + typeof (ti && ti.invoke) + " href=" + location.href;
+      if (ti && ti.invoke) {
+        try {
+          var p = ti.invoke("debug_log", { msg: msg });
+          if (p && p.then) p.then(function () {}, function (e) { try { ti.invoke("debug_log", { msg: "EARLY invoke rejected: " + e }); } catch (e2) {} });
+        } catch (e) {
+          try { ti.invoke("debug_log", { msg: "EARLY invoke threw: " + e }); } catch (e2) {}
+        }
+      }
+      window.__SBFM_EARLY_DIAG = msg;
+    })();
+  </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>silly bird FM</title>
