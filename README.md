@@ -13,13 +13,7 @@
 一只常驻屏幕角落的小鸟，点开它就是一台可以在朋友的频道间来回切台的小电台，陪你 vibe-coding 时不再是一个人。
 
 <p align="center">
-  <img src="assets/shot-main.png" width="23%" alt="主界面 · 收音机" />
-  &nbsp;
-  <img src="assets/shot-station.png" width="23%" alt="我的电台 · 命名、上传与录音" />
-  &nbsp;
-  <img src="assets/shot-look.png" width="23%" alt="外观 · 颜色与音量" />
-  &nbsp;
-  <img src="assets/shot-share.png" width="23%" alt="分享 · 生成链接" />
+  <img src="assets/collage.png" width="100%" alt="silly bird FM 界面：收音机、我的电台、外观、分享四扇窗口" />
 </p>
 
 ## 视觉

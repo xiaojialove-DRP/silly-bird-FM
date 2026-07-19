@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="assets/icon.svg" width="120" height="120" alt="silly bird fm icon" />
-</p>
-
 <p align="center">English · <a href="README.md">中文</a></p>
 
 # silly bird FM
@@ -13,13 +9,7 @@ Low barrier to entry: like sending a voice message, everyone picks a channel nam
 A little bird perches permanently in the corner of your screen. Click it open and it's a small radio you can tune across your friends' channels — company while you vibe-code alone.
 
 <p align="center">
-  <img src="assets/shot-main.png" width="23%" alt="Main screen · the radio" />
-  &nbsp;
-  <img src="assets/shot-station.png" width="23%" alt="My Station · naming, uploading, and recording" />
-  &nbsp;
-  <img src="assets/shot-look.png" width="23%" alt="Look · color and volume" />
-  &nbsp;
-  <img src="assets/shot-share.png" width="23%" alt="Share · generate a link" />
+  <img src="assets/collage.png" width="100%" alt="silly bird FM windows: the radio, my station, look, and share" />
 </p>
 
 ## Look
