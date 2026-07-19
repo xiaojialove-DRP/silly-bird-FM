@@ -598,12 +598,17 @@ function makeDraggable(el, handle, onTap) {
 // but stayed confined to the window's own small bounds) — everywhere else
 // (a normal browser tab) keeps the original web-level card dragging.
 if (document.documentElement.classList.contains("in-tauri")) {
-  const diag = `in-tauri class: true, window.__TAURI__: ${typeof window.__TAURI__}, window.__TAURI__.core: ${typeof window.__TAURI__?.core}, dragMain found: ${!!$("dragMain")}`;
-  if (window.__TAURI__?.core?.invoke) window.__TAURI__.core.invoke("debug_log", { msg: diag });
+  const ti = window.__TAURI_INTERNALS__;
+  const diag = `internals: ${typeof ti}, invoke: ${typeof ti?.invoke}, TAURI: ${typeof window.__TAURI__}, dragMain: ${!!$("dragMain")}, href: ${location.href}`;
+  const report = (msg) => {
+    try { ti.invoke("debug_log", { msg }).catch((err) => { try { ti.invoke("debug_log", { msg: "invoke rejected: " + JSON.stringify(err) }); } catch {} }); }
+    catch (err) { try { ti.invoke("debug_log", { msg: "invoke threw: " + err }); } catch {} }
+  };
+  if (ti?.invoke) report(diag);
   $("dragMain").addEventListener("mousedown", (e) => {
-    window.__TAURI__?.core?.invoke("debug_log", { msg: "mousedown on dragMain, target: " + e.target.tagName + "." + e.target.className });
+    if (ti?.invoke) report("mousedown on dragMain");
     if (e.target.closest("button")) return;
-    window.__TAURI__.core.invoke("start_drag");
+    if (ti?.invoke) ti.invoke("start_drag").catch((err) => report("start_drag rejected: " + JSON.stringify(err)));
   });
 } else {
   makeDraggable(winMain, $("dragMain"));
