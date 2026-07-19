@@ -235,7 +235,13 @@ function importFiles(list) {
   play();
   pieces.forEach((p) => {
     idb.put({ title: p.title, artist: p.artist, kind: "", cover: null, blob: p.blob, t: Date.now() })
-      .then((id) => { p.dbId = id; })
+      .then((id) => {
+        p.dbId = id;
+        // an edit (rename, tag, ID3 read) made while this put() was still in flight
+        // would otherwise be silently dropped — persistPiece() no-ops without a dbId,
+        // and this put() already wrote whatever p looked like before it resolved
+        persistPiece(p);
+      })
       .catch(() => {});
   });
   use.forEach((f, i) => readTags(f, pieces[i]));
