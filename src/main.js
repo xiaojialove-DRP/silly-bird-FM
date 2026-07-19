@@ -17,23 +17,23 @@ const CHANNELS = [
   {
     name: "深夜胡思乱想", owner: "小佳", intro: "睡不着的夜里，说给你听",
     pieces: [
-      { title: "写代码写到凌晨三点", kind: "声音故事",   dur: 192 },
-      { title: "最近单曲循环，哼给你听", kind: "自己哼的歌", dur: 108 },
-      { title: "楼下便利店的白噪音", kind: "环境音",     dur: 320 },
+      { title: "写代码写到凌晨三点", kind: "声音故事",   src: "./assets/demo-audio/night-coding.wav" },
+      { title: "最近单曲循环，哼给你听", kind: "自己哼的歌", src: "./assets/demo-audio/hum-lullaby.wav" },
+      { title: "楼下便利店的白噪音", kind: "环境音",     src: "./assets/demo-audio/store-hum.wav" },
     ],
   },
   {
     name: "雨天限定", owner: "Wren", intro: "只在下雨天更新",
     pieces: [
-      { title: "阳台上的一整场雨", kind: "环境音",     dur: 484 },
-      { title: "读了一段《海边的卡夫卡》", kind: "声音故事", dur: 390 },
+      { title: "阳台上的一整场雨", kind: "环境音",     src: "./assets/demo-audio/rain.wav" },
+      { title: "读了一段《海边的卡夫卡》", kind: "声音故事", src: "./assets/demo-audio/reading-room.wav" },
     ],
   },
   {
     name: "厨房迪斯科", owner: "Pomelo", intro: "一边做饭一边跳舞",
     pieces: [
-      { title: "边做饭边乱唱", kind: "自己哼的歌", dur: 170 },
-      { title: "今天菜市场好热闹", kind: "环境音",   dur: 250 },
+      { title: "边做饭边乱唱", kind: "自己哼的歌", src: "./assets/demo-audio/cooking-hum.wav" },
+      { title: "今天菜市场好热闹", kind: "环境音",   src: "./assets/demo-audio/market.wav" },
     ],
   },
 ];
