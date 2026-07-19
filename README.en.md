@@ -44,14 +44,6 @@ Hans Christian Andersen's papercutting art is the only visual reference — whit
 
 **Worth spelling out**: this code ships with a shared [Supabase](https://supabase.com) project already wired in as cloud storage, configured in `src/cloud-config.js` and deployed along with everything else. That means anyone opening this already-live site — you, or any friend who received your link — loads the exact same cloud config in their browser, and naturally shares the same database. If a friend who got your link wants to make their own station and generate their own share link, that just works too, with no extra setup on their end.
 
-The five steps below are only needed if you're copying this code wholesale and deploying it as a completely separate instance, disconnected from this site:
-
-1. Sign up for Supabase, create a new project (the free tier is fine)
-2. **Storage** on the left → new bucket, name it `stations`, check **Public**
-3. In project settings (Settings → API), copy the **Project URL** and the **anon public key**
-4. Copy [`src/cloud-config.example.js`](src/cloud-config.example.js) to `src/cloud-config.js` and fill in those two values
-5. Open "My Station" → **✉ Generate share link** → the link is copied automatically, send it to a friend
-
 Want to see what listen mode looks like locally first? Start the local server and visit `/?listen=http://localhost:5174/demo-station` (a test broadcast ships with the repo).
 
 > Note: please only share sound you actually own the rights to (self-recorded / original / freely shareable content). Links contain an unguessable random path — only whoever has the link can listen. Sharing one public key also means there's currently no per-person permission isolation — anyone who can open this site can, in principle, write to the same storage bucket. That's a reasonable tradeoff for small friend-circle sharing, but worth knowing.
@@ -73,4 +65,4 @@ npx serve . -l 5174
 
 ---
 
-Independent project, unrelated to THE 42 POST.
+All rights reserved, see [LICENSE](LICENSE). Independent project, unrelated to THE 42 POST.
