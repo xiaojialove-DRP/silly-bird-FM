@@ -32,11 +32,15 @@ body {
   background: #d7d3c8;   /* neutral desk — no color; transparent later in Tauri */
   -webkit-font-smoothing: antialiased;
 }
-/* in the desktop shell the window is sized around the card, not a big
-   browser viewport — centering would leave a gap between the card's own
-   titlebar and the real (native) draggable area at the window's physical
-   top, so the card sits flush against the top instead */
-html.in-tauri body { background: transparent; place-items: start center; }
+html.in-tauri body { background: transparent; }
+/* .win is position:fixed — it never participated in body's grid alignment
+   in the first place, its own top/left is what actually places it. In the
+   desktop shell the window is sized around the card, not a big browser
+   viewport, so pin it near the physical top instead of the ~60px offset
+   tuned for a spacious page (that offset is also where the real, native
+   draggable region lives — leaving it there stranded the card's own
+   titlebar in a spot the OS doesn't treat as draggable) */
+html.in-tauri #winMain { top: 4px; }
 /* paper-cut / print grain */
 body::after {
   content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 9999;
