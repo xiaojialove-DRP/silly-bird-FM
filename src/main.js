@@ -598,7 +598,10 @@ function makeDraggable(el, handle, onTap) {
 // but stayed confined to the window's own small bounds) — everywhere else
 // (a normal browser tab) keeps the original web-level card dragging.
 if (document.documentElement.classList.contains("in-tauri")) {
+  const diag = `in-tauri class: true, window.__TAURI__: ${typeof window.__TAURI__}, window.__TAURI__.core: ${typeof window.__TAURI__?.core}, dragMain found: ${!!$("dragMain")}`;
+  if (window.__TAURI__?.core?.invoke) window.__TAURI__.core.invoke("debug_log", { msg: diag });
   $("dragMain").addEventListener("mousedown", (e) => {
+    window.__TAURI__?.core?.invoke("debug_log", { msg: "mousedown on dragMain, target: " + e.target.tagName + "." + e.target.className });
     if (e.target.closest("button")) return;
     window.__TAURI__.core.invoke("start_drag");
   });
