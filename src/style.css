@@ -263,6 +263,11 @@ body::after {
 }
 .chsetup-upload:hover { background: rgba(0,0,0,.05); }
 .chsetup-upload.share { margin: 10px 0 0; }
+.chsetup-upload.danger {
+  margin-top: 8px; font-size: 10px; padding: 6px;
+  border-color: rgba(153,27,27,.5); color: rgba(153,27,27,.85);
+}
+.chsetup-upload.danger:hover { background: rgba(153,27,27,.08); border-color: #991b1b; color: #991b1b; }
 .chsetup-upload[disabled] { opacity: .5; cursor: wait; }
 
 /* two equal ways to add a program: a carefully-picked file, or a held-down moment */

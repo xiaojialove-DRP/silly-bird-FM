@@ -58,6 +58,7 @@ const recordOut = $("recordOut");
 const trackList = $("trackList"), trackCountLabel = $("trackCountLabel");
 const openShareBtn = $("openShareBtn"), shareBtn = $("shareBtn"), shareOut = $("shareOut");
 const shareLinkBox = $("shareLinkBox"), shareLinkText = $("shareLinkText"), copyLinkBtn = $("copyLinkBtn");
+const revokeShareBtn = $("revokeShareBtn");
 const swatches = [...document.querySelectorAll(".swatch")];
 const elTitle = $("title"), elKind = $("artist"), elDj = $("dj"), elDjWrap = $("djWrap"), elFreq = $("freq"), elSname = $("sname");
 const elCur = $("cur"), elDur = $("dur"), elFill = $("fill"), elBar = $("bar"), elCover = $("cover"), elVol = $("vol");
@@ -384,6 +385,46 @@ async function shareStation() {
   }
   shareBtn.disabled = false;
 }
+function cloudList(prefix) {
+  return fetch(`${CLOUD.url}/storage/v1/object/list/${CLOUD.bucket}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${CLOUD.anonKey}`, apikey: CLOUD.anonKey, "Content-Type": "application/json" },
+    body: JSON.stringify({ prefix, limit: 100 }),
+  }).then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); });
+}
+function cloudDelete(paths) {
+  return fetch(`${CLOUD.url}/storage/v1/object/${CLOUD.bucket}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${CLOUD.anonKey}`, apikey: CLOUD.anonKey, "Content-Type": "application/json" },
+    body: JSON.stringify({ prefixes: paths }),
+  }).then(async (r) => {
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const deleted = await r.json();
+    // Supabase answers 200 with an empty array (not a 403) when RLS blocks a
+    // delete — "asked to delete N, deleted 0" is the real failure signal here
+    if (paths.length && !deleted.length) throw new Error("云端拒绝了删除（缺少 delete 权限策略）");
+    return deleted;
+  });
+}
+async function revokeShare() {
+  if (!MY.shareToken) return;
+  if (!confirm("确定要撤回分享吗？之前发给朋友的链接会立刻失效，这一步做完无法恢复。")) return;
+  revokeShareBtn.disabled = true;
+  try {
+    const files = await cloudList(MY.shareToken);
+    if (files.length) await cloudDelete(files.map((f) => `${MY.shareToken}/${f.name}`));
+    MY.shareToken = null;
+    persistStationMeta();
+    renderShareLinkBox();
+    say("已撤回 · 之前的链接已经失效，再点「生成分享链接」会是一条全新的");
+  } catch (e) {
+    const unreachable = e instanceof TypeError;
+    say(unreachable
+      ? "撤回失败：连不上云端服务器，挂个 VPN 再试一次。"
+      : "撤回失败：" + (e && e.message ? e.message : e));
+  }
+  revokeShareBtn.disabled = false;
+}
 
 // ---- P1 · listen mode: ?listen=<public folder URL> tunes a friend's station ----
 async function loadGuestStation() {
@@ -534,6 +575,7 @@ copyLinkBtn.addEventListener("click", async () => {
   try { await navigator.clipboard.writeText(`${MY.name} 在等你收听\n${link}`); say("已复制"); }
   catch { say("复制失败，请手动选中上面的链接"); }
 });
+revokeShareBtn.addEventListener("click", revokeShare);
 
 swatches.forEach((s) => s.addEventListener("click", () => applyTheme(s.dataset.theme)));
 

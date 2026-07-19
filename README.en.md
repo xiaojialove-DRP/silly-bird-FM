@@ -25,12 +25,13 @@ Hans Christian Andersen's papercutting art is the only visual reference — whit
 - **Nothing lost on refresh**: uploaded tracks are saved in the browser's IndexedDB, still there next time you open it
 - **System media keys**: the play key on your keyboard or headset controls the bird directly (MediaSession)
 - **Fully offline-capable assets**: fonts and parsing libraries are all self-hosted, zero external CDN dependency, holds up on a weak connection
+- **Sharing is revocable**: sending a link isn't a one-way door — the station owner can delete the cloud content and kill an already-sent link at any time. The control stays with whoever shared it, not on an auto-destruct timer, and not gone for good the moment it's sent
 
 ## Sharing with a friend
 
 **Your friend doesn't need to install anything.** They open the link you sent, hit play, and they're listening — just like opening a normal webpage. No sign-up, no app, no need to know what's running underneath.
 
-**On your end (as the station owner)**, you only need to "power it on" once: your station (the audio files plus a station.json manifest) gets uploaded to your own cloud storage. After that, every time you click **✉ Generate share link** it updates the same `?listen=` link — your friend opens it and the bird tunes straight to your station and starts playing. Edit your station and click the button again, and the link you already sent updates in place — no need to send a new one.
+**On your end (as the station owner)**, you only need to "power it on" once: your station (the audio files plus a station.json manifest) gets uploaded to your own cloud storage. After that, every time you click **✉ Generate share link** it updates the same `?listen=` link — your friend opens it and the bird tunes straight to your station and starts playing. Edit your station and click the button again, and the link you already sent updates in place — no need to send a new one. Want it back? **Revoke share** on the share card deletes the cloud content entirely and kills the link immediately — this step can't be undone.
 
 **Worth spelling out**: this code ships with a shared [Supabase](https://supabase.com) project already wired in as cloud storage, configured in `src/cloud-config.js` and deployed along with everything else. That means anyone opening this already-live site — you, or any friend who received your link — loads the exact same cloud config in their browser, and naturally shares the same database. If a friend who got your link wants to make their own station and generate their own share link, that just works too, with no extra setup on their end.
 
