@@ -593,24 +593,11 @@ function makeDraggable(el, handle, onTap) {
   }, { passive: true });
   if (onTap) handle.addEventListener("click", () => { if (!moved) onTap(); moved = false; });
 }
-// in the Tauri shell, dragging #dragMain moves the actual OS window via a
-// custom Rust command (declarative data-tauri-drag-region tracked the mouse
-// but stayed confined to the window's own small bounds) — everywhere else
-// (a normal browser tab) keeps the original web-level card dragging.
-if (document.documentElement.classList.contains("in-tauri")) {
-  const ti = window.__TAURI_INTERNALS__;
-  const diag = `internals: ${typeof ti}, invoke: ${typeof ti?.invoke}, TAURI: ${typeof window.__TAURI__}, dragMain: ${!!$("dragMain")}, href: ${location.href}`;
-  const report = (msg) => {
-    try { ti.invoke("debug_log", { msg }).catch((err) => { try { ti.invoke("debug_log", { msg: "invoke rejected: " + JSON.stringify(err) }); } catch {} }); }
-    catch (err) { try { ti.invoke("debug_log", { msg: "invoke threw: " + err }); } catch {} }
-  };
-  if (ti?.invoke) report(diag);
-  $("dragMain").addEventListener("mousedown", (e) => {
-    if (ti?.invoke) report("mousedown on dragMain");
-    if (e.target.closest("button")) return;
-    if (ti?.invoke) ti.invoke("start_drag").catch((err) => report("start_drag rejected: " + JSON.stringify(err)));
-  });
-} else {
+// in the Tauri shell #dragMain is a native OS drag region (see index.html) —
+// wiring our own web-level drag on top of it fights the native one. The
+// window needs real decorations (macOS titleBarStyle: Overlay, not fully
+// undecorated) for native dragging to work at all — see project memory.
+if (!document.documentElement.classList.contains("in-tauri")) {
   makeDraggable(winMain, $("dragMain"));
 }
 makeDraggable(winStation, $("dragStation"));
