@@ -593,7 +593,9 @@ function makeDraggable(el, handle, onTap) {
   }, { passive: true });
   if (onTap) handle.addEventListener("click", () => { if (!moved) onTap(); moved = false; });
 }
-makeDraggable(winMain, $("dragMain"));
+// in the Tauri shell #dragMain is a native OS drag region (see index.html) —
+// wiring our own web-level drag on top of it would double-move the card
+if (!window.__TAURI_INTERNALS__) makeDraggable(winMain, $("dragMain"));
 makeDraggable(winStation, $("dragStation"));
 makeDraggable(winLook, $("dragLook"));
 makeDraggable(winShare, $("dragShare"));
