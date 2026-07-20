@@ -27,7 +27,7 @@ const I18N = {
     done: "完成", shareMyStation: "✉ 分享我的电台",
     look: "外观", interfaceColor: "界面颜色 · 你的偏好", volume: "音量",
     share: "分享", generateShareLink: "✉ 生成分享链接",
-    yourLink: "你的链接 · 编辑电台后再点一次生成即可更新", copyLink: "复制链接",
+    yourLink: "链接如下 · 每次编辑后再点一次生成即可更新", copyLink: "复制链接",
     revokeShare: "撤回分享 · 让这条链接失效",
     trackName: "节目名称", trackTag: "节目标签（可选）", remove: "移除",
     colorCrimson: "绛红", colorRust: "赤陶", colorOchre: "蜜赭", colorGreen: "墨绿",
@@ -43,7 +43,7 @@ const I18N = {
     uploading: (i, n) => `上传中 ${i} / ${n} …`,
     shareUpdated: "已更新 · 之前发过的链接会自动显示最新内容",
     shareCopied: "已复制 · 粘贴发给朋友就是一张分享卡",
-    copyFailedShowLink: (link) => `复制失败，链接在这里，手动发给朋友：\n${link}`,
+    copyFailedLinkBelow: "复制失败 · 链接就在下面，手动复制发给朋友",
     uploadFailedNetwork: "上传失败：连不上云端服务器。Supabase 是海外服务，国内网络偶尔连不稳——挂个 VPN 再点一次「生成分享链接」试试；已经开着 VPN 的话，换个节点再试一次。",
     uploadFailed: (msg) => `上传失败：${msg}`,
     waitingForYou: "在等你收听",
@@ -53,7 +53,7 @@ const I18N = {
     revokeFailedNetwork: "撤回失败：连不上云端服务器，挂个 VPN 再试一次。",
     revokeFailed: (msg) => `撤回失败：${msg}`,
     untitled: "未命名", friendsStation: "朋友的电台", friend: "朋友",
-    addTag: "＋ 标签", copied: "已复制", copyFailedSelect: "复制失败，请手动选中上面的链接",
+    addTag: "＋ 标签", copied: "✓ 已复制", copyFailedSelect: "复制失败，请手动选中上面的链接",
     saved: "✓ 已保存", micDenied: "没能打开麦克风 · 请检查浏览器/系统的麦克风权限",
     recordingTitle: (m, d, h, mi) => `录音 ${m}-${d} ${h}:${mi}`,
 
@@ -75,7 +75,7 @@ const I18N = {
     done: "Done", shareMyStation: "✉ Share my station",
     look: "Look", interfaceColor: "Interface color · your preference", volume: "Volume",
     share: "Share", generateShareLink: "✉ Generate share link",
-    yourLink: "Your link · edit the station, then click again to update it", copyLink: "Copy link",
+    yourLink: "Your link is below · edit anytime, then click generate again to update it", copyLink: "Copy link",
     revokeShare: "Revoke share · kill this link",
     trackName: "Track name", trackTag: "Track tag (optional)", remove: "Remove",
     colorCrimson: "Crimson", colorRust: "Rust", colorOchre: "Ochre", colorGreen: "Forest green",
@@ -91,7 +91,7 @@ const I18N = {
     uploading: (i, n) => `Uploading ${i} / ${n} …`,
     shareUpdated: "Updated · the link you already sent now shows the latest",
     shareCopied: "Copied · paste it to a friend and it's a share card",
-    copyFailedShowLink: (link) => `Copy failed — here's the link, send it manually:\n${link}`,
+    copyFailedLinkBelow: "Copy failed · the link is right below, copy it manually to send",
     uploadFailedNetwork: "Upload failed: can't reach the cloud server. Supabase is hosted overseas, so this can be flaky on some networks — try a VPN and click Generate share link again; if you're already on one, try a different node.",
     uploadFailed: (msg) => `Upload failed: ${msg}`,
     waitingForYou: "is waiting for you to listen",
@@ -101,7 +101,7 @@ const I18N = {
     revokeFailedNetwork: "Revoke failed: can't reach the cloud server, try a VPN and try again.",
     revokeFailed: (msg) => `Revoke failed: ${msg}`,
     untitled: "Untitled", friendsStation: "A friend's station", friend: "a friend",
-    addTag: "+ Tag", copied: "Copied", copyFailedSelect: "Copy failed, please select the link above manually",
+    addTag: "+ Tag", copied: "✓ Copied", copyFailedSelect: "Copy failed, please select the link above manually",
     saved: "✓ Saved", micDenied: "Couldn't open the mic · check your browser/system mic permission",
     recordingTitle: (m, d, h, mi) => `Recording ${m}/${d} ${h}:${mi}`,
 
@@ -537,7 +537,7 @@ async function shareStation() {
     const gift = `${MY.name} ${t("waitingForYou")}\n${link}`;
     const successMsg = isUpdate ? t("shareUpdated") : t("shareCopied");
     try { await navigator.clipboard.writeText(gift); say(successMsg); }
-    catch { say(t("copyFailedShowLink", link)); }
+    catch { say(t("copyFailedLinkBelow")); }
   } catch (e) {
     // fetch() only rejects with a TypeError when the request never got a response at
     // all (DNS/connection/CORS-level failure) — Safari says "Load failed", Chrome says
@@ -736,8 +736,15 @@ lookClose.addEventListener("click", () => (winLook.hidden = true));
 shareClose.addEventListener("click", () => (winShare.hidden = true));
 copyLinkBtn.addEventListener("click", async () => {
   const link = shareLinkText.textContent;
-  try { await navigator.clipboard.writeText(`${MY.name} ${t("waitingForYou")}\n${link}`); say(t("copied")); }
-  catch { say(t("copyFailedSelect")); }
+  try {
+    await navigator.clipboard.writeText(`${MY.name} ${t("waitingForYou")}\n${link}`);
+    // feedback lives on the button itself, not a separate floating message —
+    // it's right where the user is already looking
+    const original = copyLinkBtn.textContent;
+    copyLinkBtn.textContent = t("copied");
+    copyLinkBtn.disabled = true;
+    setTimeout(() => { copyLinkBtn.textContent = original; copyLinkBtn.disabled = false; }, 1100);
+  } catch { say(t("copyFailedSelect")); }
 });
 revokeShareBtn.addEventListener("click", revokeShare);
 
