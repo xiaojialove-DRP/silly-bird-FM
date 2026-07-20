@@ -115,8 +115,8 @@ const I18N = {
     demo3T1: "Singing badly while cooking", demo3T2: "The market was lively today",
   },
 };
-let lang = "zh";
-try { lang = localStorage.getItem("sbfm-lang") === "en" ? "en" : "zh"; } catch {}
+let lang = "en";
+try { lang = localStorage.getItem("sbfm-lang") === "zh" ? "zh" : "en"; } catch {}
 function t(key, ...args) {
   const entry = (I18N[lang] && I18N[lang][key] !== undefined) ? I18N[lang][key] : I18N.zh[key];
   return typeof entry === "function" ? entry(...args) : entry;
@@ -932,6 +932,11 @@ makeDraggable(perch, perch, () => sbfm.classList.remove("collapsed"));
 
 // ---- boot ----
 (async function boot() {
+  // static chrome translates synchronously, before any async work below, so a
+  // default-English visitor never sees a flash of the Chinese fallback text
+  // authored in index.html
+  applyStaticI18n();
+  document.documentElement.lang = lang === "en" ? "en" : "zh";
   // screenshot helper first (synchronous): ?shot=main|station|look isolates one window at 20,20
   const shot = new URLSearchParams(location.search).get("shot");
   if (shot) {
