@@ -29,6 +29,7 @@ const I18N = {
     share: "分享", generateShareLink: "✉ 生成分享链接",
     yourLink: "链接如下 · 每次编辑后再点一次生成即可更新", copyLink: "复制链接",
     revokeShare: "撤回分享 · 让这条链接失效",
+    sendStamp: "寄一枚邮票", stampsReceived: "收到的邮票",
     trackName: "节目名称", trackTag: "节目标签（可选）", remove: "移除",
     colorCrimson: "绛红", colorRust: "赤陶", colorOchre: "蜜赭", colorGreen: "墨绿",
     colorBlue: "蓝", colorPlum: "梅紫", colorBlack: "黑",
@@ -77,6 +78,7 @@ const I18N = {
     share: "Share", generateShareLink: "✉ Generate share link",
     yourLink: "Your link is below · edit anytime, then click generate again to update it", copyLink: "Copy link",
     revokeShare: "Revoke share · kill this link",
+    sendStamp: "Send a stamp", stampsReceived: "Stamps received",
     trackName: "Track name", trackTag: "Track tag (optional)", remove: "Remove",
     colorCrimson: "Crimson", colorRust: "Rust", colorOchre: "Ochre", colorGreen: "Forest green",
     colorBlue: "Blue", colorPlum: "Plum", colorBlack: "Black",
@@ -209,6 +211,8 @@ const trackList = $("trackList"), trackCountLabel = $("trackCountLabel");
 const openShareBtn = $("openShareBtn"), shareBtn = $("shareBtn"), shareOut = $("shareOut");
 const shareLinkBox = $("shareLinkBox"), shareLinkText = $("shareLinkText"), copyLinkBtn = $("copyLinkBtn");
 const revokeShareBtn = $("revokeShareBtn");
+const stampBtn = $("stampBtn");
+const stampsBox = $("stampsBox"), stampsGrid = $("stampsGrid");
 const swatches = [...document.querySelectorAll(".swatch")];
 const elTitle = $("title"), elKind = $("artist"), elDj = $("dj"), elDjWrap = $("djWrap"), elFreq = $("freq"), elSname = $("sname");
 const elCur = $("cur"), elDur = $("dur"), elFill = $("fill"), elBar = $("bar"), elCover = $("cover"), elVol = $("vol");
@@ -283,6 +287,7 @@ function renderChannel() {
   elTagline.textContent = text;
   elTagline.hidden = !text;
   renderPiece();
+  updateStampButton();
 }
 function renderPiece() {
   const p = piece();
@@ -327,7 +332,7 @@ function wireMediaSession() {
 // real audio drives progress for imported tracks
 audio.addEventListener("timeupdate", () => { if (hasAudio()) { cur = audio.currentTime; updateProgress(); } });
 audio.addEventListener("loadedmetadata", () => { if (hasAudio()) updateProgress(); });
-audio.addEventListener("ended", () => next());
+audio.addEventListener("ended", () => { markListened(); next(); });
 
 // demo tracks (no src) use a fake timer so the placeholder still animates
 function tick(ts) {
@@ -577,6 +582,11 @@ async function revokeShare() {
   try {
     const files = await cloudList(MY.shareToken);
     if (files.length) await cloudDelete(files.map((f) => `${MY.shareToken}/${f.name}`));
+    // cloudList() only lists one folder level, so any stamps/ subfolder needs its
+    // own separate list+delete pass — otherwise "revoke deletes everything" would
+    // quietly leave stamp files behind
+    const stamps = await cloudList(`${MY.shareToken}/stamps`);
+    if (stamps.length) await cloudDelete(stamps.map((f) => `${MY.shareToken}/stamps/${f.name}`));
     MY.shareToken = null;
     persistStationMeta();
     renderShareLinkBox();
@@ -602,11 +612,98 @@ async function loadGuestStation() {
       src: /^(data|https?):/.test(p.file) ? p.file : `${base}/${p.file}`,
     }));
     if (!pieces.length) return;
-    const ch = { name: st.name || t("friendsStation"), owner: st.owner || st.name || t("friend"), intro: st.intro || "", guest: true, pieces };
+    // the last path segment of the public read URL is the same folder token
+    // cloudPut() writes under — reused below to file a listen stamp
+    const ch = {
+      name: st.name || t("friendsStation"), owner: st.owner || st.name || t("friend"), intro: st.intro || "",
+      guest: true, pieces, stampToken: base.split("/").pop(),
+    };
     CHANNELS.unshift(ch);
     ci = 0; pi = 0;
     renderChannel();
   } catch (e) { console.warn("listen link failed:", e); }
+}
+
+// ---- P1.5 · listen stamps: an opt-in, once-a-day postcard a listener can send after
+// hearing every track in a friend's station — never auto-reported, never counted on
+// screen anywhere, just a little collection the owner finds when they open Share.
+// One stamp = one near-empty file whose NAME carries the date + the listener's own
+// theme color, so reading the collection back is a single list() call, no per-file
+// fetch needed. ----
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+const stampThrottleKey = (token) => `sbfm-stamp-${token}`;
+function alreadyStampedToday(token) {
+  try { return localStorage.getItem(stampThrottleKey(token)) === todayStr(); } catch { return false; }
+}
+function markListened() {
+  const ch = channel();
+  if (!ch.guest) return;
+  if (!ch.listenedSet) ch.listenedSet = new Set();
+  ch.listenedSet.add(pi);
+  updateStampButton();
+}
+function updateStampButton() {
+  const ch = channel();
+  // classList.toggle(cls, force) treats an explicit `undefined` as "no force
+  // argument" (WebIDL optional-boolean rule) and does a real toggle instead of a
+  // set — these have to land on an actual true/false, not a short-circuited undefined
+  const heardAll = !!(ch.guest && ch.listenedSet && ch.listenedSet.size >= ch.pieces.length);
+  const show = !!(heardAll && ch.stampToken && !alreadyStampedToday(ch.stampToken));
+  stampBtn.hidden = false;   // toggling [hidden] would cut off the fade-out transition
+  stampBtn.classList.toggle("show", show);
+  if (!show) setTimeout(() => { if (!stampBtn.classList.contains("show")) stampBtn.hidden = true; }, 320);
+}
+function sendStamp() {
+  const ch = channel();
+  const token = ch.stampToken;
+  if (!token || stampBtn.disabled) return;
+  stampBtn.disabled = true;
+  stampBtn.classList.add("stamping");   // the press-and-ink motion — no text state needed, the stamp IS the confirmation
+  const color = currentTheme();
+  const fname = `${todayStr()}_${color}_${Math.random().toString(36).slice(2, 8)}.json`;
+  cloudPut(`${token}/stamps/${fname}`, new Blob(["{}"], { type: "application/json" }))
+    .then(() => { try { localStorage.setItem(stampThrottleKey(token), todayStr()); } catch {} })
+    .catch((e) => console.warn("stamp failed to send:", e));   // opt-in and low-stakes — fail quietly, no error UI
+  setTimeout(() => {
+    stampBtn.classList.remove("stamping");
+    stampBtn.classList.remove("show");   // stamped and sent off — scales back out of the corner
+    setTimeout(() => { stampBtn.hidden = true; stampBtn.disabled = false; }, 380);
+  }, 500);
+}
+function stampChipHtml(color, date) {
+  const hex = document.querySelector(`.swatch[data-theme="${color}"]`)?.style.getPropertyValue("--sw") || "var(--ink)";
+  return `
+    <div class="stamp-chip" style="--sw:${esc(hex)}">
+      <span class="stamp-badge">
+        <svg class="stamp-bird" viewBox="0 0 200 172" aria-hidden="true">
+          <path class="silh2" d="M64 96 L22 82 L38 100 L18 108 L40 116 L24 134 L66 120 Z" />
+          <ellipse class="silh2" cx="94" cy="104" rx="44" ry="40" />
+          <circle class="silh2" cx="126" cy="64" r="26" />
+          <path class="silh2" d="M148 62 L170 67 L148 75 Z" />
+          <path class="chirp" d="M174 61 Q181 68 174 75 M182 56 Q192 68 182 80" />
+          <path class="cut" d="M90 96 C85 87 72 90 75 101 C77 111 90 120 90 120 C90 120 103 111 105 101 C108 90 95 87 90 96 Z" />
+        </svg>
+      </span>
+      <span class="stamp-date">${esc(date)}</span>
+    </div>`;
+}
+async function loadStamps() {
+  if (!MY.shareToken) { stampsBox.hidden = true; return; }
+  try {
+    const files = await cloudList(`${MY.shareToken}/stamps`);
+    if (!files.length) { stampsBox.hidden = true; return; }
+    const stamps = files
+      .map((f) => { const [date, color] = f.name.split("_"); return { date, color: color || "blue" }; })
+      .sort((a, b) => (a.date < b.date ? 1 : -1));   // newest first
+    stampsGrid.innerHTML = stamps.map((s) => stampChipHtml(s.color, s.date)).join("");
+    stampsBox.hidden = false;
+  } catch (e) {
+    console.warn("loading stamps failed:", e);
+    stampsBox.hidden = true;
+  }
 }
 
 // ---- transport wiring ----
@@ -729,6 +826,7 @@ langBtn.addEventListener("mousedown", (e) => e.stopPropagation());
 langBtn.addEventListener("click", () => setLang(lang === "zh" ? "en" : "zh"));
 openShareBtn.addEventListener("click", () => {
   renderShareLinkBox();
+  loadStamps();
   toggleWin(winShare, () => winStation.getBoundingClientRect().top, winStation);
 });
 stationClose.addEventListener("click", () => { stopRecording(); winStation.hidden = true; });
@@ -747,6 +845,7 @@ copyLinkBtn.addEventListener("click", async () => {
   } catch { say(t("copyFailedSelect")); }
 });
 revokeShareBtn.addEventListener("click", revokeShare);
+stampBtn.addEventListener("click", sendStamp);
 
 swatches.forEach((s) => s.addEventListener("click", () => applyTheme(s.dataset.theme)));
 

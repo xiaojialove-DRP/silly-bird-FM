@@ -143,6 +143,21 @@
           </button>
           <button class="btn" id="next" aria-label="next"><svg viewBox="0 0 24 24"><path d="M17 6v12M5 6l10 6L5 18z"/></svg></button>
         </div>
+
+        <!-- earned, not pushed: a little postmark stamped into the corner, appearing
+             only once every track in a friend's station has actually played through
+             once this session. icon-only on purpose — a postmark doesn't carry copy -->
+        <button class="stamp-cta" id="stampBtn" hidden data-i18n-aria="sendStamp" data-i18n-title="sendStamp" aria-label="寄一枚邮票" title="寄一枚邮票">
+          <svg class="stamp-bird" viewBox="0 0 200 172" aria-hidden="true">
+            <path class="silh2" d="M64 96 L22 82 L38 100 L18 108 L40 116 L24 134 L66 120 Z" />
+            <ellipse class="silh2" cx="94" cy="104" rx="44" ry="40" />
+            <circle class="silh2" cx="126" cy="64" r="26" />
+            <path class="silh2" d="M148 62 L170 67 L148 75 Z" />
+            <path class="chirp" d="M174 61 Q181 68 174 75 M182 56 Q192 68 182 80" />
+            <path class="cut" d="M90 96 C85 87 72 90 75 101 C77 111 90 120 90 120 C90 120 103 111 105 101 C108 90 95 87 90 96 Z" />
+            <path class="scallop" d="M70 110 q9 7 18 1 M70 120 q9 7 18 1" />
+          </svg>
+        </button>
       </section>
     </div>
 
@@ -219,6 +234,10 @@
             <div class="share-link-text" id="shareLinkText"></div>
             <button class="chsetup-upload" id="copyLinkBtn" data-i18n="copyLink">复制链接</button>
             <button class="chsetup-upload danger" id="revokeShareBtn" data-i18n="revokeShare">撤回分享 · 让这条链接失效</button>
+            <div class="stamps-box" id="stampsBox" hidden>
+              <div class="chsetup-label" data-i18n="stampsReceived">收到的邮票</div>
+              <div class="stamps-grid" id="stampsGrid"></div>
+            </div>
           </div>
         </div>
       </section>

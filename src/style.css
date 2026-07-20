@@ -88,6 +88,7 @@ body::after {
 
 /* ---------- papercut cards: the radio + the two panels ---------- */
 .radio, .panel {
+  position: relative;
   width: 276px;
   background: var(--paper);
   border: 2.5px solid var(--ink);
@@ -290,6 +291,46 @@ body::after {
   font-family: "Space Mono", monospace; font-size: 9.5px; line-height: 1.5; color: var(--ink);
   word-break: break-all; padding: 8px; margin-bottom: 8px;
   border: 1.5px dotted rgba(0,0,0,.3); border-radius: 6px; max-height: 72px; overflow-y: auto;
+}
+
+/* ---------- listen stamps: earned, opt-in, never counted ---------- */
+/* the CTA is a postmark, not a button with a label — round, inked, stamped into
+   the corner of the card itself once it's been earned */
+.stamp-cta {
+  position: absolute; right: 10px; bottom: 10px; z-index: 3;
+  width: 46px; height: 46px; padding: 0; border-radius: 50%;
+  border: 2px dashed var(--paper); background: var(--night);
+  display: grid; place-items: center; cursor: pointer;
+  box-shadow: 0 2px 7px rgba(0,0,0,.28);
+  transform: scale(0) rotate(-14deg); opacity: 0;
+  transition: transform .38s cubic-bezier(.34,1.56,.64,1), opacity .25s ease;
+}
+.stamp-cta[hidden] { display: none; }
+.stamp-cta.show { transform: scale(1) rotate(-8deg); opacity: 1; }
+.stamp-cta[disabled] { cursor: default; }
+.stamp-bird { width: 20px; height: 17px; overflow: visible; }
+.stamp-cta.stamping { animation: stampHit .3s ease; }
+@keyframes stampHit {
+  0%   { transform: scale(1) rotate(-8deg); }
+  45%  { transform: scale(.8) rotate(4deg); }
+  100% { transform: scale(1) rotate(-8deg); }
+}
+
+.stamps-box { margin-top: 14px; }
+.stamps-box[hidden] { display: none; }
+.stamps-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.stamp-chip {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  width: 44px; padding: 6px 4px; border: 1.5px dashed var(--sw); border-radius: 6px;
+}
+.stamp-chip .stamp-badge { width: 22px; height: 22px; background: var(--sw); border-radius: 5px; }
+.stamp-chip .stamp-bird { width: 17px; height: 14px; }
+.stamp-chip .stamp-bird .silh2 { fill: var(--paper); }
+.stamp-chip .stamp-bird .cut { fill: var(--sw); }
+.stamp-chip .stamp-bird .chirp { stroke: var(--paper); }
+.stamp-chip .stamp-date {
+  font-family: "Space Mono", monospace; font-size: 7.5px; color: var(--sw); opacity: .85; text-align: center;
+  white-space: nowrap;
 }
 
 /* the "did it actually work" list — every track you've added to your own station */
