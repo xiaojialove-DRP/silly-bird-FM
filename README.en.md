@@ -42,10 +42,10 @@ If a friend who got your link wants to make their own station and generate their
 
 ## Roadmap
 
-1. ~~Player + papercut aesthetic~~ · ~~Real playback and persistence~~ · ~~Share links~~ (done)
+1. ~~Player + papercut aesthetic~~ · ~~Real playback and persistence~~ · ~~Share links~~ · ~~Listening-receipt stamps~~ (done)
 2. **Real friend-testing, in progress** — already getting real feedback, still refining
-3. **Going desktop** — wrapped in Tauri: always-on-top, tray icon, transparent background, launch at login
-4. **Ritual layer** — a listening-receipt stamp, a weekly channel-swap day
+3. **More ritual layer** — a weekly channel-swap day
+4. **Going desktop (no rush)** — wrapped in Tauri: always-on-top, tray icon, transparent background, launch at login; there's no hurry until more friends have tried it and genuinely like it
 
 ## Running locally
 
