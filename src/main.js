@@ -10,11 +10,122 @@ window.__SBFM = "p0p1";
 // ---- cloud config lives in src/cloud-config.js (gitignored; copy cloud-config.example.js) ----
 const CLOUD = window.SBFM_CLOUD || { url: "", anonKey: "", bucket: "stations" };
 
-const PLACEHOLDER = { title: "还没有节目", kind: "点上面创建电台", dur: 0, placeholder: true };
+// ---- i18n: one-click 中文/EN toggle for the app's own copy (labels, messages, demo
+// content). A real user's own station name/intro/track titles, or a friend's shared
+// station content, are never routed through this — that's someone's own words, not
+// ours to translate. lang is read synchronously so it's ready before CHANNELS below
+// (the demo stations' first render) is built. ----
+const I18N = {
+  zh: {
+    openApp: "打开 silly bird fm", lookVolume: "外观与音量", collapseToBird: "收回成小鸟",
+    dropHint: "松手 · 放进小鸟的电台 ♪", openMyStation: "打开我的电台",
+    myStation: "我的电台", me: "我", close: "关闭",
+    stationName: "电台名", stationNamePlaceholder: "给你的电台取个名字",
+    stationIntro: "一句话介绍", stationIntroPlaceholder: "比如：睡不着的夜里，说给你听",
+    programs: "节目", programsCount: (n, max) => `节目 · ${n}/${max}`,
+    uploadAudio: "⊕ 上传音频", holdToRecord: "● 按住录音", releaseToFinish: "松开完成",
+    done: "完成", shareMyStation: "✉ 分享我的电台",
+    look: "外观", interfaceColor: "界面颜色 · 你的偏好", volume: "音量",
+    share: "分享", generateShareLink: "✉ 生成分享链接",
+    yourLink: "你的链接 · 编辑电台后再点一次生成即可更新", copyLink: "复制链接",
+    revokeShare: "撤回分享 · 让这条链接失效",
+    trackName: "节目名称", trackTag: "节目标签（可选）", remove: "移除",
+    colorCrimson: "绛红", colorRust: "赤陶", colorOchre: "蜜赭", colorGreen: "墨绿",
+    colorBlue: "蓝", colorPlum: "梅紫", colorBlack: "黑",
+
+    noProgramsYet: "还没有节目", tapAboveToCreate: "点上面创建电台",
+    inviteMakeYourOwn: "＋ 邀请你也做一个自己的电台", tuneListenFriend: "◁ ▷ 先听听朋友的电台",
+    stationFull: (n) => `电台已经满了（最多 ${n} 首）· 删掉一首再加新的`,
+    stationFullRecord: (n) => `电台已经满了（最多 ${n} 首）· 删掉一首再录新的`,
+    stationFullTrim: (n, used) => `电台最多 ${n} 首 · 这次加了前 ${used} 首，其余没加`,
+    dropOrUploadFirst: "先拖入或上传至少一段声音",
+    cloudNotConfigured: "还没配置云端 · 打开 src/main.js 顶部 CLOUD，照 README「分享」两分钟填好",
+    uploading: (i, n) => `上传中 ${i} / ${n} …`,
+    shareUpdated: "已更新 · 之前发过的链接会自动显示最新内容",
+    shareCopied: "已复制 · 粘贴发给朋友就是一张分享卡",
+    copyFailedShowLink: (link) => `复制失败，链接在这里，手动发给朋友：\n${link}`,
+    uploadFailedNetwork: "上传失败：连不上云端服务器。Supabase 是海外服务，国内网络偶尔连不稳——挂个 VPN 再点一次「生成分享链接」试试；已经开着 VPN 的话，换个节点再试一次。",
+    uploadFailed: (msg) => `上传失败：${msg}`,
+    waitingForYou: "在等你收听",
+    cloudDeleteBlocked: "云端拒绝了删除（缺少 delete 权限策略）",
+    confirmRevoke: "确定要撤回分享吗？之前发给朋友的链接会立刻失效，这一步做完无法恢复。",
+    revoked: "已撤回 · 之前的链接已经失效，再点「生成分享链接」会是一条全新的",
+    revokeFailedNetwork: "撤回失败：连不上云端服务器，挂个 VPN 再试一次。",
+    revokeFailed: (msg) => `撤回失败：${msg}`,
+    untitled: "未命名", friendsStation: "朋友的电台", friend: "朋友",
+    addTag: "＋ 标签", copied: "已复制", copyFailedSelect: "复制失败，请手动选中上面的链接",
+    saved: "✓ 已保存", micDenied: "没能打开麦克风 · 请检查浏览器/系统的麦克风权限",
+    recordingTitle: (m, d, h, mi) => `录音 ${m}-${d} ${h}:${mi}`,
+
+    demo1Name: "深夜胡思乱想", demo1Owner: "小佳", demo1Intro: "睡不着的夜里，说给你听",
+    demo1T1: "写代码写到凌晨三点", demo1T2: "最近单曲循环，哼给你听", demo1T3: "楼下便利店的白噪音",
+    demo2Name: "雨天限定", demo2Owner: "Wren", demo2Intro: "只在下雨天更新",
+    demo2T1: "阳台上的一整场雨", demo2T2: "读了一段《海边的卡夫卡》",
+    demo3Name: "厨房迪斯科", demo3Owner: "Pomelo", demo3Intro: "一边做饭一边跳舞",
+    demo3T1: "边做饭边乱唱", demo3T2: "今天菜市场好热闹",
+  },
+  en: {
+    openApp: "Open silly bird fm", lookVolume: "Look & volume", collapseToBird: "Collapse to bird",
+    dropHint: "Let go · into the bird's station ♪", openMyStation: "Open my station",
+    myStation: "My Station", me: "Me", close: "Close",
+    stationName: "Station name", stationNamePlaceholder: "Give your station a name",
+    stationIntro: "One-line intro", stationIntroPlaceholder: "e.g. Can't sleep, telling you about it",
+    programs: "Programs", programsCount: (n, max) => `Programs · ${n}/${max}`,
+    uploadAudio: "⊕ Upload audio", holdToRecord: "● Hold to record", releaseToFinish: "Release when done",
+    done: "Done", shareMyStation: "✉ Share my station",
+    look: "Look", interfaceColor: "Interface color · your preference", volume: "Volume",
+    share: "Share", generateShareLink: "✉ Generate share link",
+    yourLink: "Your link · edit the station, then click again to update it", copyLink: "Copy link",
+    revokeShare: "Revoke share · kill this link",
+    trackName: "Track name", trackTag: "Track tag (optional)", remove: "Remove",
+    colorCrimson: "Crimson", colorRust: "Rust", colorOchre: "Ochre", colorGreen: "Forest green",
+    colorBlue: "Blue", colorPlum: "Plum", colorBlack: "Black",
+
+    noProgramsYet: "No programs yet", tapAboveToCreate: "Tap above to create your station",
+    inviteMakeYourOwn: "＋ Make one of your own", tuneListenFriend: "◁ ▷ Listen to a friend's station first",
+    stationFull: (n) => `Station's full (max ${n}) · remove one to add another`,
+    stationFullRecord: (n) => `Station's full (max ${n}) · remove one to record another`,
+    stationFullTrim: (n, used) => `Max ${n} tracks per station · added the first ${used} this time, the rest didn't fit`,
+    dropOrUploadFirst: "Drop in or upload at least one sound first",
+    cloudNotConfigured: "Cloud isn't set up yet · open CLOUD at the top of src/main.js and follow the README's Sharing section, two minutes",
+    uploading: (i, n) => `Uploading ${i} / ${n} …`,
+    shareUpdated: "Updated · the link you already sent now shows the latest",
+    shareCopied: "Copied · paste it to a friend and it's a share card",
+    copyFailedShowLink: (link) => `Copy failed — here's the link, send it manually:\n${link}`,
+    uploadFailedNetwork: "Upload failed: can't reach the cloud server. Supabase is hosted overseas, so this can be flaky on some networks — try a VPN and click Generate share link again; if you're already on one, try a different node.",
+    uploadFailed: (msg) => `Upload failed: ${msg}`,
+    waitingForYou: "is waiting for you to listen",
+    cloudDeleteBlocked: "Cloud rejected the delete (missing a delete policy)",
+    confirmRevoke: "Revoke this share? The link you already sent will stop working immediately — this can't be undone.",
+    revoked: "Revoked · the old link no longer works. Click Generate share link again for a brand new one.",
+    revokeFailedNetwork: "Revoke failed: can't reach the cloud server, try a VPN and try again.",
+    revokeFailed: (msg) => `Revoke failed: ${msg}`,
+    untitled: "Untitled", friendsStation: "A friend's station", friend: "a friend",
+    addTag: "+ Tag", copied: "Copied", copyFailedSelect: "Copy failed, please select the link above manually",
+    saved: "✓ Saved", micDenied: "Couldn't open the mic · check your browser/system mic permission",
+    recordingTitle: (m, d, h, mi) => `Recording ${m}/${d} ${h}:${mi}`,
+
+    demo1Name: "Late Night Overthinking", demo1Owner: "Xiaojia", demo1Intro: "Can't sleep, telling you about it",
+    demo1T1: "Coding till 3am", demo1T2: "On repeat lately, humming it for you", demo1T3: "White noise from the corner store",
+    demo2Name: "Rainy Days Only", demo2Owner: "Wren", demo2Intro: "Only updates when it rains",
+    demo2T1: "A whole rainstorm from the balcony", demo2T2: "Read a bit of Kafka on the Shore",
+    demo3Name: "Kitchen Disco", demo3Owner: "Pomelo", demo3Intro: "Cooking and dancing at the same time",
+    demo3T1: "Singing badly while cooking", demo3T2: "The market was lively today",
+  },
+};
+let lang = "zh";
+try { lang = localStorage.getItem("sbfm-lang") === "en" ? "en" : "zh"; } catch {}
+function t(key, ...args) {
+  const entry = (I18N[lang] && I18N[lang][key] !== undefined) ? I18N[lang][key] : I18N.zh[key];
+  return typeof entry === "function" ? entry(...args) : entry;
+}
+
+const PLACEHOLDER = () => ({ title: t("noProgramsYet"), kind: t("tapAboveToCreate"), dur: 0, placeholder: true });
 
 const CHANNELS = [
-  { name: "我的电台", owner: "我", intro: "", mine: true, pieces: [{ ...PLACEHOLDER }] },
+  { name: t("myStation"), owner: t("me"), intro: "", mine: true, pieces: [PLACEHOLDER()] },
   {
+    demoKey: "demo1", freqKey: "深夜胡思乱想",
     name: "深夜胡思乱想", owner: "小佳", intro: "睡不着的夜里，说给你听",
     pieces: [
       { title: "写代码写到凌晨三点", kind: "声音故事",   src: "./assets/demo-audio/night-coding.wav" },
@@ -23,6 +134,7 @@ const CHANNELS = [
     ],
   },
   {
+    demoKey: "demo2", freqKey: "雨天限定",
     name: "雨天限定", owner: "Wren", intro: "只在下雨天更新",
     pieces: [
       { title: "阳台上的一整场雨", kind: "环境音",     src: "./assets/demo-audio/rain.wav" },
@@ -30,6 +142,7 @@ const CHANNELS = [
     ],
   },
   {
+    demoKey: "demo3", freqKey: "厨房迪斯科",
     name: "厨房迪斯科", owner: "Pomelo", intro: "一边做饭一边跳舞",
     pieces: [
       { title: "边做饭边乱唱", kind: "自己哼的歌", src: "./assets/demo-audio/cooking-hum.wav" },
@@ -38,6 +151,43 @@ const CHANNELS = [
   },
 ];
 const MY = CHANNELS[0];
+function applyDemoLang() {
+  CHANNELS.forEach((ch) => {
+    if (!ch.demoKey) return;
+    ch.name = t(`${ch.demoKey}Name`); ch.owner = t(`${ch.demoKey}Owner`); ch.intro = t(`${ch.demoKey}Intro`);
+    ch.pieces.forEach((p, i) => { p.title = t(`${ch.demoKey}T${i + 1}`); });
+  });
+}
+function applyStaticI18n() {
+  document.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => { el.placeholder = t(el.dataset.i18nPlaceholder); });
+  document.querySelectorAll("[data-i18n-title]").forEach((el) => { el.title = t(el.dataset.i18nTitle); });
+  document.querySelectorAll("[data-i18n-aria]").forEach((el) => { el.setAttribute("aria-label", t(el.dataset.i18nAria)); });
+}
+function paintLangBtn() {
+  if (!langBtn) return;
+  langBtn.textContent = lang === "zh" ? "EN" : "中";
+  langBtn.title = lang === "zh" ? "Switch to English" : "切换到中文";
+}
+// re-renders everything that carries app copy — demo stations, static chrome, the
+// current dial/track-list/share-box — without touching a real user's own station
+// name/intro/track titles or a guest's shared content
+function setLang(l) {
+  lang = l === "en" ? "en" : "zh";
+  try { localStorage.setItem("sbfm-lang", lang); } catch {}
+  document.documentElement.lang = lang === "en" ? "en" : "zh";
+  applyDemoLang();
+  MY.pieces.forEach((p) => { if (p.placeholder) Object.assign(p, PLACEHOLDER()); });
+  if (!MY.created) {
+    MY.name = t("myStation"); MY.owner = t("me");
+    if (!winStation.hidden) { chNameInput.value = MY.name; chIntroInput.value = MY.intro; }
+  }
+  applyStaticI18n();
+  renderChannel();
+  renderTrackList();
+  renderShareLinkBox();
+  paintLangBtn();
+}
 
 // ---- state ----
 let ci = 0, pi = 0, playing = false, cur = 0, raf = null, lastTs = 0;
@@ -50,7 +200,7 @@ const $ = (id) => document.getElementById(id);
 const sbfm = $("sbfm"), perch = $("perch"), filepick = $("filepick");
 const winMain = $("winMain"), winStation = $("winStation"), winLook = $("winLook"), winShare = $("winShare");
 const player = $("player"), screenEl = document.querySelector(".screen");
-const minBtn = $("min"), lookBtn = $("lookBtn"), stationClose = $("stationClose"), lookClose = $("lookClose"), shareClose = $("shareClose");
+const minBtn = $("min"), lookBtn = $("lookBtn"), langBtn = $("langBtn"), stationClose = $("stationClose"), lookClose = $("lookClose"), shareClose = $("shareClose");
 const dialMid = $("dialMid"), elTagline = $("tagline");
 const chNameInput = $("chNameInput"), chIntroInput = $("chIntroInput"), chUpload = $("chUpload"), stationSave = $("stationSave");
 const recordBtn = $("recordBtn"), recordIdle = document.querySelector(".record-idle"), recordLive = document.querySelector(".record-live"), recordTime = document.querySelector(".record-time");
@@ -123,13 +273,13 @@ function stationFreq(name) {
 function renderChannel() {
   const ch = channel();
   const isCta = !!ch.mine && !MY.created;   // fresh users see an invitation, not a name
-  elFreq.textContent = isCta ? "★" : stationFreq(ch.name);
-  elSname.textContent = isCta ? "＋ 邀请你也做一个自己的电台" : ch.name;
+  elFreq.textContent = isCta ? "★" : stationFreq(ch.freqKey || ch.name);
+  elSname.textContent = isCta ? t("inviteMakeYourOwn") : ch.name;
   dialMid.classList.toggle("cta", isCta);
   elDj.textContent = ch.owner || ch.name;
   // on the empty CTA slot, the tagline line doubles as a legend for the ◁▷ tune
   // buttons flanking it above — otherwise they read as acting on the CTA text itself
-  const text = isCta ? "◁ ▷ 先听听朋友的电台" : (ch.intro || "");
+  const text = isCta ? t("tuneListenFriend") : (ch.intro || "");
   elTagline.textContent = text;
   elTagline.hidden = !text;
   renderPiece();
@@ -138,7 +288,7 @@ function renderPiece() {
   const p = piece();
   if (!p) return;
   elTitle.textContent = p.title;
-  elKind.textContent = p.artist || p.kind || channel().name || "";
+  elKind.textContent = p.artist || kindText(p.kind) || channel().name || "";
   elDjWrap.hidden = !!p.placeholder;   // the "· owner" byline doesn't belong on an empty-state hint
   if (p.cover) { elCover.style.backgroundImage = `url("${p.cover}")`; elCover.classList.add("show"); }
   else { elCover.style.backgroundImage = ""; elCover.classList.remove("show"); }
@@ -162,7 +312,7 @@ function syncMediaSession() {
   try {
     navigator.mediaSession.metadata = new MediaMetadata({
       title: p.title || "",
-      artist: p.artist || p.kind || "",
+      artist: p.artist || kindText(p.kind) || "",
       album: `${channel().name} · silly bird FM`,
       artwork: p.cover ? [{ src: p.cover, sizes: "512x512" }] : [],
     });
@@ -218,10 +368,10 @@ function importFiles(list) {
   if (!files.length) return;
   if (MY.pieces[0] && MY.pieces[0].placeholder) MY.pieces.length = 0;
   const room = MAX_TRACKS - MY.pieces.length;
-  if (room <= 0) { say(`电台已经满了（最多 ${MAX_TRACKS} 首）· 删掉一首再加新的`, recordOut); return; }
+  if (room <= 0) { say(t("stationFull", MAX_TRACKS), recordOut); return; }
   const over = files.length > room;
   const use = over ? files.slice(0, room) : files;
-  if (over) say(`电台最多 ${MAX_TRACKS} 首 · 这次加了前 ${use.length} 首，其余没加`, recordOut);
+  if (over) say(t("stationFullTrim", MAX_TRACKS, use.length), recordOut);
   const start = MY.pieces.length;
   const pieces = use.map((f) => ({
     title: f.name.replace(/\.[^.]+$/, ""), artist: "", dur: 0,
@@ -269,20 +419,30 @@ function readTags(file, p) {
 // ---- track list inside "我的电台": the missing "did it actually work" feedback ----
 // optional flavor tag per track, picked from a real <select> — no hidden cycling to
 // discover, no hover-only tooltip that touch devices can never see
+// TRACK_KINDS stays the canonical Chinese key set — it's what's actually stored in
+// IndexedDB / a shared station.json, so switching display language can never change
+// what's persisted. kindText()/kindLabel() are display-only translations of a key.
 const TRACK_KINDS = ["", "声音故事", "自己哼的歌", "环境音", "最近循环播放的歌"];
-const kindLabel = (k) => k || "＋ 标签";
+const KIND_DISPLAY = {
+  "声音故事":         { zh: "声音故事",         en: "voice story" },
+  "自己哼的歌":       { zh: "自己哼的歌",       en: "hummed tune" },
+  "环境音":           { zh: "环境音",           en: "ambient" },
+  "最近循环播放的歌": { zh: "最近循环播放的歌", en: "on repeat lately" },
+};
+const kindText  = (k) => (k && KIND_DISPLAY[k]) ? KIND_DISPLAY[k][lang] : (k || "");
+const kindLabel = (k) => (k ? kindText(k) : t("addTag"));
 function esc(s) { return s.replace(/[<>&"']/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&#39;" }[c])); }
 function renderTrackList() {
   const real = MY.pieces.filter((p) => !p.placeholder);
-  trackCountLabel.textContent = real.length ? `节目 · ${real.length}/${MAX_TRACKS}` : "节目";
+  trackCountLabel.textContent = real.length ? t("programsCount", real.length, MAX_TRACKS) : t("programs");
   trackList.hidden = !real.length;
   trackList.innerHTML = real.map((p, i) => `
     <div class="track-row" data-i="${i}">
-      <input class="track-name" data-i="${i}" value="${esc(p.title)}" aria-label="节目名称" />
-      <select class="track-tag" data-i="${i}" aria-label="节目标签（可选）">
+      <input class="track-name" data-i="${i}" value="${esc(p.title)}" aria-label="${esc(t("trackName"))}" />
+      <select class="track-tag" data-i="${i}" aria-label="${esc(t("trackTag"))}">
         ${TRACK_KINDS.map((k) => `<option value="${esc(k)}"${(p.kind || "") === k ? " selected" : ""}>${esc(kindLabel(k))}</option>`).join("")}
       </select>
-      <button class="track-remove" data-i="${i}" aria-label="移除" title="移除">×</button>
+      <button class="track-remove" data-i="${i}" aria-label="${esc(t("remove"))}" title="${esc(t("remove"))}">×</button>
     </div>`).join("");
 }
 function persistPiece(p) {
@@ -351,8 +511,8 @@ function renderShareLinkBox() {
 }
 async function shareStation() {
   const tracks = MY.pieces.filter((p) => p.blob);
-  if (!tracks.length) return say("先拖入或上传至少一段声音");
-  if (!CLOUD.url || !CLOUD.anonKey) return say("还没配置云端 · 打开 src/main.js 顶部 CLOUD，照 README「分享」两分钟填好");
+  if (!tracks.length) return say(t("dropOrUploadFirst"));
+  if (!CLOUD.url || !CLOUD.anonKey) return say(t("cloudNotConfigured"));
   shareBtn.disabled = true;
   try {
     // same station → same token every time, so a link already sent to a friend keeps
@@ -364,7 +524,7 @@ async function shareStation() {
     persistStationMeta();
     const manifest = { v: 1, name: MY.name, owner: MY.name, intro: MY.intro, pieces: [] };
     for (let i = 0; i < tracks.length; i++) {
-      say(`上传中 ${i + 1} / ${tracks.length} …`);
+      say(t("uploading", i + 1, tracks.length));
       const p = tracks[i];
       const ext = ((p.blob.type.split("/")[1] || "bin").replace("mpeg", "mp3")).replace(/[^a-z0-9]/gi, "");
       const fname = `track-${i + 1}.${ext || "bin"}`;
@@ -374,10 +534,10 @@ async function shareStation() {
     await cloudPut(`${token}/station.json`, new Blob([JSON.stringify(manifest)], { type: "application/json" }));
     const link = shareLinkFor(token);
     renderShareLinkBox();
-    const gift = `${MY.name} 在等你收听\n${link}`;
-    const successMsg = isUpdate ? "已更新 · 之前发过的链接会自动显示最新内容" : "已复制 · 粘贴发给朋友就是一张分享卡";
+    const gift = `${MY.name} ${t("waitingForYou")}\n${link}`;
+    const successMsg = isUpdate ? t("shareUpdated") : t("shareCopied");
     try { await navigator.clipboard.writeText(gift); say(successMsg); }
-    catch { say("复制失败，链接在这里，手动发给朋友：\n" + link); }
+    catch { say(t("copyFailedShowLink", link)); }
   } catch (e) {
     // fetch() only rejects with a TypeError when the request never got a response at
     // all (DNS/connection/CORS-level failure) — Safari says "Load failed", Chrome says
@@ -385,9 +545,7 @@ async function shareStation() {
     // is thrown separately below as a plain Error, so this check reliably tells apart
     // "can't reach the server" from "server responded but rejected it".
     const unreachable = e instanceof TypeError;
-    say(unreachable
-      ? "上传失败：连不上云端服务器。Supabase 是海外服务，国内网络偶尔连不稳——挂个 VPN 再点一次「生成分享链接」试试；已经开着 VPN 的话，换个节点再试一次。"
-      : "上传失败：" + (e && e.message ? e.message : e));
+    say(unreachable ? t("uploadFailedNetwork") : t("uploadFailed", e && e.message ? e.message : e));
   }
   shareBtn.disabled = false;
 }
@@ -408,13 +566,13 @@ function cloudDelete(paths) {
     const deleted = await r.json();
     // Supabase answers 200 with an empty array (not a 403) when RLS blocks a
     // delete — "asked to delete N, deleted 0" is the real failure signal here
-    if (paths.length && !deleted.length) throw new Error("云端拒绝了删除（缺少 delete 权限策略）");
+    if (paths.length && !deleted.length) throw new Error(t("cloudDeleteBlocked"));
     return deleted;
   });
 }
 async function revokeShare() {
   if (!MY.shareToken) return;
-  if (!confirm("确定要撤回分享吗？之前发给朋友的链接会立刻失效，这一步做完无法恢复。")) return;
+  if (!confirm(t("confirmRevoke"))) return;
   revokeShareBtn.disabled = true;
   try {
     const files = await cloudList(MY.shareToken);
@@ -422,12 +580,10 @@ async function revokeShare() {
     MY.shareToken = null;
     persistStationMeta();
     renderShareLinkBox();
-    say("已撤回 · 之前的链接已经失效，再点「生成分享链接」会是一条全新的");
+    say(t("revoked"));
   } catch (e) {
     const unreachable = e instanceof TypeError;
-    say(unreachable
-      ? "撤回失败：连不上云端服务器，挂个 VPN 再试一次。"
-      : "撤回失败：" + (e && e.message ? e.message : e));
+    say(unreachable ? t("revokeFailedNetwork") : t("revokeFailed", e && e.message ? e.message : e));
   }
   revokeShareBtn.disabled = false;
 }
@@ -442,11 +598,11 @@ async function loadGuestStation() {
   try {
     const st = await (await fetch(`${base}/station.json`)).json();
     const pieces = (st.pieces || []).map((p) => ({
-      title: p.title || "未命名", artist: p.artist || "", kind: p.kind || "", dur: 0, cover: p.cover || null,
+      title: p.title || t("untitled"), artist: p.artist || "", kind: p.kind || "", dur: 0, cover: p.cover || null,
       src: /^(data|https?):/.test(p.file) ? p.file : `${base}/${p.file}`,
     }));
     if (!pieces.length) return;
-    const ch = { name: st.name || "朋友的电台", owner: st.owner || st.name || "朋友", intro: st.intro || "", guest: true, pieces };
+    const ch = { name: st.name || t("friendsStation"), owner: st.owner || st.name || t("friend"), intro: st.intro || "", guest: true, pieces };
     CHANNELS.unshift(ch);
     ci = 0; pi = 0;
     renderChannel();
@@ -499,11 +655,11 @@ function recTick() {
 async function startRecording() {
   if (recRecorder) return;
   const realCount = MY.pieces.filter((p) => !p.placeholder).length;
-  if (realCount >= MAX_TRACKS) { say(`电台已经满了（最多 ${MAX_TRACKS} 首）· 删掉一首再录新的`, recordOut); return; }
+  if (realCount >= MAX_TRACKS) { say(t("stationFullRecord", MAX_TRACKS), recordOut); return; }
   try {
     recStream = await navigator.mediaDevices.getUserMedia({ audio: true });
   } catch {
-    say("没能打开麦克风 · 请检查浏览器/系统的麦克风权限", recordOut);
+    say(t("micDenied"), recordOut);
     return;
   }
   recChunks = [];
@@ -531,7 +687,7 @@ function stopRecording() {
     const mime = mr.mimeType || "audio/webm";
     const ext = mime.split("/")[1]?.split(";")[0] || "webm";
     const now = new Date();
-    const title = `录音 ${now.getMonth() + 1}-${now.getDate()} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    const title = t("recordingTitle", now.getMonth() + 1, now.getDate(), String(now.getHours()).padStart(2, "0"), String(now.getMinutes()).padStart(2, "0"));
     importFiles([new File([new Blob(recChunks, { type: mime })], `${title}.${ext}`, { type: mime })]);
   }, { once: true });
   mr.stop();
@@ -569,6 +725,8 @@ lookBtn.addEventListener("click", () => {
   toggleWin(winLook, () => (winStation.hidden ? winMain.getBoundingClientRect().top
                                               : winStation.getBoundingClientRect().bottom + 26));
 });
+langBtn.addEventListener("mousedown", (e) => e.stopPropagation());
+langBtn.addEventListener("click", () => setLang(lang === "zh" ? "en" : "zh"));
 openShareBtn.addEventListener("click", () => {
   renderShareLinkBox();
   toggleWin(winShare, () => winStation.getBoundingClientRect().top, winStation);
@@ -578,8 +736,8 @@ lookClose.addEventListener("click", () => (winLook.hidden = true));
 shareClose.addEventListener("click", () => (winShare.hidden = true));
 copyLinkBtn.addEventListener("click", async () => {
   const link = shareLinkText.textContent;
-  try { await navigator.clipboard.writeText(`${MY.name} 在等你收听\n${link}`); say("已复制"); }
-  catch { say("复制失败，请手动选中上面的链接"); }
+  try { await navigator.clipboard.writeText(`${MY.name} ${t("waitingForYou")}\n${link}`); say(t("copied")); }
+  catch { say(t("copyFailedSelect")); }
 });
 revokeShareBtn.addEventListener("click", revokeShare);
 
@@ -598,7 +756,7 @@ function saveStation() {
   renderChannel();
   // stay open — the natural next click is 生成分享链接, right below this button
   const original = stationSave.textContent;
-  stationSave.textContent = "✓ 已保存";
+  stationSave.textContent = t("saved");
   stationSave.disabled = true;
   setTimeout(() => { stationSave.textContent = original; stationSave.disabled = false; }, 1100);
 }
@@ -709,7 +867,7 @@ makeDraggable(perch, perch, () => sbfm.classList.remove("collapsed"));
   // visitors land on a friend's channel; once you've made your own, you come back
   // to it. (A ?listen= link below still wins over both.)
   if (!MY.created) ci = 1;
-  renderChannel();
+  setLang(lang);   // applies the restored language to static chrome + demo content + dial
 
   // a friend's link?
   await loadGuestStation();

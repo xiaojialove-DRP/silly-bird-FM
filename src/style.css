@@ -124,7 +124,8 @@ body::after {
 .wb.close { position: absolute; right: 7px; z-index: 1; }
 .wb.min { position: absolute; right: 7px; z-index: 1; padding-bottom: 3px; }
 .wb.look { position: absolute; left: 7px; z-index: 1; font-size: 9px; }
-.wb.min:hover, .wb.close:hover, .wb.look:hover { background: var(--ink); color: var(--paper); }
+.wb.lang { position: absolute; left: 29px; z-index: 1; font-size: 8px; width: auto; min-width: 15px; padding: 0 2px; }
+.wb.min:hover, .wb.close:hover, .wb.look:hover, .wb.lang:hover { background: var(--ink); color: var(--paper); }
 .hd { color: var(--ink); font-size: 8px; font-style: normal; vertical-align: 2px; opacity: .85; }
 
 /* ---------- the black screen ---------- */
@@ -346,7 +347,7 @@ body::after {
 .titlebar { background: none; border-bottom: 2px dotted var(--soft); }
 .brand { background: none; }
 .wb { border: none; background: none; width: 18px; height: 18px; font-size: 13px; }
-.wb.min:hover, .wb.close:hover, .wb.look:hover { background: none; color: var(--ink); opacity: .55; }
+.wb.min:hover, .wb.close:hover, .wb.look:hover, .wb.lang:hover { background: none; color: var(--ink); opacity: .55; }
 .screen { border: none; margin: 8px 0; border-radius: 3px; }
 .dial { border: none; border-radius: 0; background: none; margin: 0 0 3px; padding: 3px 0; border-top: 2px dotted var(--soft); border-bottom: 2px dotted var(--soft); }
 .dial-mid:hover { background: none; opacity: .7; }

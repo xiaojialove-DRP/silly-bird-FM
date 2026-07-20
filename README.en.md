@@ -9,7 +9,7 @@ Low barrier to entry: like sending a voice message, everyone picks a channel nam
 A little bird perches permanently in the corner of your screen. Click it open and it's a small radio you can tune across your friends' channels — company while you vibe-code alone.
 
 <p align="center">
-  <img src="assets/collage.png" width="100%" alt="silly bird FM windows: the radio, my station, look, and share" />
+  <img src="assets/screens-en.png" width="100%" alt="silly bird FM windows in English: the radio, my station, look, and share" />
 </p>
 
 ## Look
@@ -27,12 +27,13 @@ Hans Christian Andersen's papercutting art is the only visual reference — whit
 - **Fully offline-capable assets**: fonts and parsing libraries are all self-hosted, zero external CDN dependency, holds up on a weak connection
 - **Sharing is revocable**: sending a link isn't a one-way door — the station owner can delete the cloud content and kill an already-sent link at any time. The control stays with whoever shared it, not on an auto-destruct timer, and not gone for good the moment it's sent
 - **The demo channels are original too**: the sound in the three built-in sample stations (Late Night Overthinking / Rainy Days Only / Kitchen Disco) is all synthesized on the fly from code — tones and hums, not any existing recording — same stance this product takes on sound and copyright generally
+- **One-click 中/EN**: the EN / 中 button in the titlebar switches the interface language — button copy and demo-channel content follow along; a friend's own station name or track titles are never machine-translated, always left exactly as they typed them
 
 ## Sharing with a friend
 
 **Your friend doesn't need to install anything.** They open the link you sent, hit play, and they're listening — just like opening a normal webpage. No sign-up, no app, no need to know what's running underneath.
 
-**On your end (as the station owner)**, you only need to "power it on" once: your station (the audio files plus a station.json manifest) gets uploaded to your own cloud storage. After that, every time you click **✉ Generate share link** it updates the same `?listen=` link — your friend opens it and the bird tunes straight to your station and starts playing. Edit your station and click the button again, and the link you already sent updates in place — no need to send a new one. Want it back? **Revoke share** on the share card deletes the cloud content entirely and kills the link immediately — this step can't be undone.
+**On your end (as the station owner)**, you only need to "power it on" once: your station (the audio files plus a station.json manifest) gets uploaded to your own cloud storage. After that, every time you click **✉ Share my station** it updates the same `?listen=` link — your friend opens it and the bird tunes straight to your station and starts playing. Edit your station and click the button again, and the link you already sent updates in place — no need to send a new one. Want it back? **Revoke share** on the share card deletes the cloud content entirely and kills the link immediately — this step can't be undone.
 
 If a friend who got your link wants to make their own station and generate their own share link, that just works too, with no extra setup on their end — everyone who opens this site runs on the same cloud config.
 

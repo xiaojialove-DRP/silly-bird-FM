@@ -20,11 +20,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>silly bird FM</title>
-  <meta name="description" content="一位朋友在为你广播 · 点开听听" />
+  <meta name="description" content="一位朋友在为你广播 · 点开听听 · A friend is broadcasting for you, click to listen" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="silly bird fm" />
   <meta property="og:title" content="silly bird fm" />
-  <meta property="og:description" content="一位朋友在为你广播 · 点开听听" />
+  <meta property="og:description" content="一位朋友在为你广播 · 点开听听 · A friend is broadcasting for you, click to listen" />
   <meta property="og:image" content="https://xiaojialove-drp.github.io/silly-bird-FM/assets/og-card.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
@@ -36,7 +36,7 @@
   <div id="sbfm">
 
     <!-- collapsed: the little bird perched on the desktop -->
-    <button class="perch" id="perch" title="打开 silly bird fm">
+    <button class="perch" id="perch" data-i18n-title="openApp" title="打开 silly bird fm">
       <span class="chip">
         <svg class="bird sm" viewBox="0 0 200 172" aria-hidden="true">
           <path class="silh2" d="M64 96 L22 82 L38 100 L18 108 L40 116 L24 134 L66 120 Z" />
@@ -61,9 +61,10 @@
       <div class="lace" aria-hidden="true"></div>
       <section class="radio" id="player">
         <header class="titlebar" id="dragMain" data-tauri-drag-region>
-          <button class="wb look" id="lookBtn" title="外观与音量">❋</button>
+          <button class="wb look" id="lookBtn" data-i18n-title="lookVolume" title="外观与音量">❋</button>
+          <button class="wb lang" id="langBtn" title="Switch to English">EN</button>
           <span class="brand"><i class="hd">♥</i>&nbsp;silly&nbsp;bird <em>fm</em>&nbsp;<i class="hd">♥</i></span>
-          <button class="wb min" id="min" title="收回成小鸟">–</button>
+          <button class="wb min" id="min" data-i18n-title="collapseToBird" title="收回成小鸟">–</button>
         </header>
 
         <div class="screen">
@@ -108,12 +109,12 @@
           </svg>
           <span class="note n1">♪</span>
           <span class="note n2">♫</span>
-          <div class="screenhint" id="screenhint">松手&nbsp;·&nbsp;放进小鸟的电台&nbsp;♪</div>
+          <div class="screenhint" id="screenhint" data-i18n="dropHint">松手&nbsp;·&nbsp;放进小鸟的电台&nbsp;♪</div>
         </div>
 
         <div class="dial">
           <button class="ch tprev" id="tprev" aria-label="prev channel">◁</button>
-          <button class="dial-mid" id="dialMid" title="打开我的电台">
+          <button class="dial-mid" id="dialMid" data-i18n-title="openMyStation" title="打开我的电台">
             <b id="freq">88.2</b><span class="fm">FM</span><span id="sname">—</span>
           </button>
           <button class="ch tnext" id="tnext" aria-label="next channel">▷</button>
@@ -150,26 +151,26 @@
       <div class="lace" aria-hidden="true"></div>
       <section class="panel">
         <header class="titlebar" id="dragStation">
-          <span class="brand">我的电台</span>
-          <button class="wb close" id="stationClose" title="关闭">×</button>
+          <span class="brand" data-i18n="myStation">我的电台</span>
+          <button class="wb close" id="stationClose" data-i18n-title="close" title="关闭">×</button>
         </header>
         <div class="panel-body">
-          <div class="chsetup-label">电台名</div>
-          <input class="chsetup-input" id="chNameInput" maxlength="24" placeholder="给你的电台取个名字" />
-          <div class="chsetup-label">一句话介绍</div>
-          <input class="chsetup-input" id="chIntroInput" maxlength="40" placeholder="比如：睡不着的夜里，说给你听" />
-          <div class="chsetup-label" id="trackCountLabel">节目</div>
+          <div class="chsetup-label" data-i18n="stationName">电台名</div>
+          <input class="chsetup-input" id="chNameInput" maxlength="24" data-i18n-placeholder="stationNamePlaceholder" placeholder="给你的电台取个名字" />
+          <div class="chsetup-label" data-i18n="stationIntro">一句话介绍</div>
+          <input class="chsetup-input" id="chIntroInput" maxlength="40" data-i18n-placeholder="stationIntroPlaceholder" placeholder="比如：睡不着的夜里，说给你听" />
+          <div class="chsetup-label" id="trackCountLabel" data-i18n="programs">节目</div>
           <div class="add-row">
-            <button class="chsetup-upload" id="chUpload">⊕&nbsp;上传音频</button>
+            <button class="chsetup-upload" id="chUpload" data-i18n="uploadAudio">⊕&nbsp;上传音频</button>
             <button class="chsetup-upload record" id="recordBtn">
-              <span class="record-idle">●&nbsp;按住录音</span>
-              <span class="record-live" hidden>●&nbsp;<span class="record-time">0:00</span>&nbsp;松开完成</span>
+              <span class="record-idle" data-i18n="holdToRecord">●&nbsp;按住录音</span>
+              <span class="record-live" hidden>●&nbsp;<span class="record-time">0:00</span>&nbsp;<span data-i18n="releaseToFinish">松开完成</span></span>
             </button>
           </div>
           <div class="track-list" id="trackList" hidden></div>
           <div class="share-out" id="recordOut" hidden></div>
-          <button class="chsetup-save" id="stationSave">完成</button>
-          <button class="chsetup-upload share" id="openShareBtn">✉&nbsp;分享我的电台</button>
+          <button class="chsetup-save" id="stationSave" data-i18n="done">完成</button>
+          <button class="chsetup-upload share" id="openShareBtn" data-i18n="generateShareLink">✉&nbsp;生成分享链接</button>
         </div>
       </section>
     </div>
@@ -179,21 +180,21 @@
       <div class="lace" aria-hidden="true"></div>
       <section class="panel">
         <header class="titlebar" id="dragLook">
-          <span class="brand">外观</span>
-          <button class="wb close" id="lookClose" title="关闭">×</button>
+          <span class="brand" data-i18n="look">外观</span>
+          <button class="wb close" id="lookClose" data-i18n-title="close" title="关闭">×</button>
         </header>
         <div class="panel-body">
-          <div class="chsetup-label">界面颜色 · 你的偏好</div>
+          <div class="chsetup-label" data-i18n="interfaceColor">界面颜色 · 你的偏好</div>
           <div class="swatches">
-            <button class="swatch" data-theme="crimson" style="--sw:#9c1f2d" aria-label="绛红"></button>
-            <button class="swatch" data-theme="rust"    style="--sw:#af4a26" aria-label="赤陶"></button>
-            <button class="swatch" data-theme="ochre"   style="--sw:#8a5f0e" aria-label="蜜赭"></button>
-            <button class="swatch" data-theme="green"   style="--sw:#276b46" aria-label="墨绿"></button>
-            <button class="swatch" data-theme="blue"    style="--sw:#1f31cc" aria-label="蓝"></button>
-            <button class="swatch" data-theme="plum"    style="--sw:#5b2d66" aria-label="梅紫"></button>
-            <button class="swatch" data-theme="black"   style="--sw:#161616" aria-label="黑"></button>
+            <button class="swatch" data-theme="crimson" style="--sw:#9c1f2d" data-i18n-aria="colorCrimson" aria-label="绛红"></button>
+            <button class="swatch" data-theme="rust"    style="--sw:#af4a26" data-i18n-aria="colorRust" aria-label="赤陶"></button>
+            <button class="swatch" data-theme="ochre"   style="--sw:#8a5f0e" data-i18n-aria="colorOchre" aria-label="蜜赭"></button>
+            <button class="swatch" data-theme="green"   style="--sw:#276b46" data-i18n-aria="colorGreen" aria-label="墨绿"></button>
+            <button class="swatch" data-theme="blue"    style="--sw:#1f31cc" data-i18n-aria="colorBlue" aria-label="蓝"></button>
+            <button class="swatch" data-theme="plum"    style="--sw:#5b2d66" data-i18n-aria="colorPlum" aria-label="梅紫"></button>
+            <button class="swatch" data-theme="black"   style="--sw:#161616" data-i18n-aria="colorBlack" aria-label="黑"></button>
           </div>
-          <div class="chsetup-label">音量</div>
+          <div class="chsetup-label" data-i18n="volume">音量</div>
           <div class="vol">
             <svg viewBox="0 0 24 24" class="vol-ico"><path d="M4 9v6h4l5 4V5L8 9z"/></svg>
             <input type="range" id="vol" min="0" max="100" value="72" />
@@ -207,17 +208,17 @@
       <div class="lace" aria-hidden="true"></div>
       <section class="panel">
         <header class="titlebar" id="dragShare">
-          <span class="brand">分享</span>
-          <button class="wb close" id="shareClose" title="关闭">×</button>
+          <span class="brand" data-i18n="share">分享</span>
+          <button class="wb close" id="shareClose" data-i18n-title="close" title="关闭">×</button>
         </header>
         <div class="panel-body">
-          <button class="chsetup-upload share" id="shareBtn">✉&nbsp;生成分享链接</button>
+          <button class="chsetup-upload share" id="shareBtn" data-i18n="shareMyStation">✉&nbsp;分享我的电台</button>
           <div class="share-out" id="shareOut" hidden></div>
           <div class="share-link-box" id="shareLinkBox" hidden>
-            <div class="chsetup-label">你的链接 · 编辑电台后再点一次生成即可更新</div>
+            <div class="chsetup-label" data-i18n="yourLink">你的链接 · 编辑电台后再点一次生成即可更新</div>
             <div class="share-link-text" id="shareLinkText"></div>
-            <button class="chsetup-upload" id="copyLinkBtn">复制链接</button>
-            <button class="chsetup-upload danger" id="revokeShareBtn">撤回分享 · 让这条链接失效</button>
+            <button class="chsetup-upload" id="copyLinkBtn" data-i18n="copyLink">复制链接</button>
+            <button class="chsetup-upload danger" id="revokeShareBtn" data-i18n="revokeShare">撤回分享 · 让这条链接失效</button>
           </div>
         </div>
       </section>
