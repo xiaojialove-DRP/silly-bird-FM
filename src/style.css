@@ -48,31 +48,15 @@ body::after {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* ---------- floating papercut windows (Poolsuite-style, each draggable) ---------- */
+/* ---------- floating papercut windows, each draggable ---------- */
 .win { position: fixed; z-index: 10; }
 .win[hidden] { display: none; }
-#winMain    { left: calc(50% - 138px); top: 60px; }
+#winMain    { left: calc(50% - 150px); top: 60px; }
 #winStation { left: calc(50% + 158px); top: 76px; }
 #winLook    { left: calc(50% + 178px); top: 320px; }
 #winShare   { left: calc(50% + 178px); top: 76px; }
 #sbfm.collapsed .win { display: none; }
 #sbfm:not(.collapsed) .perch { display: none; }
-
-/* hand-cut scalloped paper edge behind the whole radio (doily) */
-.lace {
-  position: absolute; inset: -8px; z-index: -1; pointer-events: none;
-  filter: url(#roughF);
-  background:
-    radial-gradient(circle 10px at 10px 10px,                            var(--paper) 9.5px, #0000 10px) top left     / 20px 20px no-repeat,
-    radial-gradient(circle 10px at calc(100% - 10px) 10px,               var(--paper) 9.5px, #0000 10px) top right    / 20px 20px no-repeat,
-    radial-gradient(circle 10px at 10px calc(100% - 10px),               var(--paper) 9.5px, #0000 10px) bottom left  / 20px 20px no-repeat,
-    radial-gradient(circle 10px at calc(100% - 10px) calc(100% - 10px),  var(--paper) 9.5px, #0000 10px) bottom right / 20px 20px no-repeat,
-    radial-gradient(circle 8px at 50% 8px,              var(--paper) 7.6px, #0000 8px) top    / 17px 16px repeat-x,
-    radial-gradient(circle 8px at 50% calc(100% - 8px), var(--paper) 7.6px, #0000 8px) bottom / 17px 16px repeat-x,
-    radial-gradient(circle 8px at 8px 50%,              var(--paper) 7.6px, #0000 8px) left   / 16px 17px repeat-y,
-    radial-gradient(circle 8px at calc(100% - 8px) 50%, var(--paper) 7.6px, #0000 8px) right  / 16px 17px repeat-y,
-    linear-gradient(var(--paper), var(--paper)) center / calc(100% - 16px) calc(100% - 16px) no-repeat;
-}
 
 /* ---------- collapsed: black chip + white bird ---------- */
 .perch {
@@ -86,15 +70,19 @@ body::after {
 }
 .chip .bird { width: 62px; height: 54px; }
 
-/* ---------- papercut cards: the radio + the two panels ---------- */
+/* ---------- papercut cards: the radio + the two panels ----------
+   The window IS a cut sheet: scalloped silhouette + punched holes via
+   border-image; inner UI de-boxed — stitched dotted rules, bare glyph
+   buttons, punched-hole play. */
 .radio, .panel {
   position: relative;
-  width: 276px;
-  background: var(--paper);
-  border: 2.5px solid var(--ink);
-  border-radius: 13px;
-  overflow: hidden;
+  width: 300px;
+  background: none;
+  border: 20px solid transparent;
+  border-radius: 0;
+  overflow: visible;
   user-select: none;
+  border-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cdefs%3E%3Cmask id='m'%3E%3Crect width='120' height='120' fill='black'/%3E%3Crect x='12' y='12' width='96' height='96' fill='white'/%3E%3Ccircle cx='15' cy='15' r='11' fill='white'/%3E%3Ccircle cx='105' cy='15' r='11' fill='white'/%3E%3Ccircle cx='15' cy='105' r='11' fill='white'/%3E%3Ccircle cx='105' cy='105' r='11' fill='white'/%3E%3Ccircle cx='35' cy='12.5' r='8.5' fill='white'/%3E%3Ccircle cx='55' cy='14' r='9.5' fill='white'/%3E%3Ccircle cx='75' cy='12.5' r='8' fill='white'/%3E%3Ccircle cx='35' cy='107.5' r='8.5' fill='white'/%3E%3Ccircle cx='55' cy='106' r='9.5' fill='white'/%3E%3Ccircle cx='75' cy='107.5' r='8' fill='white'/%3E%3Ccircle cx='12.5' cy='35' r='8.5' fill='white'/%3E%3Ccircle cx='14' cy='55' r='9.5' fill='white'/%3E%3Ccircle cx='12.5' cy='75' r='8' fill='white'/%3E%3Ccircle cx='107.5' cy='35' r='8.5' fill='white'/%3E%3Ccircle cx='106' cy='55' r='9.5' fill='white'/%3E%3Ccircle cx='107.5' cy='75' r='8' fill='white'/%3E%3Ccircle cx='40' cy='24' r='2' fill='black'/%3E%3Ccircle cx='60' cy='24' r='2.2' fill='black'/%3E%3Ccircle cx='80' cy='24' r='2' fill='black'/%3E%3Ccircle cx='40' cy='96' r='2' fill='black'/%3E%3Ccircle cx='60' cy='96' r='2.2' fill='black'/%3E%3Ccircle cx='80' cy='96' r='2' fill='black'/%3E%3Ccircle cx='24' cy='40' r='2' fill='black'/%3E%3Ccircle cx='24' cy='60' r='2.2' fill='black'/%3E%3Ccircle cx='24' cy='80' r='2' fill='black'/%3E%3Ccircle cx='96' cy='40' r='2' fill='black'/%3E%3Ccircle cx='96' cy='60' r='2.2' fill='black'/%3E%3Ccircle cx='96' cy='80' r='2' fill='black'/%3E%3C/mask%3E%3C/defs%3E%3Crect width='120' height='120' fill='%23f8f4ea' mask='url(%23m)'/%3E%3C/svg%3E") 30 fill / 20px round;
 }
 .panel .brand { font-size: 13px; }
 
@@ -102,13 +90,13 @@ body::after {
 .titlebar {
   position: relative; height: 24px; cursor: grab;
   display: flex; align-items: center; justify-content: center;
-  border-bottom: 2px dotted var(--ink);
-  background: var(--paper);
+  border-bottom: 2px dotted var(--soft);
+  background: none;
 }
 .deco { color: var(--accent); font-size: 9px; font-style: normal; vertical-align: 1px; }
 .titlebar:active { cursor: grabbing; }
 .brand {
-  background: var(--paper); padding: 0 10px; z-index: 1;
+  background: none; padding: 0 10px; z-index: 1;
   font-family: "Fraunces", "Songti SC", "STSong", "SimSun", Georgia, serif; font-style: italic; font-weight: 600;
   font-size: 15px; color: var(--ink);
 }
@@ -119,21 +107,21 @@ body::after {
 }
 .back-hint { display: none; }   /* shown only on narrow viewports — see the mobile media query */
 .wb {
-  width: 15px; height: 15px; border: 2px solid var(--ink); border-radius: 3px;
-  background: var(--paper); display: grid; place-items: center;
-  font-family: "Space Mono", monospace; font-size: 11px; line-height: 1; color: var(--ink); cursor: pointer; padding: 0;
+  width: 18px; height: 18px; border: none; border-radius: 3px;
+  background: none; display: grid; place-items: center;
+  font-family: "Space Mono", monospace; font-size: 13px; line-height: 1; color: var(--ink); cursor: pointer; padding: 0;
 }
 .wb.close { position: absolute; right: 7px; z-index: 1; }
 .wb.min { position: absolute; right: 7px; z-index: 1; padding-bottom: 3px; }
 .wb.look { position: absolute; left: 7px; z-index: 1; font-size: 9px; }
 .wb.lang { position: absolute; left: 29px; z-index: 1; font-size: 8px; width: auto; min-width: 15px; padding: 0 2px; }
-.wb.min:hover, .wb.close:hover, .wb.look:hover, .wb.lang:hover { background: var(--ink); color: var(--paper); }
+.wb.min:hover, .wb.close:hover, .wb.look:hover, .wb.lang:hover { background: none; color: var(--ink); opacity: .55; }
 .hd { color: var(--ink); font-size: 8px; font-style: normal; vertical-align: 2px; opacity: .85; }
 
 /* ---------- the black screen ---------- */
 .screen {
-  position: relative; margin: 9px; height: 128px;
-  background: var(--night); border: 2.5px solid var(--ink); border-radius: 8px;
+  position: relative; margin: 8px 0; height: 128px;
+  background: var(--night); border: none; border-radius: 3px;
   display: grid; place-items: center; overflow: hidden;
 }
 .screen::after {
@@ -177,7 +165,11 @@ body::after {
 @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
 
 /* dial strip (channel switch + readout) */
-.dial { display: flex; align-items: center; gap: 6px; margin: 0 9px 3px; padding: 3px 6px; border: 2px solid var(--ink); border-radius: 6px; background: var(--paper); }
+.dial {
+  display: flex; align-items: center; gap: 6px; margin: 0 0 3px; padding: 3px 0;
+  border: none; border-radius: 0; background: none;
+  border-top: 2px dotted var(--soft); border-bottom: 2px dotted var(--soft);
+}
 .dial .ch { border: none; background: transparent; color: var(--ink); opacity: .5; font-size: 12px; cursor: pointer; padding: 2px 5px; }
 .dial .ch:hover { opacity: 1; }
 .dial-mid {
@@ -185,7 +177,7 @@ body::after {
   color: var(--ink); letter-spacing: .5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   background: none; border: none; cursor: pointer; padding: 3px 0; border-radius: 4px;
 }
-.dial-mid:hover { background: rgba(0,0,0,.06); }
+.dial-mid:hover { background: none; opacity: .7; }
 .dial-mid b { font-weight: 700; }
 .dial-mid .fm { font-size: 8px; opacity: .55; margin: 0 6px 0 3px; }
 .dial-mid #sname { opacity: .78; }
@@ -213,7 +205,7 @@ body::after {
 .screen.dragging { outline: 2px dashed var(--paper); outline-offset: -8px; }
 
 /* ---------- readout ---------- */
-.readout { display: flex; align-items: center; gap: 10px; padding: 3px 14px 8px; }
+.readout { display: flex; align-items: center; gap: 10px; padding: 2px 6px 8px; }
 .meta { min-width: 0; flex: 1; }
 .cover { width: 42px; height: 42px; flex: none; border: 2px solid var(--ink); border-radius: 4px; background-size: cover; background-position: center; display: none; }
 .cover.show { display: block; }
@@ -222,18 +214,19 @@ body::after {
 .sub b { color: var(--ink); font-weight: 700; }
 
 /* ---------- progress ---------- */
-.progress { display: flex; align-items: center; gap: 8px; padding: 0 14px 10px; }
+.progress { display: flex; align-items: center; gap: 8px; padding: 0 6px 10px; }
 .time { font-family: "Space Mono", monospace; font-size: 9.5px; color: var(--soft); width: 26px; }
 .time:last-child { text-align: right; }
-.bar { flex: 1; height: 6px; border: 2px solid var(--ink); border-radius: 4px; background: var(--paper); overflow: hidden; cursor: pointer; }
-.fill { height: 100%; width: 0%; background: var(--ink); }
+.bar { flex: 1; height: 6px; border: none; border-radius: 4px; background: none; overflow: visible; cursor: pointer; position: relative; }
+.bar::before { content: ""; position: absolute; left: 0; right: 0; top: 2px; border-top: 2px dotted var(--soft); }
+.fill { position: relative; height: 4px; width: 0%; margin-top: 1px; border-radius: 2px; background: var(--ink); }
 
 /* ---------- controls ---------- */
-.controls { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 0 14px 13px; }
-.btn { width: 34px; height: 34px; border: 2.5px solid var(--ink); border-radius: 50%; background: var(--paper); color: var(--ink); display: grid; place-items: center; cursor: pointer; padding: 0; transition: transform .07s ease; }
+.controls { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 0 6px 8px; }
+.btn { width: 34px; height: 34px; border: none; border-radius: 50%; background: none; color: var(--ink); display: grid; place-items: center; cursor: pointer; padding: 0; transition: transform .07s ease; }
 .btn:active { transform: translate(1px,1px); }
-.btn svg { width: 16px; height: 16px; fill: currentColor; }
-.btn.play { width: 46px; height: 46px; background: var(--ink); color: var(--paper); outline: 2px dotted var(--ink); outline-offset: 3px; }
+.btn svg { width: 22px; height: 22px; fill: currentColor; }
+.btn.play { width: 44px; height: 44px; background: var(--ink); color: var(--paper); outline: none; }
 .btn.play svg { width: 20px; height: 20px; }
 .i-pause { display: none; }
 .radio.playing .i-play { display: none; }
@@ -245,12 +238,12 @@ body::after {
 #vol::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--paper); border: 2px solid var(--ink); }
 
 /* ---------- panel bodies (station / look windows) ---------- */
-.panel-body { padding: 12px 14px 14px; }
+.panel-body { padding: 6px 4px 8px; }
 .chsetup-label { font-size: 9.5px; text-transform: uppercase; letter-spacing: .5px; color: var(--soft); margin-bottom: 5px; }
 .chsetup-input {
   width: 100%; box-sizing: border-box; font-family: "Space Mono", "Songti SC", "STSong", "SimSun", monospace; font-size: 12px;
-  padding: 7px 9px; margin-bottom: 12px; border: 2px solid var(--ink); border-radius: 6px;
-  background: rgba(255,255,255,.4); color: var(--ink);
+  padding: 5px 2px 7px; margin-bottom: 13px; border: none; border-bottom: 2px dotted var(--ink); border-radius: 0;
+  background: none; color: var(--ink);
 }
 .chsetup-input:focus { outline: none; }
 .swatches { display: flex; justify-content: space-between; margin-bottom: 14px; }
@@ -372,39 +365,6 @@ body::after {
 .chsetup-save:active { transform: translate(1px,1px); }
 
 @media (prefers-reduced-motion: reduce) { .bird-body, .note { animation: none !important; } }
-
-/* ═══════════ EXPERIMENT · 整张剪纸皮肤（未提交试验：git restore 即回滚） ═══════════
-   The window IS a cut sheet: scalloped silhouette + punched holes via border-image;
-   inner UI de-boxed — stitched dotted rules, bare glyph buttons, punched-hole play. */
-.lace { display: none; }
-.radio, .panel {
-  width: 300px;
-  background: none;
-  border: 20px solid transparent;
-  border-radius: 0;
-  overflow: visible;
-  border-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cdefs%3E%3Cmask id='m'%3E%3Crect width='120' height='120' fill='black'/%3E%3Crect x='12' y='12' width='96' height='96' fill='white'/%3E%3Ccircle cx='15' cy='15' r='11' fill='white'/%3E%3Ccircle cx='105' cy='15' r='11' fill='white'/%3E%3Ccircle cx='15' cy='105' r='11' fill='white'/%3E%3Ccircle cx='105' cy='105' r='11' fill='white'/%3E%3Ccircle cx='35' cy='12.5' r='8.5' fill='white'/%3E%3Ccircle cx='55' cy='14' r='9.5' fill='white'/%3E%3Ccircle cx='75' cy='12.5' r='8' fill='white'/%3E%3Ccircle cx='35' cy='107.5' r='8.5' fill='white'/%3E%3Ccircle cx='55' cy='106' r='9.5' fill='white'/%3E%3Ccircle cx='75' cy='107.5' r='8' fill='white'/%3E%3Ccircle cx='12.5' cy='35' r='8.5' fill='white'/%3E%3Ccircle cx='14' cy='55' r='9.5' fill='white'/%3E%3Ccircle cx='12.5' cy='75' r='8' fill='white'/%3E%3Ccircle cx='107.5' cy='35' r='8.5' fill='white'/%3E%3Ccircle cx='106' cy='55' r='9.5' fill='white'/%3E%3Ccircle cx='107.5' cy='75' r='8' fill='white'/%3E%3Ccircle cx='40' cy='24' r='2' fill='black'/%3E%3Ccircle cx='60' cy='24' r='2.2' fill='black'/%3E%3Ccircle cx='80' cy='24' r='2' fill='black'/%3E%3Ccircle cx='40' cy='96' r='2' fill='black'/%3E%3Ccircle cx='60' cy='96' r='2.2' fill='black'/%3E%3Ccircle cx='80' cy='96' r='2' fill='black'/%3E%3Ccircle cx='24' cy='40' r='2' fill='black'/%3E%3Ccircle cx='24' cy='60' r='2.2' fill='black'/%3E%3Ccircle cx='24' cy='80' r='2' fill='black'/%3E%3Ccircle cx='96' cy='40' r='2' fill='black'/%3E%3Ccircle cx='96' cy='60' r='2.2' fill='black'/%3E%3Ccircle cx='96' cy='80' r='2' fill='black'/%3E%3C/mask%3E%3C/defs%3E%3Crect width='120' height='120' fill='%23f8f4ea' mask='url(%23m)'/%3E%3C/svg%3E") 30 fill / 20px round;
-}
-#winMain { left: calc(50% - 150px); }
-.titlebar { background: none; border-bottom: 2px dotted var(--soft); }
-.brand { background: none; }
-.wb { border: none; background: none; width: 18px; height: 18px; font-size: 13px; }
-.wb.min:hover, .wb.close:hover, .wb.look:hover, .wb.lang:hover { background: none; color: var(--ink); opacity: .55; }
-.screen { border: none; margin: 8px 0; border-radius: 3px; }
-.dial { border: none; border-radius: 0; background: none; margin: 0 0 3px; padding: 3px 0; border-top: 2px dotted var(--soft); border-bottom: 2px dotted var(--soft); }
-.dial-mid:hover { background: none; opacity: .7; }
-.readout { padding: 2px 6px 8px; }
-.progress { padding: 0 6px 10px; }
-.bar { border: none; background: none; position: relative; height: 6px; overflow: visible; }
-.bar::before { content: ""; position: absolute; left: 0; right: 0; top: 2px; border-top: 2px dotted var(--soft); }
-.fill { position: relative; height: 4px; margin-top: 1px; border-radius: 2px; background: var(--ink); }
-.controls { padding: 0 6px 8px; gap: 12px; }
-.btn { border: none; background: none; box-shadow: none; }
-.btn svg { width: 22px; height: 22px; }
-.btn.play { background: var(--ink); outline: none; width: 44px; height: 44px; }
-.panel-body { padding: 6px 4px 8px; }
-.chsetup-input { background: none; border: none; border-bottom: 2px dotted var(--ink); border-radius: 0; padding: 5px 2px 7px; margin-bottom: 13px; }
-.chsetup-upload { background: none; }
 
 /* ---------- mobile: bigger tap targets, a stacking ritual instead of free-floating cards ---------- */
 @media (max-width: 600px) {
