@@ -24,10 +24,10 @@ const I18N = {
     stationIntro: "一句话介绍", stationIntroPlaceholder: "比如：睡不着的夜里，说给你听",
     programs: "节目", programsCount: (n, max) => `节目 · ${n}/${max}`,
     uploadAudio: "⊕ 上传音频", holdToRecord: "● 按住录音", releaseToFinish: "松开完成",
-    done: "完成", shareMyStation: "✉ 分享我的电台",
+    done: "完成", shareMyStation: "✉ 生成我的电台",
     look: "外观", interfaceColor: "界面颜色 · 你的偏好", volume: "音量",
     share: "分享", backToStation: "‹ 我的电台", generateShareLink: "✉ 生成分享链接",
-    yourLink: "链接如下 · 每次编辑后再点一次生成即可更新", copyLink: "复制链接",
+    yourLink: "链接如下 · 每次编辑后再点一次生成即可更新", copyLink: "✉ 复制以下链接",
     revokeShare: "撤回分享 · 让这条链接失效",
     sendStamp: "给朋友寄个回执吧。", stampsReceived: "收到的邮票",
     trackName: "节目名称", trackTag: "节目标签（可选）", remove: "移除",
@@ -45,8 +45,9 @@ const I18N = {
     shareUpdated: "已更新 · 之前发过的链接会自动显示最新内容",
     shareCopied: "已复制 · 粘贴发给朋友就是一张分享卡",
     copyFailedLinkBelow: "复制失败 · 链接就在下面，手动复制发给朋友",
-    uploadFailedNetwork: "上传失败：连不上云端服务器。Supabase 是海外服务，国内网络偶尔连不稳——挂个 VPN 再点一次「生成分享链接」试试；已经开着 VPN 的话，换个节点再试一次。",
-    uploadFailed: (msg) => `上传失败：${msg}`,
+    uploadFailedNetwork: "上传失败：连不上云端服务器。Supabase 是海外服务，国内网络偶尔连不稳——挂个 VPN 再点一次「生成我的电台」试试；已经开着 VPN 的话，换个节点再试一次。",
+    uploadFailed: "这次没能生成链接，可以再试一次",
+    uploadFailedKeepOld: "这次更新没有推送成功 · 之前发出去的链接不受影响，还能正常打开",
     waitingForYou: "在等你收听",
     cloudDeleteBlocked: "云端拒绝了删除（缺少 delete 权限策略）",
     confirmRevoke: "确定要撤回分享吗？之前发给朋友的链接会立刻失效，这一步做完无法恢复。",
@@ -74,10 +75,10 @@ const I18N = {
     stationIntro: "One-line intro", stationIntroPlaceholder: "e.g. Can't sleep, telling you about it",
     programs: "Programs", programsCount: (n, max) => `Programs · ${n}/${max}`,
     uploadAudio: "⊕ Upload audio", holdToRecord: "● Hold to record", releaseToFinish: "Release when done",
-    done: "Done", shareMyStation: "✉ Share my station",
+    done: "Done", shareMyStation: "✉ Generate my station",
     look: "Look", interfaceColor: "Interface color · your preference", volume: "Volume",
     share: "Share", backToStation: "‹ My Station", generateShareLink: "✉ Generate share link",
-    yourLink: "Your link is below · edit anytime, then click generate again to update it", copyLink: "Copy link",
+    yourLink: "Your link is below · edit anytime, then click generate again to update it", copyLink: "✉ Copy the link below",
     revokeShare: "Revoke share · kill this link",
     sendStamp: "Send your friend a receipt", stampsReceived: "Stamps received",
     trackName: "Track name", trackTag: "Track tag (optional)", remove: "Remove",
@@ -95,8 +96,9 @@ const I18N = {
     shareUpdated: "Updated · the link you already sent now shows the latest",
     shareCopied: "Copied · paste it to a friend and it's a share card",
     copyFailedLinkBelow: "Copy failed · the link is right below, copy it manually to send",
-    uploadFailedNetwork: "Upload failed: can't reach the cloud server. Supabase is hosted overseas, so this can be flaky on some networks — try a VPN and click Generate share link again; if you're already on one, try a different node.",
-    uploadFailed: (msg) => `Upload failed: ${msg}`,
+    uploadFailedNetwork: "Upload failed: can't reach the cloud server. Supabase is hosted overseas, so this can be flaky on some networks — try a VPN and click Generate my station again; if you're already on one, try a different node.",
+    uploadFailed: "Could not generate the link this time — feel free to try again",
+    uploadFailedKeepOld: "This update did not go through · the link you already sent is unaffected and still works",
     waitingForYou: "is waiting for you to listen",
     cloudDeleteBlocked: "Cloud rejected the delete (missing a delete policy)",
     confirmRevoke: "Revoke this share? The link you already sent will stop working immediately — this can't be undone.",
@@ -583,20 +585,36 @@ function shareLinkFor(token) {
   return location.origin + location.pathname + "?listen=" + encodeURIComponent(base);
 }
 function renderShareLinkBox() {
-  if (!MY.shareToken) { shareLinkBox.hidden = true; return; }
+  // once a link exists, the top button's job shifts from "produce one" to "hand
+  // over the one you already have" — copying it is instant and needs no network
+  // round-trip, unlike re-sharing
+  const hasLink = !!MY.shareToken;
+  shareBtn.textContent = hasLink ? t("copyLink") : t("shareMyStation");
+  if (!hasLink) { shareLinkBox.hidden = true; return; }
   shareLinkText.textContent = shareLinkFor(MY.shareToken);
   shareLinkBox.hidden = false;
+}
+async function copyShareLink() {
+  const link = shareLinkText.textContent;
+  try {
+    await navigator.clipboard.writeText(`${MY.name} ${t("waitingForYou")}\n${link}`);
+    const original = shareBtn.textContent;
+    shareBtn.textContent = t("copied");
+    shareBtn.disabled = true;
+    setTimeout(() => { shareBtn.textContent = original; shareBtn.disabled = false; }, 1100);
+  } catch { say(t("copyFailedSelect")); }
 }
 async function shareStation() {
   const tracks = MY.pieces.filter((p) => p.blob);
   if (!tracks.length) return say(t("dropOrUploadFirst"));
   if (!CLOUD.url || !CLOUD.anonKey) return say(t("cloudNotConfigured"));
+  // same station → same token every time, so a link already sent to a friend keeps
+  // working and just shows whatever you've most recently shared — editing a station
+  // updates it in place instead of minting a new, disconnected link
+  const isUpdate = !!MY.shareToken;
   shareBtn.disabled = true;
+  copyLinkBtn.disabled = true;
   try {
-    // same station → same token every time, so a link already sent to a friend keeps
-    // working and just shows whatever you've most recently shared — editing a station
-    // updates it in place instead of minting a new, disconnected link
-    const isUpdate = !!MY.shareToken;
     const token = MY.shareToken || crypto.randomUUID();
     MY.shareToken = token;
     persistStationMeta();
@@ -623,10 +641,14 @@ async function shareStation() {
     // is thrown separately below as a plain Error, so this check reliably tells apart
     // "can't reach the server" from "server responded but rejected it".
     const unreachable = e instanceof TypeError;
-    say(unreachable ? t("uploadFailedNetwork") : t("uploadFailed", e && e.message ? e.message : e));
+    if (unreachable) say(t("uploadFailedNetwork"));
+    // an update failing leaves the previously-shared link fully intact — say so,
+    // rather than showing a raw status code that reads as scarier than it is
+    else say(isUpdate ? t("uploadFailedKeepOld") : t("uploadFailed"));
     reportError("shareStation", e);
   }
   shareBtn.disabled = false;
+  copyLinkBtn.disabled = false;
 }
 function cloudList(prefix) {
   return fetch(`${CLOUD.url}/storage/v1/object/list/${CLOUD.bucket}`, {
@@ -836,7 +858,7 @@ player.addEventListener("dragleave", (e) => { if (!player.contains(e.relatedTarg
 player.addEventListener("drop", (e) => { e.preventDefault(); screenEl.classList.remove("dragging"); if (e.dataTransfer) importFiles(e.dataTransfer.files); });
 filepick.addEventListener("change", () => { importFiles(filepick.files); filepick.value = ""; });
 chUpload.addEventListener("click", () => filepick.click());
-shareBtn.addEventListener("click", shareStation);
+shareBtn.addEventListener("click", () => (MY.shareToken ? copyShareLink() : shareStation()));
 
 // ---- press-and-hold recording: a second door into the exact same pipeline as
 // uploading a file — a held moment (street noise, a passing thought) is just as
@@ -964,25 +986,18 @@ lookBtn.addEventListener("click", () => {
 langBtn.addEventListener("mousedown", (e) => e.stopPropagation());
 langBtn.addEventListener("click", () => setLang(lang === "zh" ? "en" : "zh"));
 openShareBtn.addEventListener("click", () => {
+  const opening = winShare.hidden;
   renderShareLinkBox();
   loadStamps();
   toggleWin(winShare, () => winStation.getBoundingClientRect().top, winStation);
+  // this button already promises "generate" by name — fulfill that on the first
+  // click instead of opening a card that then asks for a second one
+  if (opening && !MY.shareToken) shareStation();
 });
 stationClose.addEventListener("click", () => { stopRecording(); closeWin(winStation); });
 lookClose.addEventListener("click", () => closeWin(winLook));
 shareClose.addEventListener("click", () => closeWin(winShare));
-copyLinkBtn.addEventListener("click", async () => {
-  const link = shareLinkText.textContent;
-  try {
-    await navigator.clipboard.writeText(`${MY.name} ${t("waitingForYou")}\n${link}`);
-    // feedback lives on the button itself, not a separate floating message —
-    // it's right where the user is already looking
-    const original = copyLinkBtn.textContent;
-    copyLinkBtn.textContent = t("copied");
-    copyLinkBtn.disabled = true;
-    setTimeout(() => { copyLinkBtn.textContent = original; copyLinkBtn.disabled = false; }, 1100);
-  } catch { say(t("copyFailedSelect")); }
-});
+copyLinkBtn.addEventListener("click", shareStation);
 revokeShareBtn.addEventListener("click", revokeShare);
 stampBtn.addEventListener("click", sendStamp);
 

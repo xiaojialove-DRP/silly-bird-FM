@@ -38,9 +38,9 @@ test("create, share, a friend listens, then revoke", async ({ page, browser }) =
   await expect(page.locator("#trackList .track-row")).toHaveCount(1);
   await page.locator("#stationSave").click();
 
-  // share
+  // share: opening the panel for the first time generates the link directly,
+  // no separate confirm click needed
   await page.locator("#openShareBtn").click();
-  await page.locator("#shareBtn").click();
   await expect(page.locator("#shareLinkBox")).toBeVisible({ timeout: 15_000 });
   const linkText = await page.locator("#shareLinkText").textContent();
   expect(linkText).toContain("?listen=");
