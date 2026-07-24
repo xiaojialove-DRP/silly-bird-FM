@@ -899,22 +899,37 @@ recordBtn.addEventListener("contextmenu", (e) => e.preventDefault());
 
 // ---- windows: open / close / first-open placement beside the main radio ----
 // below this width, the four cards can't sit side by side without spilling off
-// screen — placeBeside()'s desktop cascade only nudges a window +36px when it
-// doesn't fit to the right, which on a phone just stacks every panel almost
-// exactly on top of the last one. Below the line, show one card at a time instead.
+// screen. Instead of free floating, they stack vertically below whatever is
+// already showing, in a fixed order, sliding into their slot as they appear —
+// Main never hides on a phone, it's the anchor the stack builds down from, and
+// Look intentionally lands right under it so picking a color and seeing it land
+// on the player happen in the same glance.
 const isNarrowViewport = () => window.innerWidth < 600;
-function showOnly(win) {
-  [winMain, winStation, winLook, winShare].forEach((w) => { w.hidden = (w !== win); });
+const MOBILE_STACK_ORDER = [winMain, winLook, winStation, winShare];
+function restackMobile() {
+  if (!isNarrowViewport()) return;
+  let bottom = 8;
+  MOBILE_STACK_ORDER.forEach((win) => {
+    if (win.hidden) { delete win.dataset.stacked; return; }
+    const w = win.offsetWidth || 320;
+    win.style.left = Math.max(8, (window.innerWidth - w) / 2) + "px";
+    if (!win.dataset.stacked) {
+      // first appearance in this stack — start a little higher and let the
+      // top transition (see the mobile media query) slide it down into its
+      // real slot, rather than just popping into place
+      win.style.transition = "none";
+      win.style.top = Math.max(8, bottom - 20) + "px";
+      void win.offsetWidth;   // force layout so the browser commits the "from" position first
+      win.style.transition = "";
+      win.dataset.stacked = "1";
+    }
+    win.style.top = bottom + "px";
+    bottom += win.offsetHeight + 14;
+  });
 }
 function placeBeside(win, topOf, refWin) {
   if (win.dataset.placed) return;
   const w = win.offsetWidth || 320, h = win.offsetHeight || 200;
-  if (isNarrowViewport()) {
-    win.style.left = Math.max(8, (window.innerWidth - w) / 2) + "px";
-    win.style.top = Math.max(8, Math.min(60, window.innerHeight - h - 8)) + "px";
-    win.dataset.placed = "1";
-    return;
-  }
   const r = (refWin || winMain).getBoundingClientRect();
   const fitsRight = r.right + 16 + w < window.innerWidth;
   const left = fitsRight ? r.right + 16 : Math.max(8, r.left + 36);
@@ -923,20 +938,18 @@ function placeBeside(win, topOf, refWin) {
   win.style.top = Math.max(8, Math.min(top, window.innerHeight - h - 8)) + "px";
   win.dataset.placed = "1";
 }
-// on a phone, each window has exactly one place it's ever opened from, so "closed"
-// has one obvious destination — no need for a real navigation stack
-function toggleWin(win, topOf, refWin, returnTo) {
+function toggleWin(win, topOf, refWin) {
   if (win.hidden) {
     win.hidden = false;
-    if (isNarrowViewport()) showOnly(win);
-    placeBeside(win, topOf, refWin);
+    if (isNarrowViewport()) restackMobile();
+    else placeBeside(win, topOf, refWin);
   } else {
-    closeWin(win, returnTo);
+    closeWin(win);
   }
 }
-function closeWin(win, returnTo) {
+function closeWin(win) {
   win.hidden = true;
-  if (isNarrowViewport()) showOnly(returnTo || winMain);
+  if (isNarrowViewport()) restackMobile();
 }
 dialMid.addEventListener("click", () => {
   if (winStation.hidden) { chNameInput.value = MY.name; chIntroInput.value = MY.intro; renderTrackList(); }
@@ -953,11 +966,11 @@ langBtn.addEventListener("click", () => setLang(lang === "zh" ? "en" : "zh"));
 openShareBtn.addEventListener("click", () => {
   renderShareLinkBox();
   loadStamps();
-  toggleWin(winShare, () => winStation.getBoundingClientRect().top, winStation, winStation);
+  toggleWin(winShare, () => winStation.getBoundingClientRect().top, winStation);
 });
 stationClose.addEventListener("click", () => { stopRecording(); closeWin(winStation); });
 lookClose.addEventListener("click", () => closeWin(winLook));
-shareClose.addEventListener("click", () => closeWin(winShare, winStation));
+shareClose.addEventListener("click", () => closeWin(winShare));
 copyLinkBtn.addEventListener("click", async () => {
   const link = shareLinkText.textContent;
   try {
@@ -1048,12 +1061,18 @@ function makeDraggable(el, handle, onTap) {
 // wiring our own web-level drag on top of it fights the native one. The
 // window needs real decorations (macOS titleBarStyle: Overlay, not fully
 // undecorated) for native dragging to work at all — see project memory.
-if (!document.documentElement.classList.contains("in-tauri")) {
+// On a phone the four cards auto-stack (see restackMobile) instead of floating
+// freely, so dragging them would just fight the stack on the very next open or
+// close — skip wiring it there. The collapsed perch icon is unrelated to the
+// stack and stays draggable everywhere.
+if (!document.documentElement.classList.contains("in-tauri") && !isNarrowViewport()) {
   makeDraggable(winMain, $("dragMain"));
 }
-makeDraggable(winStation, $("dragStation"));
-makeDraggable(winLook, $("dragLook"));
-makeDraggable(winShare, $("dragShare"));
+if (!isNarrowViewport()) {
+  makeDraggable(winStation, $("dragStation"));
+  makeDraggable(winLook, $("dragLook"));
+  makeDraggable(winShare, $("dragShare"));
+}
 makeDraggable(perch, perch, () => sbfm.classList.remove("collapsed"));
 
 // ---- boot ----

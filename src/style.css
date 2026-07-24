@@ -406,7 +406,7 @@ body::after {
 .chsetup-input { background: none; border: none; border-bottom: 2px dotted var(--ink); border-radius: 0; padding: 5px 2px 7px; margin-bottom: 13px; }
 .chsetup-upload { background: none; }
 
-/* ---------- mobile: bigger tap targets, clearer nested-panel navigation ---------- */
+/* ---------- mobile: bigger tap targets, a stacking ritual instead of free-floating cards ---------- */
 @media (max-width: 600px) {
   /* the visual size stays put (it's part of the papercut system) — just the
      actual tappable area grows, since 18px alone is well under a comfortable
@@ -414,9 +414,15 @@ body::after {
   .wb::after, .track-remove::after { content: ""; position: absolute; inset: -13px; }
   .track-remove { position: relative; }
 
-  /* share is only ever opened from inside the station panel, so on a phone —
-     where closing it always returns there (see closeWin) — a small breadcrumb
-     makes that "back", not "quit", without changing what the × button does */
+  /* cards auto-stack (see restackMobile in main.js) instead of being dragged —
+     this is what actually produces the slide-into-place feel: only `top` ever
+     changes here, so a newly-revealed card sliding down from just above its
+     real slot, or an existing card shifting to close a gap when something above
+     it closes, both animate the same simple way */
+  .win { transition: top .32s cubic-bezier(.22, 1, .36, 1); }
+
+  /* share is only ever opened from inside the station panel — a small
+     breadcrumb marks that relationship, without changing what the × does */
   .back-hint {
     display: block; position: absolute; left: 8px; top: 50%; transform: translateY(-50%);
     max-width: 76px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
