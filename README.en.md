@@ -18,7 +18,7 @@ Hans Christian Andersen's papercutting art is the only visual reference — whit
 
 ## What works right now
 
-- **Four draggable papercut windows**: the radio / my station (name it, write a one-line intro, upload or record) / look (color + volume) / share (generate a link); draggable with a mouse on desktop and a finger on a phone, and the bird docks to a corner of the screen when collapsed
+- **Four papercut windows**: the radio / my station (name it, write a one-line intro, upload or record) / look (color + volume) / share (generate a link); drag them anywhere on desktop, and on a phone they slide out and stack in sequence instead — the bird still docks to a corner of the screen when collapsed
 - **Curated by design**: a station holds at most 7 tracks — picking a handful with care fits this product better than an unlimited dumping ground
 - **Drop to play**: drag audio onto the bird (or upload from the panel), title / artist / cover art read automatically from ID3 tags
 - **Press and hold to record**: not just uploading finished files — you can also record a moment straight from your mic
