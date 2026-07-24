@@ -16,3 +16,7 @@
 node_modules/
 dist/
 src-tauri/target/
+
+# 测试产物
+test-results/
+playwright-report/
