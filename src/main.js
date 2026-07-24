@@ -47,13 +47,14 @@ const I18N = {
     copyFailedLinkBelow: "复制失败 · 链接就在下面，手动复制发给朋友",
     uploadFailedNetwork: "上传失败：连不上云端服务器。Supabase 是海外服务，国内网络偶尔连不稳——挂个 VPN 再点一次「生成我的电台」试试；已经开着 VPN 的话，换个节点再试一次。",
     uploadFailed: "这次没能生成链接，可以再试一次",
-    uploadFailedKeepOld: "这次更新没有推送成功 · 之前发出去的链接不受影响，还能正常打开",
+    uploadFailedKeepOld: "这次的修改没有发布出去 · 朋友打开看到的还是上一次成功分享的内容",
+    shareNotYours: "这条链接已经不认得这个浏览器了（清过网站数据、或换过设备），所以改不动它 · 你这次的修改没有发布出去，朋友看到的还是旧的。想让新内容生效：点下面的「撤回分享」，再生成一条新链接发给朋友。",
     waitingForYou: "在等你收听",
     cloudDeleteBlocked: "云端拒绝了删除（缺少 delete 权限策略）",
     confirmRevoke: "确定要撤回分享吗？之前发给朋友的链接会立刻失效，这一步做完无法恢复。",
-    revoked: "已撤回 · 之前的链接已经失效，再点「生成分享链接」会是一条全新的",
+    revoked: "已撤回 · 之前的链接已经失效，再点「生成我的电台」会是一条全新的",
     revokeFailedNetwork: "撤回失败：连不上云端服务器，挂个 VPN 再试一次。",
-    revokeFailedButCleared: "这条链接已经收不回来了，但本地记录已清除 · 再点一次「生成分享链接」会是一条全新的",
+    revokeFailedButCleared: "这条链接已经收不回来了，但本地记录已清除 · 再点一次「生成我的电台」会是一条全新的",
     revokeFailed: (msg) => `撤回失败：${msg}`,
     untitled: "未命名", friendsStation: "朋友的电台", friend: "朋友", tuningIn: "调台中…",
     addTag: "＋ 标签", copied: "✓ 已复制", copyFailedSelect: "复制失败，请手动选中上面的链接",
@@ -98,13 +99,14 @@ const I18N = {
     copyFailedLinkBelow: "Copy failed · the link is right below, copy it manually to send",
     uploadFailedNetwork: "Upload failed: can't reach the cloud server. Supabase is hosted overseas, so this can be flaky on some networks — try a VPN and click Generate my station again; if you're already on one, try a different node.",
     uploadFailed: "Could not generate the link this time — feel free to try again",
-    uploadFailedKeepOld: "This update did not go through · the link you already sent is unaffected and still works",
+    uploadFailedKeepOld: "These edits were not published · your friend still sees whatever you last shared successfully",
+    shareNotYours: "This link no longer recognizes this browser (site data cleared, or a different device), so it cannot be edited · your changes were not published, and your friend still sees the old version. To publish them: hit Revoke share below, then generate a fresh link to send.",
     waitingForYou: "is waiting for you to listen",
     cloudDeleteBlocked: "Cloud rejected the delete (missing a delete policy)",
     confirmRevoke: "Revoke this share? The link you already sent will stop working immediately — this can't be undone.",
-    revoked: "Revoked · the old link no longer works. Click Generate share link again for a brand new one.",
+    revoked: "Revoked · the old link no longer works. Click Generate my station again for a brand new one.",
     revokeFailedNetwork: "Revoke failed: can't reach the cloud server, try a VPN and try again.",
-    revokeFailedButCleared: "This link can no longer be reclaimed, but it's been cleared locally · click Generate share link again for a brand new one",
+    revokeFailedButCleared: "This link can no longer be reclaimed, but it's been cleared locally · click Generate my station again for a brand new one",
     revokeFailed: (msg) => `Revoke failed: ${msg}`,
     untitled: "Untitled", friendsStation: "A friend's station", friend: "a friend", tuningIn: "Tuning in…",
     addTag: "+ Tag", copied: "✓ Copied", copyFailedSelect: "Copy failed, please select the link above manually",
@@ -512,35 +514,54 @@ function loadCachedSession() {
 function saveSession(session) {
   try { localStorage.setItem("sbfm-auth", JSON.stringify(session)); } catch {}
 }
+const sessionIsFresh = (s) => !!(s && s.access_token && s.expires_at && s.expires_at * 1000 > Date.now() + 60000);
+async function signUpAnon() {
+  const r = await fetch(`${CLOUD.url}/auth/v1/signup`, {
+    method: "POST",
+    headers: { apikey: CLOUD.anonKey, "Content-Type": "application/json" },
+    body: JSON.stringify({}),
+  });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  const session = await r.json();
+  if (!session.access_token) throw new Error("no access_token in response");
+  saveSession(session);
+  return session.access_token;
+}
 function ensureAnonSession() {
   if (anonSessionPromise) return anonSessionPromise;
   anonSessionPromise = (async () => {
     const cached = loadCachedSession();
-    if (cached && cached.access_token && cached.expires_at && cached.expires_at * 1000 > Date.now() + 60000) {
-      return cached.access_token;
-    }
+    if (sessionIsFresh(cached)) return cached.access_token;
     try {
-      if (cached && cached.refresh_token) {
-        const r = await fetch(`${CLOUD.url}/auth/v1/token?grant_type=refresh_token`, {
-          method: "POST",
-          headers: { apikey: CLOUD.anonKey, "Content-Type": "application/json" },
-          body: JSON.stringify({ refresh_token: cached.refresh_token }),
-        });
-        if (r.ok) { const session = await r.json(); saveSession(session); return session.access_token; }
-      }
-      const r = await fetch(`${CLOUD.url}/auth/v1/signup`, {
+      // no identity yet — nothing to protect, just take one
+      if (!cached || !cached.refresh_token) return await signUpAnon();
+
+      const r = await fetch(`${CLOUD.url}/auth/v1/token?grant_type=refresh_token`, {
         method: "POST",
         headers: { apikey: CLOUD.anonKey, "Content-Type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ refresh_token: cached.refresh_token }),
       });
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      const session = await r.json();
-      if (!session.access_token) throw new Error("no access_token in response");
-      saveSession(session);
-      return session.access_token;
+      if (r.ok) { const session = await r.json(); saveSession(session); return session.access_token; }
+
+      // a second tab racing this one would have rotated the refresh token out from
+      // under us and written the winner to storage — that reads as a rejection here,
+      // so re-check storage before concluding the identity is actually dead
+      const latest = loadCachedSession();
+      if (sessionIsFresh(latest) && latest.access_token !== cached.access_token) return latest.access_token;
+
+      // the refresh token is genuinely dead, so this identity can never prove
+      // ownership again no matter what we keep. Signing up is the only way back to a
+      // usable state, but stash the old one first: everything this browser already
+      // shared is owned by it, and that record is the only trace of why those
+      // stations suddenly became read-only.
+      try { localStorage.setItem("sbfm-auth-lost", JSON.stringify({ at: new Date().toISOString(), session: cached })); } catch {}
+      return await signUpAnon();
     } catch (e) {
-      console.warn("anonymous session unavailable, writes will use the shared key:", e);
-      return null;   // cached for the rest of this page session — a reload retries fresh
+      // a network-level failure says nothing about whether the identity is still
+      // good — replacing it here would silently orphan every station this browser
+      // has ever shared, so keep it and let a later page load retry the refresh
+      console.warn("anonymous session unavailable this page load, identity preserved:", e);
+      return null;
     }
   })();
   return anonSessionPromise;
@@ -556,7 +577,19 @@ async function cloudPut(path, blob) {
     },
     body: blob,
   });
-  if (!r.ok) throw new Error("HTTP " + r.status);
+  if (!r.ok) {
+    // Supabase answers an RLS-blocked storage write with 400, and hides the real
+    // reason in the body: {"statusCode":"403","message":"new row violates row-level
+    // security policy"}. The status alone cannot tell "this is not yours" apart from
+    // "this request was malformed", so read the body and tag the error accordingly —
+    // throwing away that body is what made this failure unreadable for days.
+    let detail = "";
+    try { detail = await r.text(); } catch {}
+    const err = new Error("HTTP " + r.status + (detail ? " · " + detail.slice(0, 200) : ""));
+    err.httpStatus = r.status;
+    err.blocked = /row-level security|Unauthorized/i.test(detail);
+    throw err;
+  }
 }
 // ---- lightweight, privacy-respecting error signal: no third-party analytics, no
 // per-user identity, just enough to know something broke. Filed anonymously into
@@ -642,8 +675,11 @@ async function shareStation() {
     // "can't reach the server" from "server responded but rejected it".
     const unreachable = e instanceof TypeError;
     if (unreachable) say(t("uploadFailedNetwork"));
-    // an update failing leaves the previously-shared link fully intact — say so,
-    // rather than showing a raw status code that reads as scarier than it is
+    // "not yours" is a dead end, not a retry — saying "try again" here would send
+    // someone in circles forever, so name the cause and point at the one way out
+    else if (e.blocked) say(t("shareNotYours"));
+    // never imply an update landed when it did not: the link still works, but it
+    // is serving the previous content, and only saying "unaffected" reads as success
     else say(isUpdate ? t("uploadFailedKeepOld") : t("uploadFailed"));
     reportError("shareStation", e);
   }
