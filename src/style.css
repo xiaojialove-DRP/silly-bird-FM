@@ -117,6 +117,7 @@ body::after {
   text-transform: uppercase; letter-spacing: 1px;
   background: var(--accent); color: var(--paper); padding: 1px 4px; border-radius: 2px; margin-left: 2px; vertical-align: 1.5px;
 }
+.back-hint { display: none; }   /* shown only on narrow viewports — see the mobile media query */
 .wb {
   width: 15px; height: 15px; border: 2px solid var(--ink); border-radius: 3px;
   background: var(--paper); display: grid; place-items: center;
@@ -404,3 +405,22 @@ body::after {
 .panel-body { padding: 6px 4px 8px; }
 .chsetup-input { background: none; border: none; border-bottom: 2px dotted var(--ink); border-radius: 0; padding: 5px 2px 7px; margin-bottom: 13px; }
 .chsetup-upload { background: none; }
+
+/* ---------- mobile: bigger tap targets, clearer nested-panel navigation ---------- */
+@media (max-width: 600px) {
+  /* the visual size stays put (it's part of the papercut system) — just the
+     actual tappable area grows, since 18px alone is well under a comfortable
+     touch target on a phone */
+  .wb::after, .track-remove::after { content: ""; position: absolute; inset: -13px; }
+  .track-remove { position: relative; }
+
+  /* share is only ever opened from inside the station panel, so on a phone —
+     where closing it always returns there (see closeWin) — a small breadcrumb
+     makes that "back", not "quit", without changing what the × button does */
+  .back-hint {
+    display: block; position: absolute; left: 8px; top: 50%; transform: translateY(-50%);
+    max-width: 76px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    background: var(--paper); padding: 0 4px; z-index: 1;
+    font-family: "Space Mono", "Songti SC", "STSong", "SimSun", monospace; font-size: 9px; color: var(--soft);
+  }
+}

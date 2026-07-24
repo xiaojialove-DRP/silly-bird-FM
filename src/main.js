@@ -1,5 +1,5 @@
 // silly bird FM — player core
-// Three floating papercut windows (radio / my-station / look), draggable, Poolsuite-style.
+// Four floating papercut windows (radio / my-station / look / share), each draggable.
 // P0: imports persist in IndexedDB (survive reload); MediaSession (system media keys);
 //     self-hosted fonts (see style.css).
 // P1: share = upload your station to cloud storage → send friends a ?listen= link;
@@ -26,7 +26,7 @@ const I18N = {
     uploadAudio: "⊕ 上传音频", holdToRecord: "● 按住录音", releaseToFinish: "松开完成",
     done: "完成", shareMyStation: "✉ 分享我的电台",
     look: "外观", interfaceColor: "界面颜色 · 你的偏好", volume: "音量",
-    share: "分享", generateShareLink: "✉ 生成分享链接",
+    share: "分享", backToStation: "‹ 我的电台", generateShareLink: "✉ 生成分享链接",
     yourLink: "链接如下 · 每次编辑后再点一次生成即可更新", copyLink: "复制链接",
     revokeShare: "撤回分享 · 让这条链接失效",
     sendStamp: "给朋友寄个回执吧。", stampsReceived: "收到的邮票",
@@ -54,7 +54,7 @@ const I18N = {
     revokeFailedNetwork: "撤回失败：连不上云端服务器，挂个 VPN 再试一次。",
     revokeFailedButCleared: "这条链接已经收不回来了，但本地记录已清除 · 再点一次「生成分享链接」会是一条全新的",
     revokeFailed: (msg) => `撤回失败：${msg}`,
-    untitled: "未命名", friendsStation: "朋友的电台", friend: "朋友",
+    untitled: "未命名", friendsStation: "朋友的电台", friend: "朋友", tuningIn: "调台中…",
     addTag: "＋ 标签", copied: "✓ 已复制", copyFailedSelect: "复制失败，请手动选中上面的链接",
     saved: "✓ 已保存", micDenied: "没能打开麦克风 · 请检查浏览器/系统的麦克风权限",
     recordingTitle: (m, d, h, mi) => `录音 ${m}-${d} ${h}:${mi}`,
@@ -76,7 +76,7 @@ const I18N = {
     uploadAudio: "⊕ Upload audio", holdToRecord: "● Hold to record", releaseToFinish: "Release when done",
     done: "Done", shareMyStation: "✉ Share my station",
     look: "Look", interfaceColor: "Interface color · your preference", volume: "Volume",
-    share: "Share", generateShareLink: "✉ Generate share link",
+    share: "Share", backToStation: "‹ My Station", generateShareLink: "✉ Generate share link",
     yourLink: "Your link is below · edit anytime, then click generate again to update it", copyLink: "Copy link",
     revokeShare: "Revoke share · kill this link",
     sendStamp: "Send your friend a receipt", stampsReceived: "Stamps received",
@@ -104,16 +104,16 @@ const I18N = {
     revokeFailedNetwork: "Revoke failed: can't reach the cloud server, try a VPN and try again.",
     revokeFailedButCleared: "This link can no longer be reclaimed, but it's been cleared locally · click Generate share link again for a brand new one",
     revokeFailed: (msg) => `Revoke failed: ${msg}`,
-    untitled: "Untitled", friendsStation: "A friend's station", friend: "a friend",
+    untitled: "Untitled", friendsStation: "A friend's station", friend: "a friend", tuningIn: "Tuning in…",
     addTag: "+ Tag", copied: "✓ Copied", copyFailedSelect: "Copy failed, please select the link above manually",
     saved: "✓ Saved", micDenied: "Couldn't open the mic · check your browser/system mic permission",
     recordingTitle: (m, d, h, mi) => `Recording ${m}/${d} ${h}:${mi}`,
 
-    demo1Name: "Late Night Overthinking", demo1Owner: "Xiaojia", demo1Intro: "Can't sleep, telling you about it",
-    demo1T1: "Coding till 3am", demo1T2: "On repeat lately, humming it for you", demo1T3: "White noise from the corner store",
+    demo1Name: "Late Night Overthinking", demo1Owner: "Xiaojia", demo1Intro: "Wide awake, and you're who I'm telling",
+    demo1T1: "Coding till 3am", demo1T2: "The song stuck in my head, hummed for you", demo1T3: "White noise from the corner store",
     demo2Name: "Rainy Days Only", demo2Owner: "Wren", demo2Intro: "Only updates when it rains",
     demo2T1: "A whole rainstorm from the balcony", demo2T2: "Read a bit of Kafka on the Shore",
-    demo3Name: "Kitchen Disco", demo3Owner: "Pomelo", demo3Intro: "Cooking and dancing at the same time",
+    demo3Name: "Kitchen Disco", demo3Owner: "Pomelo", demo3Intro: "Dancing while dinner cooks",
     demo3T1: "Singing badly while cooking", demo3T2: "The market was lively today",
   },
 };
@@ -556,6 +556,28 @@ async function cloudPut(path, blob) {
   });
   if (!r.ok) throw new Error("HTTP " + r.status);
 }
+// ---- lightweight, privacy-respecting error signal: no third-party analytics, no
+// per-user identity, just enough to know something broke. Filed anonymously into
+// the same bucket everything else already writes to — best-effort only, and must
+// never itself become a source of user-visible failure. Shares the same
+// require-a-session behavior as every other write, so a failure in establishing
+// the session itself can't self-report — an accepted, narrow blind spot rather
+// than a reason to give error reports their own more-open policy.
+function reportError(context, error) {
+  console.warn(`[${context}]`, error);
+  try {
+    const payload = {
+      context,
+      message: (error && error.message) ? error.message : String(error),
+      stack: (error && error.stack) ? String(error.stack).slice(0, 800) : "",
+      at: new Date().toISOString(),
+    };
+    const fname = `${todayStr()}_${Math.random().toString(36).slice(2, 8)}.json`;
+    cloudPut(`errors/${fname}`, new Blob([JSON.stringify(payload)], { type: "application/json" })).catch(() => {});
+  } catch {}
+}
+window.addEventListener("error", (e) => reportError("uncaught", e.error || e.message));
+window.addEventListener("unhandledrejection", (e) => reportError("unhandledrejection", e.reason));
 function shareLinkFor(token) {
   const base = `${CLOUD.url}/storage/v1/object/public/${CLOUD.bucket}/${token}`;
   return location.origin + location.pathname + "?listen=" + encodeURIComponent(base);
@@ -602,6 +624,7 @@ async function shareStation() {
     // "can't reach the server" from "server responded but rejected it".
     const unreachable = e instanceof TypeError;
     say(unreachable ? t("uploadFailedNetwork") : t("uploadFailed", e && e.message ? e.message : e));
+    reportError("shareStation", e);
   }
   shareBtn.disabled = false;
 }
@@ -670,6 +693,7 @@ async function revokeShare() {
       say(t("revokeFailedButCleared"));
     } else {
       say(t("revokeFailed", e && e.message ? e.message : e));
+      reportError("revokeShare", e);
     }
   }
   revokeShareBtn.disabled = false;
@@ -698,7 +722,7 @@ async function loadGuestStation() {
     CHANNELS.unshift(ch);
     ci = 0; pi = 0;
     renderChannel();
-  } catch (e) { console.warn("listen link failed:", e); }
+  } catch (e) { reportError("loadGuestStation", e); }
 }
 
 // ---- P1.5 · listen stamps: an opt-in, once-a-day postcard a listener can send after
@@ -743,7 +767,7 @@ function sendStamp() {
   const fname = `${todayStr()}_${color}_${Math.random().toString(36).slice(2, 8)}.json`;
   cloudPut(`${token}/stamps/${fname}`, new Blob(["{}"], { type: "application/json" }))
     .then(() => { try { localStorage.setItem(stampThrottleKey(token), todayStr()); } catch {} })
-    .catch((e) => console.warn("stamp failed to send:", e));   // opt-in and low-stakes — fail quietly, no error UI
+    .catch((e) => reportError("sendStamp", e));   // opt-in and low-stakes — fail quietly, no error UI, just a signal
   setTimeout(() => {
     stampBtn.classList.remove("stamping");
     stampBtn.classList.remove("show");   // stamped and sent off — scales back out of the corner
@@ -778,7 +802,7 @@ async function loadStamps() {
     stampsGrid.innerHTML = stamps.map((s) => stampChipHtml(s.color, s.date)).join("");
     stampsBox.hidden = false;
   } catch (e) {
-    console.warn("loading stamps failed:", e);
+    reportError("loadStamps", e);
     stampsBox.hidden = true;
   }
 }
@@ -1043,6 +1067,18 @@ makeDraggable(perch, perch, () => sbfm.classList.remove("collapsed"));
   // almost certainly already resolved and cached, so it never adds visible latency
   // to the moment that matters
   if (CLOUD.url && CLOUD.anonKey) ensureAnonSession();
+  // a friend's link takes a real network round-trip to resolve — show that
+  // something is happening immediately instead of flashing the default channel
+  // first and then swapping to the real one a moment later
+  const hasGuestLink = !!new URLSearchParams(location.search).get("listen");
+  if (hasGuestLink) {
+    elFreq.textContent = "···";
+    elSname.textContent = t("tuningIn");
+    elTagline.hidden = true;
+    elTitle.textContent = "";
+    elKind.textContent = "";
+    elDjWrap.hidden = true;
+  }
   // screenshot helper first (synchronous): ?shot=main|station|look isolates one window at 20,20
   const shot = new URLSearchParams(location.search).get("shot");
   if (shot) {
@@ -1077,17 +1113,19 @@ makeDraggable(perch, perch, () => sbfm.classList.remove("collapsed"));
       })));
       MY.created = true;
     }
-  } catch (e) { console.warn("idb restore failed:", e); }
+  } catch (e) { reportError("idbRestore", e); }
 
   // turning the radio on should land you on a station that's already playing —
   // like a real radio, not a blank "make your own broadcast" screen. First-time
   // visitors land on a friend's channel; once you've made your own, you come back
   // to it. (A ?listen= link below still wins over both.)
   if (!MY.created) ci = 1;
-  setLang(lang);   // applies the restored language to static chrome + demo content + dial
-
-  // a friend's link?
+  // resolve a friend's link (a no-op right away if there isn't one) before the
+  // first real render, so setLang()'s renderChannel() paints the guest station
+  // directly instead of showing the default channel first and swapping a moment
+  // later once the fetch comes back
   await loadGuestStation();
+  setLang(lang);   // applies the restored language to static chrome + demo content + dial
 
   // dev helper: ?seed=1 imports a synthetic tone (used to e2e-test IDB persistence and
   // to populate demo content for README screenshots). Idempotent — a second load with
