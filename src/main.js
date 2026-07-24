@@ -52,6 +52,7 @@ const I18N = {
     confirmRevoke: "确定要撤回分享吗？之前发给朋友的链接会立刻失效，这一步做完无法恢复。",
     revoked: "已撤回 · 之前的链接已经失效，再点「生成分享链接」会是一条全新的",
     revokeFailedNetwork: "撤回失败：连不上云端服务器，挂个 VPN 再试一次。",
+    revokeFailedButCleared: "这条链接已经收不回来了，但本地记录已清除 · 再点一次「生成分享链接」会是一条全新的",
     revokeFailed: (msg) => `撤回失败：${msg}`,
     untitled: "未命名", friendsStation: "朋友的电台", friend: "朋友",
     addTag: "＋ 标签", copied: "✓ 已复制", copyFailedSelect: "复制失败，请手动选中上面的链接",
@@ -101,6 +102,7 @@ const I18N = {
     confirmRevoke: "Revoke this share? The link you already sent will stop working immediately — this can't be undone.",
     revoked: "Revoked · the old link no longer works. Click Generate share link again for a brand new one.",
     revokeFailedNetwork: "Revoke failed: can't reach the cloud server, try a VPN and try again.",
+    revokeFailedButCleared: "This link can no longer be reclaimed, but it's been cleared locally · click Generate share link again for a brand new one",
     revokeFailed: (msg) => `Revoke failed: ${msg}`,
     untitled: "Untitled", friendsStation: "A friend's station", friend: "a friend",
     addTag: "+ Tag", copied: "✓ Copied", copyFailedSelect: "Copy failed, please select the link above manually",
@@ -494,16 +496,65 @@ trackList.addEventListener("click", (e) => {
 
 // ---- P1 · share my station: upload to cloud, hand friends a ?listen= link ----
 function say(msg, target = shareOut) { target.hidden = false; target.textContent = msg; }
-function cloudPut(path, blob) {
-  return fetch(`${CLOUD.url}/storage/v1/object/${CLOUD.bucket}/${path}`, {
+// ---- anonymous auth: each browser gets its own silent, real (if anonymous)
+// identity, so writes can be scoped to "whoever created this" instead of every
+// visitor sharing one all-powerful key. Reads stay on the bare anon key always —
+// listening must stay public. Falls back to the bare key for writes too if
+// anonymous sign-ins aren't enabled on the project yet, so this is safe to ship
+// ahead of that Supabase-side toggle: nothing changes until the project side is
+// flipped on and the RLS policies are tightened to require it.
+let anonSessionPromise = null;
+function loadCachedSession() {
+  try { return JSON.parse(localStorage.getItem("sbfm-auth") || "null"); } catch { return null; }
+}
+function saveSession(session) {
+  try { localStorage.setItem("sbfm-auth", JSON.stringify(session)); } catch {}
+}
+function ensureAnonSession() {
+  if (anonSessionPromise) return anonSessionPromise;
+  anonSessionPromise = (async () => {
+    const cached = loadCachedSession();
+    if (cached && cached.access_token && cached.expires_at && cached.expires_at * 1000 > Date.now() + 60000) {
+      return cached.access_token;
+    }
+    try {
+      if (cached && cached.refresh_token) {
+        const r = await fetch(`${CLOUD.url}/auth/v1/token?grant_type=refresh_token`, {
+          method: "POST",
+          headers: { apikey: CLOUD.anonKey, "Content-Type": "application/json" },
+          body: JSON.stringify({ refresh_token: cached.refresh_token }),
+        });
+        if (r.ok) { const session = await r.json(); saveSession(session); return session.access_token; }
+      }
+      const r = await fetch(`${CLOUD.url}/auth/v1/signup`, {
+        method: "POST",
+        headers: { apikey: CLOUD.anonKey, "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const session = await r.json();
+      if (!session.access_token) throw new Error("no access_token in response");
+      saveSession(session);
+      return session.access_token;
+    } catch (e) {
+      console.warn("anonymous session unavailable, writes will use the shared key:", e);
+      return null;   // cached for the rest of this page session — a reload retries fresh
+    }
+  })();
+  return anonSessionPromise;
+}
+async function cloudPut(path, blob) {
+  const token = await ensureAnonSession();
+  const r = await fetch(`${CLOUD.url}/storage/v1/object/${CLOUD.bucket}/${path}`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${CLOUD.anonKey}`, apikey: CLOUD.anonKey,
+      Authorization: `Bearer ${token || CLOUD.anonKey}`, apikey: CLOUD.anonKey,
       "x-upsert": "true",   // re-sharing reuses the same path on purpose — must overwrite, not conflict
       "Content-Type": blob.type || "application/octet-stream",
     },
     body: blob,
-  }).then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); });
+  });
+  if (!r.ok) throw new Error("HTTP " + r.status);
 }
 function shareLinkFor(token) {
   const base = `${CLOUD.url}/storage/v1/object/public/${CLOUD.bucket}/${token}`;
@@ -561,17 +612,28 @@ function cloudList(prefix) {
     body: JSON.stringify({ prefix, limit: 100 }),
   }).then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); });
 }
-function cloudDelete(paths) {
+async function cloudDelete(paths) {
+  const token = await ensureAnonSession();
   return fetch(`${CLOUD.url}/storage/v1/object/${CLOUD.bucket}`, {
     method: "DELETE",
-    headers: { Authorization: `Bearer ${CLOUD.anonKey}`, apikey: CLOUD.anonKey, "Content-Type": "application/json" },
+    headers: { Authorization: `Bearer ${token || CLOUD.anonKey}`, apikey: CLOUD.anonKey, "Content-Type": "application/json" },
     body: JSON.stringify({ prefixes: paths }),
   }).then(async (r) => {
-    if (!r.ok) throw new Error("HTTP " + r.status);
+    if (!r.ok) {
+      const err = new Error("HTTP " + r.status);
+      err.httpStatus = r.status;
+      throw err;
+    }
     const deleted = await r.json();
     // Supabase answers 200 with an empty array (not a 403) when RLS blocks a
-    // delete — "asked to delete N, deleted 0" is the real failure signal here
-    if (paths.length && !deleted.length) throw new Error(t("cloudDeleteBlocked"));
+    // delete — "asked to delete N, deleted 0" is the real failure signal here.
+    // Tagged on the error object (not just baked into the translated message)
+    // so callers can detect "blocked, not just broken" without matching text.
+    if (paths.length && !deleted.length) {
+      const err = new Error(t("cloudDeleteBlocked"));
+      err.blocked = true;
+      throw err;
+    }
     return deleted;
   });
 }
@@ -593,7 +655,22 @@ async function revokeShare() {
     say(t("revoked"));
   } catch (e) {
     const unreachable = e instanceof TypeError;
-    say(unreachable ? t("revokeFailedNetwork") : t("revokeFailed", e && e.message ? e.message : e));
+    const notYours = !unreachable && (e.blocked || e.httpStatus === 403);
+    if (unreachable) {
+      say(t("revokeFailedNetwork"));
+    } else if (notYours) {
+      // this link isn't deletable by this browser anymore (most likely: it predates
+      // an ownership rule change) — retrying will never succeed, and there's nothing
+      // left to protect by keeping it "active" locally, so clear it here too. A fresh
+      // click on generate-share-link then mints a brand new, fully-working link
+      // instead of forever retrying a delete that can't go through.
+      MY.shareToken = null;
+      persistStationMeta();
+      renderShareLinkBox();
+      say(t("revokeFailedButCleared"));
+    } else {
+      say(t("revokeFailed", e && e.message ? e.message : e));
+    }
   }
   revokeShareBtn.disabled = false;
 }
@@ -797,10 +874,24 @@ window.addEventListener("touchcancel", stopRecording);
 recordBtn.addEventListener("contextmenu", (e) => e.preventDefault());
 
 // ---- windows: open / close / first-open placement beside the main radio ----
+// below this width, the four cards can't sit side by side without spilling off
+// screen — placeBeside()'s desktop cascade only nudges a window +36px when it
+// doesn't fit to the right, which on a phone just stacks every panel almost
+// exactly on top of the last one. Below the line, show one card at a time instead.
+const isNarrowViewport = () => window.innerWidth < 600;
+function showOnly(win) {
+  [winMain, winStation, winLook, winShare].forEach((w) => { w.hidden = (w !== win); });
+}
 function placeBeside(win, topOf, refWin) {
   if (win.dataset.placed) return;
-  const r = (refWin || winMain).getBoundingClientRect();
   const w = win.offsetWidth || 320, h = win.offsetHeight || 200;
+  if (isNarrowViewport()) {
+    win.style.left = Math.max(8, (window.innerWidth - w) / 2) + "px";
+    win.style.top = Math.max(8, Math.min(60, window.innerHeight - h - 8)) + "px";
+    win.dataset.placed = "1";
+    return;
+  }
+  const r = (refWin || winMain).getBoundingClientRect();
   const fitsRight = r.right + 16 + w < window.innerWidth;
   const left = fitsRight ? r.right + 16 : Math.max(8, r.left + 36);
   const top = (topOf ? topOf() : r.top) + (fitsRight ? 0 : 36);
@@ -808,9 +899,20 @@ function placeBeside(win, topOf, refWin) {
   win.style.top = Math.max(8, Math.min(top, window.innerHeight - h - 8)) + "px";
   win.dataset.placed = "1";
 }
-function toggleWin(win, topOf, refWin) {
-  if (win.hidden) { win.hidden = false; placeBeside(win, topOf, refWin); }
-  else win.hidden = true;
+// on a phone, each window has exactly one place it's ever opened from, so "closed"
+// has one obvious destination — no need for a real navigation stack
+function toggleWin(win, topOf, refWin, returnTo) {
+  if (win.hidden) {
+    win.hidden = false;
+    if (isNarrowViewport()) showOnly(win);
+    placeBeside(win, topOf, refWin);
+  } else {
+    closeWin(win, returnTo);
+  }
+}
+function closeWin(win, returnTo) {
+  win.hidden = true;
+  if (isNarrowViewport()) showOnly(returnTo || winMain);
 }
 dialMid.addEventListener("click", () => {
   if (winStation.hidden) { chNameInput.value = MY.name; chIntroInput.value = MY.intro; renderTrackList(); }
@@ -827,11 +929,11 @@ langBtn.addEventListener("click", () => setLang(lang === "zh" ? "en" : "zh"));
 openShareBtn.addEventListener("click", () => {
   renderShareLinkBox();
   loadStamps();
-  toggleWin(winShare, () => winStation.getBoundingClientRect().top, winStation);
+  toggleWin(winShare, () => winStation.getBoundingClientRect().top, winStation, winStation);
 });
-stationClose.addEventListener("click", () => { stopRecording(); winStation.hidden = true; });
-lookClose.addEventListener("click", () => (winLook.hidden = true));
-shareClose.addEventListener("click", () => (winShare.hidden = true));
+stationClose.addEventListener("click", () => { stopRecording(); closeWin(winStation); });
+lookClose.addEventListener("click", () => closeWin(winLook));
+shareClose.addEventListener("click", () => closeWin(winShare, winStation));
 copyLinkBtn.addEventListener("click", async () => {
   const link = shareLinkText.textContent;
   try {
@@ -937,6 +1039,10 @@ makeDraggable(perch, perch, () => sbfm.classList.remove("collapsed"));
   // authored in index.html
   applyStaticI18n();
   document.documentElement.lang = lang === "en" ? "en" : "zh";
+  // fire and forget — by the time anyone actually shares/revokes/stamps, this has
+  // almost certainly already resolved and cached, so it never adds visible latency
+  // to the moment that matters
+  if (CLOUD.url && CLOUD.anonKey) ensureAnonSession();
   // screenshot helper first (synchronous): ?shot=main|station|look isolates one window at 20,20
   const shot = new URLSearchParams(location.search).get("shot");
   if (shot) {
