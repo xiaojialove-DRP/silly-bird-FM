@@ -315,7 +315,9 @@ body::after {
 .stamps-grid { display: flex; flex-wrap: wrap; gap: 8px; }
 .stamp-chip {
   display: flex; flex-direction: column; align-items: center; gap: 4px;
-  width: 44px; padding: 6px 4px; border: 1.5px dashed var(--sw); border-radius: 6px;
+  /* wide enough for a full YYYY-MM-DD: at 44px the date ran out over the dashed
+     edge, and text crossing the cut line reads as a printing mistake here */
+  width: 58px; padding: 6px 4px; border: 1.5px dashed var(--sw); border-radius: 6px;
 }
 .stamp-chip .stamp-badge { width: 22px; height: 22px; background: var(--sw); border-radius: 5px; }
 .stamp-chip .stamp-bird { width: 17px; height: 14px; }
