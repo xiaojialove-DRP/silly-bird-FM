@@ -113,20 +113,11 @@ body::after {
 }
 .wb.close { position: absolute; right: 7px; z-index: 1; }
 .wb.min { position: absolute; right: 7px; z-index: 1; padding-bottom: 3px; }
-/* A bare ❋ says nothing about colour. Filling it with the colour currently in use
-   turns it into a paint swatch: the control shows what it changes, so it needs no
-   label and no growth in a titlebar that has none to spare. The ring keeps it
-   reading as a button rather than a stray dot. */
-.wb.look {
-  position: absolute; left: 7px; z-index: 1;
-  width: 14px; height: 14px; border-radius: 50%;
-  font-size: 0;                                  /* the ❋ glyph is the fallback, not the design */
-  background: var(--night);
-  box-shadow: 0 0 0 2px var(--paper), 0 0 0 3.5px var(--ink);
-}
-.wb.look:hover { background: var(--night); opacity: .7; }
+/* the ❋ was simply too small to notice at 9px — it keeps the cut-paper feel a
+   filled swatch loses, so it just gets a little more presence */
+.wb.look { position: absolute; left: 7px; z-index: 1; font-size: 12px; }
 .wb.lang { position: absolute; left: 29px; z-index: 1; font-size: 8px; width: auto; min-width: 15px; padding: 0 2px; }
-.wb.min:hover, .wb.close:hover, .wb.lang:hover { background: none; color: var(--ink); opacity: .55; }
+.wb.min:hover, .wb.close:hover, .wb.look:hover, .wb.lang:hover { background: none; color: var(--ink); opacity: .55; }
 .hd { color: var(--ink); font-size: 8px; font-style: normal; vertical-align: 2px; opacity: .85; }
 
 /* ---------- the black screen ---------- */
