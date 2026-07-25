@@ -96,7 +96,8 @@ const chNameInput = $("chNameInput"), chIntroInput = $("chIntroInput"), chUpload
 const recordBtn = $("recordBtn"), recordIdle = document.querySelector(".record-idle"), recordLive = document.querySelector(".record-live"), recordTime = document.querySelector(".record-time");
 const recordOut = $("recordOut");
 const trackList = $("trackList"), trackCountLabel = $("trackCountLabel");
-const openShareBtn = $("openShareBtn"), shareBtn = $("shareBtn"), shareOut = $("shareOut"), restoreBtn = $("restoreBtn");
+const openShareBtn = $("openShareBtn"), shareBtn = $("shareBtn"), shareOut = $("shareOut");
+const restoreBtn = $("restoreBtn"), restoreInput = $("restoreInput");
 const shareLinkBox = $("shareLinkBox"), shareLinkText = $("shareLinkText"), copyLinkBtn = $("copyLinkBtn");
 const revokeShareBtn = $("revokeShareBtn");
 const stampBtn = $("stampBtn");
@@ -380,6 +381,9 @@ function renderTrackList() {
       </select>
       <button class="track-remove" data-i="${i}" aria-label="${esc(t("remove"))}" title="${esc(t("remove"))}">×</button>
     </div>`).join("");
+  // whether there is anything here is exactly what decides the recovery offer, so
+  // settle it wherever that changes rather than only when the panel opens
+  updateRestoreBtn();
 }
 function persistPiece(p) {
   if (!p.dbId) return;
@@ -613,45 +617,81 @@ async function loadGuestStation() {
 // owner already has the link — they sent it to someone. So the way back is the link
 // itself, which costs no accounts, no sync and no new format.
 //
-// Offered only when this device has no station of its own, so it can never quietly
-// overwrite one, and worded as recovery rather than "copy this" so a friend who is
-// simply listening has no reason to press it.
+// Never offered while someone is listening to a shared link. A friend opening your
+// link for the first time also has an empty station, so anything shown there lands
+// squarely in the path that matters most, asking a question they have no way to
+// understand. Recovery is a rare, deliberate act by the one person who knows the
+// link is theirs, so it asks for that link instead of guessing — and it lives only
+// on the bare site, where a friend arriving from a link never is.
+//
+// Also never offered when this device already holds a station, so it cannot quietly
+// overwrite one.
 //
 // The restored station deliberately does NOT adopt the old share token. Writes are
 // scoped to whoever created the files, and this browser is not that identity, so
 // keeping the token would only produce a confusing refusal the next time they
 // published. A fresh link gets minted instead, and the copy says so.
-function guestChannel() { return CHANNELS.find((c) => c.guest); }
+const hasGuestLink = () => !!new URLSearchParams(location.search).get("listen");
 function updateRestoreBtn() {
-  const canRestore = !!guestChannel() && !MY.pieces.some((p) => !p.placeholder);
+  const canRestore = !hasGuestLink() && !MY.pieces.some((p) => !p.placeholder);
   restoreBtn.hidden = !canRestore;
+  if (!canRestore) { restoreInput.hidden = true; restoreBtn.dataset.armed = ""; }
 }
-async function restoreFromGuest() {
-  const ch = guestChannel();
-  if (!ch || restoreBtn.disabled) return;
+// pasted text may be a whole share link or just the folder URL inside it
+function baseFromPastedLink(text) {
+  const raw = (text || "").trim();
+  if (!raw) return null;
+  let candidate = raw;
+  try {
+    const inner = new URL(raw).searchParams.get("listen");
+    if (inner) candidate = inner;
+  } catch { /* not a full URL — maybe they pasted the folder URL itself */ }
+  try {
+    const u = new URL(candidate);
+    if (!/^https?:$/.test(u.protocol)) return null;
+    return u.toString().replace(/\/+$/, "");
+  } catch { return null; }
+}
+async function restoreFromLink() {
+  if (restoreBtn.disabled) return;
+  // first press just asks for the link; nothing happens until there is one
+  if (!restoreBtn.dataset.armed) {
+    restoreInput.hidden = false;
+    restoreBtn.dataset.armed = "1";
+    restoreBtn.textContent = t("restoreDo");
+    restoreInput.focus();
+    return;
+  }
+  const base = baseFromPastedLink(restoreInput.value);
+  if (!base) { say(t("restoreBadLink"), recordOut); return; }
+
   restoreBtn.disabled = true;
   try {
+    const st = await (await fetch(`${base}/station.json?v=${Date.now()}`, { cache: "no-store" })).json();
+    const pieces = st.pieces || [];
+    if (!pieces.length) throw new Error("no pieces in manifest");
     const files = [];
-    for (let i = 0; i < ch.pieces.length; i++) {
-      say(t("restoring", i + 1, ch.pieces.length), recordOut);
-      const p = ch.pieces[i];
-      const r = await fetch(p.src);
+    for (let i = 0; i < pieces.length; i++) {
+      say(t("restoring", i + 1, pieces.length), recordOut);
+      const p = pieces[i];
+      const url = /^(data|https?):/.test(p.file) ? p.file : `${base}/${p.file}`;
+      const r = await fetch(url);
       if (!r.ok) throw new Error("HTTP " + r.status);
       const blob = await r.blob();
       const ext = ((blob.type.split("/")[1] || "bin").replace("mpeg", "mp3")).replace(/[^a-z0-9]/gi, "");
       files.push(new File([blob], `${p.title || "track"}.${ext || "bin"}`, { type: blob.type }));
     }
-    MY.name = ch.name; MY.owner = ch.name; MY.intro = ch.intro || "";
+    MY.name = st.name || MY.name; MY.owner = MY.name; MY.intro = st.intro || "";
     const added = importFiles(files) || [];
     // filenames carry the titles, but the tags are only in the manifest
-    added.forEach((p, i) => { if (ch.pieces[i]) { p.kind = ch.pieces[i].kind || ""; persistPiece(p); } });
+    added.forEach((p, i) => { if (pieces[i]) { p.kind = pieces[i].kind || ""; persistPiece(p); } });
     persistStationMeta();
     chNameInput.value = MY.name; chIntroInput.value = MY.intro;
     renderChannel(); renderTrackList(); updateRestoreBtn();
     say(t("restoredNeedsNewLink"), recordOut);
   } catch (e) {
     say(t("restoreFailed"), recordOut);
-    reportError("restoreFromGuest", e);
+    reportError("restoreFromLink", e);
   }
   restoreBtn.disabled = false;
 }
@@ -973,7 +1013,8 @@ function saveStation() {
   setTimeout(() => { stationSave.textContent = original; stationSave.disabled = false; }, 1100);
 }
 stationSave.addEventListener("click", saveStation);
-restoreBtn.addEventListener("click", restoreFromGuest);
+restoreBtn.addEventListener("click", restoreFromLink);
+restoreInput.addEventListener("keydown", (e) => { if (e.key === "Enter") restoreFromLink(); });
 [chNameInput, chIntroInput].forEach((el) => el.addEventListener("keydown", (e) => { if (e.key === "Enter") saveStation(); }));
 
 // ---- collapse / expand ----

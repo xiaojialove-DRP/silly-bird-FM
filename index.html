@@ -187,9 +187,11 @@
           <div class="share-out" id="recordOut" hidden></div>
           <button class="chsetup-save" id="stationSave" data-i18n="done">完成</button>
           <button class="chsetup-upload share" id="openShareBtn" data-i18n="generateShareLink">✉&nbsp;生成分享链接</button>
-          <!-- only when this device has no station of its own and a shared link is
-               open: the way back after a phone clears its storage, or onto a new one -->
-          <button class="chsetup-upload restore" id="restoreBtn" hidden data-i18n="restoreFromLink">↺&nbsp;这是我自己的电台 · 恢复到这台设备</button>
+          <!-- the way back after a phone clears its storage, or onto a new device.
+               Deliberately absent while a shared link is open, so a friend listening
+               to yours is never asked a question that is not theirs to answer. -->
+          <input class="chsetup-input restore-input" id="restoreInput" hidden data-i18n-placeholder="restorePlaceholder" placeholder="粘贴你之前发出去的那条链接" />
+          <button class="chsetup-upload restore" id="restoreBtn" hidden data-i18n="restoreFromLink">↺&nbsp;从我自己的分享链接恢复</button>
         </div>
       </section>
     </div>
