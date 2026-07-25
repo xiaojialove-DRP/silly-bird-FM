@@ -7,130 +7,9 @@
 //     Cloud is config-gated: fill CLOUD below (see README «分享» section).
 window.__SBFM = "p0p1";
 
-// ---- cloud config lives in src/cloud-config.js (gitignored; copy cloud-config.example.js) ----
-const CLOUD = window.SBFM_CLOUD || { url: "", anonKey: "", bucket: "stations" };
+import { CLOUD, ensureAnonSession, cloudPut, cloudList, cloudDelete, reportError, todayStr } from "./cloud.js";
 
-// ---- i18n: one-click 中文/EN toggle for the app's own copy (labels, messages, demo
-// content). A real user's own station name/intro/track titles, or a friend's shared
-// station content, are never routed through this — that's someone's own words, not
-// ours to translate. lang is read synchronously so it's ready before CHANNELS below
-// (the demo stations' first render) is built. ----
-const I18N = {
-  zh: {
-    openApp: "打开 silly bird fm", lookVolume: "外观与音量", collapseToBird: "收回成小鸟",
-    dropHint: "松手 · 放进小鸟的电台 ♪", openMyStation: "打开我的电台",
-    myStation: "我的电台", me: "我", close: "关闭",
-    stationName: "电台名", stationNamePlaceholder: "给你的电台取个名字",
-    stationIntro: "一句话介绍", stationIntroPlaceholder: "比如：睡不着的夜里，说给你听",
-    programs: "节目", programsCount: (n, max) => `节目 · ${n}/${max}`,
-    uploadAudio: "⊕ 上传音频", holdToRecord: "● 按住录音", releaseToFinish: "松开完成",
-    done: "完成", shareMyStation: "✉ 生成我的电台",
-    look: "外观", interfaceColor: "界面颜色 · 你的偏好", volume: "音量",
-    share: "分享", backToStation: "‹ 我的电台", generateShareLink: "✉ 生成分享链接",
-    yourLink: "链接如下 · 每次编辑后再点一次生成即可更新", copyLink: "✉ 复制以下链接",
-    revokeShare: "撤回分享 · 让这条链接失效",
-    sendStamp: "给朋友寄个回执吧。", stampsReceived: "收到的邮票",
-    trackName: "节目名称", trackTag: "节目标签（可选）", remove: "移除",
-    colorCrimson: "绛红", colorRust: "赤陶", colorOchre: "蜜赭", colorGreen: "墨绿",
-    colorBlue: "蓝", colorPlum: "梅紫", colorBlack: "黑",
-
-    noProgramsYet: "还没有节目", tapAboveToCreate: "点上面创建电台",
-    inviteMakeYourOwn: "＋ 邀请你也做一个自己的电台", tuneListenFriend: "◁ ▷ 先听听朋友的电台",
-    stationFull: (n) => `电台已经满了（最多 ${n} 首）· 删掉一首再加新的`,
-    stationFullRecord: (n) => `电台已经满了（最多 ${n} 首）· 删掉一首再录新的`,
-    stationFullTrim: (n, used) => `电台最多 ${n} 首 · 这次加了前 ${used} 首，其余没加`,
-    dropOrUploadFirst: "先拖入或上传至少一段声音",
-    cloudNotConfigured: "还没配置云端 · 打开 src/main.js 顶部 CLOUD，照 README「分享」两分钟填好",
-    uploading: (i, n) => `上传中 ${i} / ${n} …`,
-    shareUpdated: "已更新 · 之前发过的链接会自动显示最新内容",
-    shareCopied: "已复制 · 粘贴发给朋友就是一张分享卡",
-    copyFailedLinkBelow: "复制失败 · 链接就在下面，手动复制发给朋友",
-    uploadFailedNetwork: "上传失败：连不上云端服务器。Supabase 是海外服务，国内网络偶尔连不稳——挂个 VPN 再点一次「生成我的电台」试试；已经开着 VPN 的话，换个节点再试一次。",
-    uploadFailed: "这次没能生成链接，可以再试一次",
-    uploadFailedKeepOld: "这次的修改没有发布出去 · 朋友打开看到的还是上一次成功分享的内容",
-    cannotSignIn: "暂时没能连上账号服务，所以这次没有发布出去 · 过一会儿再试一次就好",
-    publishedButUnverified: "上传完成了，但回读检查没通过 · 朋友现在打开可能还是旧的，过一会儿再点一次「生成我的电台」",
-    shareNotYours: "这条链接已经不认得这个浏览器了（清过网站数据、或换过设备），所以改不动它 · 你这次的修改没有发布出去，朋友看到的还是旧的。想让新内容生效：点下面的「撤回分享」，再生成一条新链接发给朋友。",
-    waitingForYou: "在等你收听",
-    cloudDeleteBlocked: "云端拒绝了删除（缺少 delete 权限策略）",
-    confirmRevoke: "确定要撤回分享吗？之前发给朋友的链接会立刻失效，这一步做完无法恢复。",
-    revoked: "已撤回 · 之前的链接已经失效，再点「生成我的电台」会是一条全新的",
-    revokeFailedNetwork: "撤回失败：连不上云端服务器，挂个 VPN 再试一次。",
-    revokeFailedButCleared: "这条链接已经收不回来了，但本地记录已清除 · 再点一次「生成我的电台」会是一条全新的",
-    revokeFailed: (msg) => `撤回失败：${msg}`,
-    untitled: "未命名", friendsStation: "朋友的电台", friend: "朋友", tuningIn: "调台中…",
-    addTag: "＋ 标签", copied: "✓ 已复制", copyFailedSelect: "复制失败，请手动选中上面的链接",
-    saved: "✓ 已保存", micDenied: "没能打开麦克风 · 请检查浏览器/系统的麦克风权限",
-    recordingTitle: (m, d, h, mi) => `录音 ${m}-${d} ${h}:${mi}`,
-
-    demo1Name: "深夜胡思乱想", demo1Owner: "小佳", demo1Intro: "睡不着的夜里，说给你听",
-    demo1T1: "写代码写到凌晨三点", demo1T2: "最近单曲循环，哼给你听", demo1T3: "楼下便利店的白噪音",
-    demo2Name: "雨天限定", demo2Owner: "Wren", demo2Intro: "只在下雨天更新",
-    demo2T1: "阳台上的一整场雨", demo2T2: "读了一段《海边的卡夫卡》",
-    demo3Name: "厨房迪斯科", demo3Owner: "Pomelo", demo3Intro: "一边做饭一边跳舞",
-    demo3T1: "边做饭边乱唱", demo3T2: "今天菜市场好热闹",
-  },
-  en: {
-    openApp: "Open silly bird fm", lookVolume: "Look & volume", collapseToBird: "Collapse to bird",
-    dropHint: "Let go · into the bird's station ♪", openMyStation: "Open my station",
-    myStation: "My Station", me: "Me", close: "Close",
-    stationName: "Station name", stationNamePlaceholder: "Give your station a name",
-    stationIntro: "One-line intro", stationIntroPlaceholder: "e.g. Can't sleep, telling you about it",
-    programs: "Programs", programsCount: (n, max) => `Programs · ${n}/${max}`,
-    uploadAudio: "⊕ Upload audio", holdToRecord: "● Hold to record", releaseToFinish: "Release when done",
-    done: "Done", shareMyStation: "✉ Generate my station",
-    look: "Look", interfaceColor: "Interface color · your preference", volume: "Volume",
-    share: "Share", backToStation: "‹ My Station", generateShareLink: "✉ Generate share link",
-    yourLink: "Your link is below · edit anytime, then click generate again to update it", copyLink: "✉ Copy the link below",
-    revokeShare: "Revoke share · kill this link",
-    sendStamp: "Send your friend a receipt", stampsReceived: "Stamps received",
-    trackName: "Track name", trackTag: "Track tag (optional)", remove: "Remove",
-    colorCrimson: "Crimson", colorRust: "Rust", colorOchre: "Ochre", colorGreen: "Forest green",
-    colorBlue: "Blue", colorPlum: "Plum", colorBlack: "Black",
-
-    noProgramsYet: "No programs yet", tapAboveToCreate: "Tap above to create your station",
-    inviteMakeYourOwn: "＋ Make one of your own", tuneListenFriend: "◁ ▷ Listen to a friend's station first",
-    stationFull: (n) => `Station's full (max ${n}) · remove one to add another`,
-    stationFullRecord: (n) => `Station's full (max ${n}) · remove one to record another`,
-    stationFullTrim: (n, used) => `Max ${n} tracks per station · added the first ${used} this time, the rest didn't fit`,
-    dropOrUploadFirst: "Drop in or upload at least one sound first",
-    cloudNotConfigured: "Cloud isn't set up yet · open CLOUD at the top of src/main.js and follow the README's Sharing section, two minutes",
-    uploading: (i, n) => `Uploading ${i} / ${n} …`,
-    shareUpdated: "Updated · the link you already sent now shows the latest",
-    shareCopied: "Copied · paste it to a friend and it's a share card",
-    copyFailedLinkBelow: "Copy failed · the link is right below, copy it manually to send",
-    uploadFailedNetwork: "Upload failed: can't reach the cloud server. Supabase is hosted overseas, so this can be flaky on some networks — try a VPN and click Generate my station again; if you're already on one, try a different node.",
-    uploadFailed: "Could not generate the link this time — feel free to try again",
-    uploadFailedKeepOld: "These edits were not published · your friend still sees whatever you last shared successfully",
-    cannotSignIn: "Could not reach the sign-in service just now, so nothing was published · try again in a moment",
-    publishedButUnverified: "Uploaded, but reading the link back did not match · a friend opening it now may still get the old version. Give it a moment and click Generate my station again.",
-    shareNotYours: "This link no longer recognizes this browser (site data cleared, or a different device), so it cannot be edited · your changes were not published, and your friend still sees the old version. To publish them: hit Revoke share below, then generate a fresh link to send.",
-    waitingForYou: "is waiting for you to listen",
-    cloudDeleteBlocked: "Cloud rejected the delete (missing a delete policy)",
-    confirmRevoke: "Revoke this share? The link you already sent will stop working immediately — this can't be undone.",
-    revoked: "Revoked · the old link no longer works. Click Generate my station again for a brand new one.",
-    revokeFailedNetwork: "Revoke failed: can't reach the cloud server, try a VPN and try again.",
-    revokeFailedButCleared: "This link can no longer be reclaimed, but it's been cleared locally · click Generate my station again for a brand new one",
-    revokeFailed: (msg) => `Revoke failed: ${msg}`,
-    untitled: "Untitled", friendsStation: "A friend's station", friend: "a friend", tuningIn: "Tuning in…",
-    addTag: "+ Tag", copied: "✓ Copied", copyFailedSelect: "Copy failed, please select the link above manually",
-    saved: "✓ Saved", micDenied: "Couldn't open the mic · check your browser/system mic permission",
-    recordingTitle: (m, d, h, mi) => `Recording ${m}/${d} ${h}:${mi}`,
-
-    demo1Name: "Late Night Overthinking", demo1Owner: "Xiaojia", demo1Intro: "Wide awake, and you're who I'm telling",
-    demo1T1: "Coding till 3am", demo1T2: "The song stuck in my head, hummed for you", demo1T3: "White noise from the corner store",
-    demo2Name: "Rainy Days Only", demo2Owner: "Wren", demo2Intro: "Only updates when it rains",
-    demo2T1: "A whole rainstorm from the balcony", demo2T2: "Read a bit of Kafka on the Shore",
-    demo3Name: "Kitchen Disco", demo3Owner: "Pomelo", demo3Intro: "Dancing while dinner cooks",
-    demo3T1: "Singing badly while cooking", demo3T2: "The market was lively today",
-  },
-};
-let lang = "en";
-try { lang = localStorage.getItem("sbfm-lang") === "zh" ? "zh" : "en"; } catch {}
-function t(key, ...args) {
-  const entry = (I18N[lang] && I18N[lang][key] !== undefined) ? I18N[lang][key] : I18N.zh[key];
-  return typeof entry === "function" ? entry(...args) : entry;
-}
+import { I18N, lang, t, setLangValue } from "./i18n.js";
 
 const PLACEHOLDER = () => ({ title: t("noProgramsYet"), kind: t("tapAboveToCreate"), dur: 0, placeholder: true });
 
@@ -185,8 +64,7 @@ function paintLangBtn() {
 // current dial/track-list/share-box — without touching a real user's own station
 // name/intro/track titles or a guest's shared content
 function setLang(l) {
-  lang = l === "en" ? "en" : "zh";
-  try { localStorage.setItem("sbfm-lang", lang); } catch {}
+  setLangValue(l);   // owns the variable and its persistence — see i18n.js
   document.documentElement.lang = lang === "en" ? "en" : "zh";
   applyDemoLang();
   MY.pieces.forEach((p) => { if (p.placeholder) Object.assign(p, PLACEHOLDER()); });
@@ -504,140 +382,6 @@ trackList.addEventListener("click", (e) => {
 
 // ---- P1 · share my station: upload to cloud, hand friends a ?listen= link ----
 function say(msg, target = shareOut) { target.hidden = false; target.textContent = msg; }
-// ---- anonymous auth: each browser gets its own silent, real (if anonymous)
-// identity, so writes can be scoped to "whoever created this" instead of every
-// visitor sharing one all-powerful key. Reads stay on the bare anon key always —
-// listening must stay public and must never need an identity.
-//
-// This identity is load-bearing: it is the only proof a browser owns the stations
-// it has shared. Lose it and those stations are readable forever but editable never
-// again, which is why the paths below go out of their way not to throw one away.
-// It is also claimed lazily, only when something actually needs to write — sign-ins
-// are rate limited for the whole project, and spending them on listeners would
-// starve the people trying to create.
-let anonSessionPromise = null;
-let anonRetryAfter = 0;
-function loadCachedSession() {
-  try { return JSON.parse(localStorage.getItem("sbfm-auth") || "null"); } catch { return null; }
-}
-function saveSession(session) {
-  try { localStorage.setItem("sbfm-auth", JSON.stringify(session)); } catch {}
-}
-const sessionIsFresh = (s) => !!(s && s.access_token && s.expires_at && s.expires_at * 1000 > Date.now() + 60000);
-async function signUpAnon() {
-  const r = await fetch(`${CLOUD.url}/auth/v1/signup`, {
-    method: "POST",
-    headers: { apikey: CLOUD.anonKey, "Content-Type": "application/json" },
-    body: JSON.stringify({}),
-  });
-  if (!r.ok) throw new Error("HTTP " + r.status);
-  const session = await r.json();
-  if (!session.access_token) throw new Error("no access_token in response");
-  saveSession(session);
-  return session.access_token;
-}
-function ensureAnonSession() {
-  // storage is the source of truth and costs nothing to read, so consult it on
-  // every call rather than resolving once at boot. An access token lasts about an
-  // hour and this is a radio — the tab stays open far longer than that — so a
-  // session settled at load time is routinely dead by the time anyone shares.
-  const cached = loadCachedSession();
-  if (sessionIsFresh(cached)) return Promise.resolve(cached.access_token);
-  if (anonSessionPromise) return anonSessionPromise;   // one attempt in flight at a time
-  // a failed attempt should not turn every later write into another round trip
-  if (Date.now() < anonRetryAfter) return Promise.resolve(null);
-  const attempt = (async () => {
-    try {
-      // no identity yet — nothing to protect, just take one
-      if (!cached || !cached.refresh_token) return await signUpAnon();
-
-      const r = await fetch(`${CLOUD.url}/auth/v1/token?grant_type=refresh_token`, {
-        method: "POST",
-        headers: { apikey: CLOUD.anonKey, "Content-Type": "application/json" },
-        body: JSON.stringify({ refresh_token: cached.refresh_token }),
-      });
-      if (r.ok) { const session = await r.json(); saveSession(session); return session.access_token; }
-
-      // a second tab racing this one would have rotated the refresh token out from
-      // under us and written the winner to storage — that reads as a rejection here,
-      // so re-check storage before concluding the identity is actually dead
-      const latest = loadCachedSession();
-      if (sessionIsFresh(latest) && latest.access_token !== cached.access_token) return latest.access_token;
-
-      // the refresh token is genuinely dead, so this identity can never prove
-      // ownership again no matter what we keep. Signing up is the only way back to a
-      // usable state, but stash the old one first: everything this browser already
-      // shared is owned by it, and that record is the only trace of why those
-      // stations suddenly became read-only.
-      try { localStorage.setItem("sbfm-auth-lost", JSON.stringify({ at: new Date().toISOString(), session: cached })); } catch {}
-      return await signUpAnon();
-    } catch (e) {
-      // a network-level failure says nothing about whether the identity is still
-      // good — replacing it here would silently orphan every station this browser
-      // has ever shared, so keep it and let a later attempt retry the refresh
-      console.warn("anonymous session unavailable right now, identity preserved:", e);
-      anonRetryAfter = Date.now() + 60000;
-      return null;
-    }
-  })();
-  anonSessionPromise = attempt;
-  // release the slot once settled, so a token that expires later in this same page
-  // session can still be renewed instead of being stuck on the first result forever
-  attempt.finally(() => { if (anonSessionPromise === attempt) anonSessionPromise = null; });
-  return attempt;
-}
-async function cloudPut(path, blob) {
-  const token = await ensureAnonSession();
-  // writing requires a real identity: the policies only grant insert/update to a
-  // signed-in role, so retrying with the bare public key cannot succeed — it just
-  // comes back as an RLS rejection, which reads as "this is not yours" and sends
-  // everyone hunting for an ownership problem that does not exist
-  if (!token) { const err = new Error("no anonymous session available"); err.noSession = true; throw err; }
-  const r = await fetch(`${CLOUD.url}/storage/v1/object/${CLOUD.bucket}/${path}`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`, apikey: CLOUD.anonKey,
-      "x-upsert": "true",   // re-sharing reuses the same path on purpose — must overwrite, not conflict
-      "Content-Type": blob.type || "application/octet-stream",
-    },
-    body: blob,
-  });
-  if (!r.ok) {
-    // Supabase answers an RLS-blocked storage write with 400, and hides the real
-    // reason in the body: {"statusCode":"403","message":"new row violates row-level
-    // security policy"}. The status alone cannot tell "this is not yours" apart from
-    // "this request was malformed", so read the body and tag the error accordingly —
-    // throwing away that body is what made this failure unreadable for days.
-    let detail = "";
-    try { detail = await r.text(); } catch {}
-    const err = new Error("HTTP " + r.status + (detail ? " · " + detail.slice(0, 200) : ""));
-    err.httpStatus = r.status;
-    err.blocked = /row-level security|Unauthorized/i.test(detail);
-    throw err;
-  }
-}
-// ---- lightweight, privacy-respecting error signal: no third-party analytics, no
-// per-user identity, just enough to know something broke. Filed anonymously into
-// the same bucket everything else already writes to — best-effort only, and must
-// never itself become a source of user-visible failure. Shares the same
-// require-a-session behavior as every other write, so a failure in establishing
-// the session itself can't self-report — an accepted, narrow blind spot rather
-// than a reason to give error reports their own more-open policy.
-function reportError(context, error) {
-  console.warn(`[${context}]`, error);
-  try {
-    const payload = {
-      context,
-      message: (error && error.message) ? error.message : String(error),
-      stack: (error && error.stack) ? String(error.stack).slice(0, 800) : "",
-      at: new Date().toISOString(),
-    };
-    const fname = `${todayStr()}_${Math.random().toString(36).slice(2, 8)}.json`;
-    cloudPut(`errors/${fname}`, new Blob([JSON.stringify(payload)], { type: "application/json" })).catch(() => {});
-  } catch {}
-}
-window.addEventListener("error", (e) => reportError("uncaught", e.error || e.message));
-window.addEventListener("unhandledrejection", (e) => reportError("unhandledrejection", e.reason));
 function shareLinkFor(token) {
   const base = `${CLOUD.url}/storage/v1/object/public/${CLOUD.bucket}/${token}`;
   return location.origin + location.pathname + "?listen=" + encodeURIComponent(base);
@@ -751,41 +495,6 @@ async function shareStation() {
   shareBtn.disabled = false;
   copyLinkBtn.disabled = false;
 }
-function cloudList(prefix) {
-  return fetch(`${CLOUD.url}/storage/v1/object/list/${CLOUD.bucket}`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${CLOUD.anonKey}`, apikey: CLOUD.anonKey, "Content-Type": "application/json" },
-    body: JSON.stringify({ prefix, limit: 100 }),
-  }).then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); });
-}
-async function cloudDelete(paths) {
-  const token = await ensureAnonSession();
-  // same as cloudPut: without an identity this is guaranteed to be refused, and the
-  // refusal is indistinguishable from "someone else owns this"
-  if (!token) { const err = new Error("no anonymous session available"); err.noSession = true; throw err; }
-  return fetch(`${CLOUD.url}/storage/v1/object/${CLOUD.bucket}`, {
-    method: "DELETE",
-    headers: { Authorization: `Bearer ${token}`, apikey: CLOUD.anonKey, "Content-Type": "application/json" },
-    body: JSON.stringify({ prefixes: paths }),
-  }).then(async (r) => {
-    if (!r.ok) {
-      const err = new Error("HTTP " + r.status);
-      err.httpStatus = r.status;
-      throw err;
-    }
-    const deleted = await r.json();
-    // Supabase answers 200 with an empty array (not a 403) when RLS blocks a
-    // delete — "asked to delete N, deleted 0" is the real failure signal here.
-    // Tagged on the error object (not just baked into the translated message)
-    // so callers can detect "blocked, not just broken" without matching text.
-    if (paths.length && !deleted.length) {
-      const err = new Error(t("cloudDeleteBlocked"));
-      err.blocked = true;
-      throw err;
-    }
-    return deleted;
-  });
-}
 async function revokeShare() {
   if (!MY.shareToken) return;
   if (!confirm(t("confirmRevoke"))) return;
@@ -861,10 +570,6 @@ async function loadGuestStation() {
 // One stamp = one near-empty file whose NAME carries the date + the listener's own
 // theme color, so reading the collection back is a single list() call, no per-file
 // fetch needed. ----
-function todayStr() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
 const stampThrottleKey = (token) => `sbfm-stamp-${token}`;
 function alreadyStampedToday(token) {
   try { return localStorage.getItem(stampThrottleKey(token)) === todayStr(); } catch { return false; }
@@ -894,7 +599,12 @@ function sendStamp() {
   stampBtn.disabled = true;
   stampBtn.classList.add("stamping");   // the press-and-ink motion — no text state needed, the stamp IS the confirmation
   const color = currentTheme();
-  const fname = `${todayStr()}_${color}_${Math.random().toString(36).slice(2, 8)}.json`;
+  // the moment goes in the NAME too, in the listener's own local time — a postmark
+  // records when it was struck, and reading it back still costs one list() call and
+  // no per-file fetch. Stamps sent before this carry a date only, and still render.
+  const now = new Date();
+  const hhmm = `${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`;
+  const fname = `${todayStr()}T${hhmm}_${color}_${Math.random().toString(36).slice(2, 8)}.json`;
   cloudPut(`${token}/stamps/${fname}`, new Blob(["{}"], { type: "application/json" }))
     .then(() => { try { localStorage.setItem(stampThrottleKey(token), todayStr()); } catch {} })
     .catch((e) => reportError("sendStamp", e));   // opt-in and low-stakes — fail quietly, no error UI, just a signal
@@ -904,21 +614,38 @@ function sendStamp() {
     setTimeout(() => { stampBtn.hidden = true; stampBtn.disabled = false; }, 380);
   }, 500);
 }
-function stampChipHtml(color, date) {
+// A real postmark: one round ink strike, the date curved along the top of the ring,
+// the hour struck straight underneath. Same circle, same bird as the button a friend
+// pressed to send it — the thing they clicked is the thing that arrives.
+// Dates stay numeric in both languages: it is the one format that reads the same to
+// everyone, and a curved line this small has no room for a spelled-out month.
+function stampChipHtml(color, date, time, idx) {
   const hex = document.querySelector(`.swatch[data-theme="${color}"]`)?.style.getPropertyValue("--sw") || "var(--ink)";
+  const arc = `stamp-arc-${idx}`;   // textPath needs its own id per stamp on the page
   return `
-    <div class="stamp-chip" style="--sw:${esc(hex)}">
-      <span class="stamp-badge">
-        <svg class="stamp-bird" viewBox="0 0 200 172" aria-hidden="true">
+    <div class="stamp-chip" style="--sw:${esc(hex)}" title="${esc(date)}${time ? " " + esc(time) : ""}">
+      <svg class="stamp-mark" viewBox="0 0 100 100" role="img" aria-label="${esc(date)}${time ? " " + esc(time) : ""}">
+        <defs>
+          <!-- glyphs sit on top of this arc, so it has to clear the r=43 ring by a
+               whole line's ascent or the date cuts straight through the ink border -->
+          <path id="${arc}" d="M 21 50 A 29 29 0 0 1 79 50" />
+        </defs>
+        <circle class="stamp-ink" cx="50" cy="50" r="48" />
+        <circle class="stamp-ring" cx="50" cy="50" r="43" />
+        <text class="stamp-arc-text">
+          <textPath href="#${arc}" startOffset="50%" text-anchor="middle">${esc(date)}</textPath>
+        </text>
+        <g class="stamp-bird" transform="translate(21.65,25) scale(0.27)">
           <path class="silh2" d="M64 96 L22 82 L38 100 L18 108 L40 116 L24 134 L66 120 Z" />
           <ellipse class="silh2" cx="94" cy="104" rx="44" ry="40" />
           <circle class="silh2" cx="126" cy="64" r="26" />
           <path class="silh2" d="M148 62 L170 67 L148 75 Z" />
           <path class="chirp" d="M174 61 Q181 68 174 75 M182 56 Q192 68 182 80" />
           <path class="cut" d="M90 96 C85 87 72 90 75 101 C77 111 90 120 90 120 C90 120 103 111 105 101 C108 90 95 87 90 96 Z" />
-        </svg>
-      </span>
-      <span class="stamp-date">${esc(date)}</span>
+          <path class="legs2" d="M85 142 L81 169 M103 142 L108 169" />
+        </g>
+        ${time ? `<text class="stamp-time" x="50" y="83" text-anchor="middle">${esc(time)}</text>` : ""}
+      </svg>
     </div>`;
 }
 async function loadStamps() {
@@ -927,9 +654,14 @@ async function loadStamps() {
     const files = await cloudList(`${MY.shareToken}/stamps`);
     if (!files.length) { stampsBox.hidden = true; return; }
     const stamps = files
-      .map((f) => { const [date, color] = f.name.split("_"); return { date, color: color || "blue" }; })
-      .sort((a, b) => (a.date < b.date ? 1 : -1));   // newest first
-    stampsGrid.innerHTML = stamps.map((s) => stampChipHtml(s.color, s.date)).join("");
+      .map((f) => {
+        const [when, color] = f.name.split("_");
+        const [date, hhmm] = when.split("T");
+        // stamps predating the time-in-the-name change simply have no hhmm part
+        return { date, time: hhmm ? `${hhmm.slice(0, 2)}:${hhmm.slice(2, 4)}` : "", color: color || "blue", sort: when };
+      })
+      .sort((a, b) => (a.sort < b.sort ? 1 : -1));   // newest first
+    stampsGrid.innerHTML = stamps.map((s, i) => stampChipHtml(s.color, s.date, s.time, i)).join("");
     stampsBox.hidden = false;
   } catch (e) {
     reportError("loadStamps", e);

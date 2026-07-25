@@ -1,0 +1,138 @@
+// ---- i18n: the app's own copy, in both languages, plus the lookup ----
+// Split out of main.js purely because it is bulk data, not behaviour: ~120 lines of
+// dictionary sitting above the logic meant scrolling past it to reach anything real.
+//
+// Scope is deliberate and narrow. This translates strings THIS APP wrote — labels,
+// status messages, the three demo channels. It never touches a real station name,
+// intro or track title, and never a guest's shared content: those are someone's own
+// words, not ours to translate.
+//
+// `lang` is exported as a live binding, so importers always read the current value;
+// setLangValue() is the only way to change it. Everything that re-renders on a
+// language switch stays in main.js, because it is all DOM work.
+//
+// lang resolves synchronously on import, so it is ready before main.js builds the
+// demo stations for their first render.
+export const I18N = {
+  zh: {
+    openApp: "打开 silly bird fm", lookVolume: "外观与音量", collapseToBird: "收回成小鸟",
+    dropHint: "松手 · 放进小鸟的电台 ♪", openMyStation: "打开我的电台",
+    myStation: "我的电台", me: "我", close: "关闭",
+    stationName: "电台名", stationNamePlaceholder: "给你的电台取个名字",
+    stationIntro: "一句话介绍", stationIntroPlaceholder: "比如：睡不着的夜里，说给你听",
+    programs: "节目", programsCount: (n, max) => `节目 · ${n}/${max}`,
+    uploadAudio: "⊕ 上传音频", holdToRecord: "● 按住录音", releaseToFinish: "松开完成",
+    done: "完成", shareMyStation: "✉ 生成我的电台",
+    look: "外观", interfaceColor: "界面颜色 · 你的偏好", volume: "音量",
+    share: "分享", backToStation: "‹ 我的电台", generateShareLink: "✉ 生成分享链接",
+    yourLink: "链接如下 · 每次编辑后再点一次生成即可更新", copyLink: "✉ 复制以下链接",
+    revokeShare: "撤回分享 · 让这条链接失效",
+    sendStamp: "给朋友寄个回执吧。", stampsReceived: "收到的邮票",
+    trackName: "节目名称", trackTag: "节目标签（可选）", remove: "移除",
+    colorCrimson: "绛红", colorRust: "赤陶", colorOchre: "蜜赭", colorGreen: "墨绿",
+    colorBlue: "蓝", colorPlum: "梅紫", colorBlack: "黑",
+
+    noProgramsYet: "还没有节目", tapAboveToCreate: "点上面创建电台",
+    inviteMakeYourOwn: "＋ 邀请你也做一个自己的电台", tuneListenFriend: "◁ ▷ 先听听朋友的电台",
+    stationFull: (n) => `电台已经满了（最多 ${n} 首）· 删掉一首再加新的`,
+    stationFullRecord: (n) => `电台已经满了（最多 ${n} 首）· 删掉一首再录新的`,
+    stationFullTrim: (n, used) => `电台最多 ${n} 首 · 这次加了前 ${used} 首，其余没加`,
+    dropOrUploadFirst: "先拖入或上传至少一段声音",
+    cloudNotConfigured: "还没配置云端 · 打开 src/main.js 顶部 CLOUD，照 README「分享」两分钟填好",
+    uploading: (i, n) => `上传中 ${i} / ${n} …`,
+    shareUpdated: "已更新 · 之前发过的链接会自动显示最新内容",
+    shareCopied: "已复制 · 粘贴发给朋友就是一张分享卡",
+    copyFailedLinkBelow: "复制失败 · 链接就在下面，手动复制发给朋友",
+    uploadFailedNetwork: "上传失败：连不上云端服务器。Supabase 是海外服务，国内网络偶尔连不稳——挂个 VPN 再点一次「生成我的电台」试试；已经开着 VPN 的话，换个节点再试一次。",
+    uploadFailed: "这次没能生成链接，可以再试一次",
+    uploadFailedKeepOld: "这次的修改没有发布出去 · 朋友打开看到的还是上一次成功分享的内容",
+    cannotSignIn: "暂时没能连上账号服务，所以这次没有发布出去 · 过一会儿再试一次就好",
+    publishedButUnverified: "上传完成了，但回读检查没通过 · 朋友现在打开可能还是旧的，过一会儿再点一次「生成我的电台」",
+    shareNotYours: "这条链接已经不认得这个浏览器了（清过网站数据、或换过设备），所以改不动它 · 你这次的修改没有发布出去，朋友看到的还是旧的。想让新内容生效：点下面的「撤回分享」，再生成一条新链接发给朋友。",
+    waitingForYou: "在等你收听",
+    cloudDeleteBlocked: "云端拒绝了删除（缺少 delete 权限策略）",
+    confirmRevoke: "确定要撤回分享吗？之前发给朋友的链接会立刻失效，这一步做完无法恢复。",
+    revoked: "已撤回 · 之前的链接已经失效，再点「生成我的电台」会是一条全新的",
+    revokeFailedNetwork: "撤回失败：连不上云端服务器，挂个 VPN 再试一次。",
+    revokeFailedButCleared: "这条链接已经收不回来了，但本地记录已清除 · 再点一次「生成我的电台」会是一条全新的",
+    revokeFailed: (msg) => `撤回失败：${msg}`,
+    untitled: "未命名", friendsStation: "朋友的电台", friend: "朋友", tuningIn: "调台中…",
+    addTag: "＋ 标签", copied: "✓ 已复制", copyFailedSelect: "复制失败，请手动选中上面的链接",
+    saved: "✓ 已保存", micDenied: "没能打开麦克风 · 请检查浏览器/系统的麦克风权限",
+    recordingTitle: (m, d, h, mi) => `录音 ${m}-${d} ${h}:${mi}`,
+
+    demo1Name: "深夜胡思乱想", demo1Owner: "小佳", demo1Intro: "睡不着的夜里，说给你听",
+    demo1T1: "写代码写到凌晨三点", demo1T2: "最近单曲循环，哼给你听", demo1T3: "楼下便利店的白噪音",
+    demo2Name: "雨天限定", demo2Owner: "Wren", demo2Intro: "只在下雨天更新",
+    demo2T1: "阳台上的一整场雨", demo2T2: "读了一段《海边的卡夫卡》",
+    demo3Name: "厨房迪斯科", demo3Owner: "Pomelo", demo3Intro: "一边做饭一边跳舞",
+    demo3T1: "边做饭边乱唱", demo3T2: "今天菜市场好热闹",
+  },
+  en: {
+    openApp: "Open silly bird fm", lookVolume: "Look & volume", collapseToBird: "Collapse to bird",
+    dropHint: "Let go · into the bird's station ♪", openMyStation: "Open my station",
+    myStation: "My Station", me: "Me", close: "Close",
+    stationName: "Station name", stationNamePlaceholder: "Give your station a name",
+    stationIntro: "One-line intro", stationIntroPlaceholder: "e.g. Can't sleep, telling you about it",
+    programs: "Programs", programsCount: (n, max) => `Programs · ${n}/${max}`,
+    uploadAudio: "⊕ Upload audio", holdToRecord: "● Hold to record", releaseToFinish: "Release when done",
+    done: "Done", shareMyStation: "✉ Generate my station",
+    look: "Look", interfaceColor: "Interface color · your preference", volume: "Volume",
+    share: "Share", backToStation: "‹ My Station", generateShareLink: "✉ Generate share link",
+    yourLink: "Your link is below · edit anytime, then click generate again to update it", copyLink: "✉ Copy the link below",
+    revokeShare: "Revoke share · kill this link",
+    sendStamp: "Send your friend a receipt", stampsReceived: "Stamps received",
+    trackName: "Track name", trackTag: "Track tag (optional)", remove: "Remove",
+    colorCrimson: "Crimson", colorRust: "Rust", colorOchre: "Ochre", colorGreen: "Forest green",
+    colorBlue: "Blue", colorPlum: "Plum", colorBlack: "Black",
+
+    noProgramsYet: "No programs yet", tapAboveToCreate: "Tap above to create your station",
+    inviteMakeYourOwn: "＋ Make one of your own", tuneListenFriend: "◁ ▷ Listen to a friend's station first",
+    stationFull: (n) => `Station's full (max ${n}) · remove one to add another`,
+    stationFullRecord: (n) => `Station's full (max ${n}) · remove one to record another`,
+    stationFullTrim: (n, used) => `Max ${n} tracks per station · added the first ${used} this time, the rest didn't fit`,
+    dropOrUploadFirst: "Drop in or upload at least one sound first",
+    cloudNotConfigured: "Cloud isn't set up yet · open CLOUD at the top of src/main.js and follow the README's Sharing section, two minutes",
+    uploading: (i, n) => `Uploading ${i} / ${n} …`,
+    shareUpdated: "Updated · the link you already sent now shows the latest",
+    shareCopied: "Copied · paste it to a friend and it's a share card",
+    copyFailedLinkBelow: "Copy failed · the link is right below, copy it manually to send",
+    uploadFailedNetwork: "Upload failed: can't reach the cloud server. Supabase is hosted overseas, so this can be flaky on some networks — try a VPN and click Generate my station again; if you're already on one, try a different node.",
+    uploadFailed: "Could not generate the link this time — feel free to try again",
+    uploadFailedKeepOld: "These edits were not published · your friend still sees whatever you last shared successfully",
+    cannotSignIn: "Could not reach the sign-in service just now, so nothing was published · try again in a moment",
+    publishedButUnverified: "Uploaded, but reading the link back did not match · a friend opening it now may still get the old version. Give it a moment and click Generate my station again.",
+    shareNotYours: "This link no longer recognizes this browser (site data cleared, or a different device), so it cannot be edited · your changes were not published, and your friend still sees the old version. To publish them: hit Revoke share below, then generate a fresh link to send.",
+    waitingForYou: "is waiting for you to listen",
+    cloudDeleteBlocked: "Cloud rejected the delete (missing a delete policy)",
+    confirmRevoke: "Revoke this share? The link you already sent will stop working immediately — this can't be undone.",
+    revoked: "Revoked · the old link no longer works. Click Generate my station again for a brand new one.",
+    revokeFailedNetwork: "Revoke failed: can't reach the cloud server, try a VPN and try again.",
+    revokeFailedButCleared: "This link can no longer be reclaimed, but it's been cleared locally · click Generate my station again for a brand new one",
+    revokeFailed: (msg) => `Revoke failed: ${msg}`,
+    untitled: "Untitled", friendsStation: "A friend's station", friend: "a friend", tuningIn: "Tuning in…",
+    addTag: "+ Tag", copied: "✓ Copied", copyFailedSelect: "Copy failed, please select the link above manually",
+    saved: "✓ Saved", micDenied: "Couldn't open the mic · check your browser/system mic permission",
+    recordingTitle: (m, d, h, mi) => `Recording ${m}/${d} ${h}:${mi}`,
+
+    demo1Name: "Late Night Overthinking", demo1Owner: "Xiaojia", demo1Intro: "Wide awake, and you're who I'm telling",
+    demo1T1: "Coding till 3am", demo1T2: "The song stuck in my head, hummed for you", demo1T3: "White noise from the corner store",
+    demo2Name: "Rainy Days Only", demo2Owner: "Wren", demo2Intro: "Only updates when it rains",
+    demo2T1: "A whole rainstorm from the balcony", demo2T2: "Read a bit of Kafka on the Shore",
+    demo3Name: "Kitchen Disco", demo3Owner: "Pomelo", demo3Intro: "Dancing while dinner cooks",
+    demo3T1: "Singing badly while cooking", demo3T2: "The market was lively today",
+  },
+};
+export let lang = "en";
+try { lang = localStorage.getItem("sbfm-lang") === "zh" ? "zh" : "en"; } catch {}
+export function t(key, ...args) {
+  const entry = (I18N[lang] && I18N[lang][key] !== undefined) ? I18N[lang][key] : I18N.zh[key];
+  return typeof entry === "function" ? entry(...args) : entry;
+}
+
+export function setLangValue(l) {
+  lang = l === "en" ? "en" : "zh";
+  try { localStorage.setItem("sbfm-lang", lang); } catch {}
+  return lang;
+}
+

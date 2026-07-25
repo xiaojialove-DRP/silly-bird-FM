@@ -303,6 +303,9 @@ body::after {
 .stamp-cta.show { transform: scale(1) rotate(-8deg); opacity: 1; }
 .stamp-cta[disabled] { cursor: default; }
 .stamp-bird { width: 20px; height: 17px; overflow: visible; }
+/* 200 viewBox units squeezed into 20px, so a 3.5-wide stroke lands at a third of a
+   pixel and the legs simply vanish — thicken them to survive the reduction */
+.stamp-cta .stamp-bird .legs2 { stroke-width: 8; }
 .stamp-cta.stamping { animation: stampHit .3s ease; }
 @keyframes stampHit {
   0%   { transform: scale(1) rotate(-8deg); }
@@ -313,21 +316,22 @@ body::after {
 .stamps-box { margin-top: 14px; }
 .stamps-box[hidden] { display: none; }
 .stamps-grid { display: flex; flex-wrap: wrap; gap: 8px; }
-.stamp-chip {
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-  /* wide enough for a full YYYY-MM-DD: at 44px the date ran out over the dashed
-     edge, and text crossing the cut line reads as a printing mistake here */
-  width: 58px; padding: 6px 4px; border: 1.5px dashed var(--sw); border-radius: 6px;
+/* one round ink strike, tilted a little because a hand held the stamp */
+.stamp-chip { width: 72px; height: 72px; transform: rotate(-7deg); }
+.stamp-chip:nth-child(even) { transform: rotate(5deg); }   /* struck one at a time, not printed in a grid */
+.stamp-mark { width: 100%; height: 100%; overflow: visible; }
+.stamp-ink { fill: var(--sw); }
+.stamp-ring { fill: none; stroke: var(--paper); stroke-width: 1.6; stroke-dasharray: 3 2.6; opacity: .9; }
+.stamp-arc-text, .stamp-time {
+  fill: var(--paper); font-family: "Space Mono", monospace; font-weight: 700;
+  font-size: 9px; letter-spacing: .2px;
 }
-.stamp-chip .stamp-badge { width: 22px; height: 22px; background: var(--sw); border-radius: 5px; }
-.stamp-chip .stamp-bird { width: 17px; height: 14px; }
+/* the bird is drawn at its own 200x172 scale then shrunk, so every stroke has to be
+   thickened by roughly the same factor or it disappears at this size */
 .stamp-chip .stamp-bird .silh2 { fill: var(--paper); }
 .stamp-chip .stamp-bird .cut { fill: var(--sw); }
-.stamp-chip .stamp-bird .chirp { stroke: var(--paper); }
-.stamp-chip .stamp-date {
-  font-family: "Space Mono", monospace; font-size: 7.5px; color: var(--sw); opacity: .85; text-align: center;
-  white-space: nowrap;
-}
+.stamp-chip .stamp-bird .chirp { stroke: var(--paper); stroke-width: 7; fill: none; stroke-linecap: round; }
+.stamp-chip .stamp-bird .legs2 { stroke: var(--paper); stroke-width: 7; fill: none; stroke-linecap: round; }
 
 /* the "did it actually work" list — every track you've added to your own station */
 .track-list { margin: -4px 0 12px; max-height: 132px; overflow-y: auto; }
