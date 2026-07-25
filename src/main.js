@@ -766,7 +766,11 @@ recordBtn.addEventListener("contextmenu", (e) => e.preventDefault());
 // Main never hides on a phone, it's the anchor the stack builds down from, and
 // Look intentionally lands right under it so picking a color and seeing it land
 // on the player happen in the same glance.
-const isNarrowViewport = () => window.innerWidth < 600;
+// Ask the same question the stylesheet asks, rather than measuring the window
+// separately: window.innerWidth can be momentarily distorted by a card that is being
+// revealed while still parked at its desktop coordinates, and a mismatch there sends
+// the whole layout down the wrong branch. One breakpoint, one answer.
+const isNarrowViewport = () => window.matchMedia("(max-width: 600px)").matches;
 const MOBILE_STACK_ORDER = [winMain, winLook, winStation, winShare];
 function restackMobile() {
   if (!isNarrowViewport()) return;
@@ -803,8 +807,24 @@ function placeBeside(win, topOf, refWin) {
 function toggleWin(win, topOf, refWin) {
   if (win.hidden) {
     win.hidden = false;
-    if (isNarrowViewport()) restackMobile();
-    else placeBeside(win, topOf, refWin);
+    if (isNarrowViewport()) {
+      restackMobile();
+      // the stack outgrows a phone screen quickly, so a card can slide into a slot
+      // entirely below the fold and opening it looks like nothing happened. Scroll
+      // by exactly the shortfall — enough to see the new card, without shoving the
+      // rest of the stack off the top. Waits for the slide to settle first.
+      setTimeout(() => {
+        const shortfall = win.getBoundingClientRect().bottom - window.innerHeight;
+        if (shortfall <= 0) return;
+        const start = window.scrollY;
+        const target = start + shortfall + 8;
+        window.scrollTo({ top: target, behavior: "smooth" });
+        // not every engine honours smooth scrolling, and some ignore the call
+        // outright — leaving the card stranded below the fold. If nothing moved,
+        // get there anyway; being reachable matters more than the glide.
+        setTimeout(() => { if (window.scrollY === start) window.scrollTo(0, target); }, 400);
+      }, 360);
+    } else placeBeside(win, topOf, refWin);
   } else {
     closeWin(win);
   }

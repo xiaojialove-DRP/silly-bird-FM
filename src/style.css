@@ -113,9 +113,20 @@ body::after {
 }
 .wb.close { position: absolute; right: 7px; z-index: 1; }
 .wb.min { position: absolute; right: 7px; z-index: 1; padding-bottom: 3px; }
-.wb.look { position: absolute; left: 7px; z-index: 1; font-size: 9px; }
+/* A bare ❋ says nothing about colour. Filling it with the colour currently in use
+   turns it into a paint swatch: the control shows what it changes, so it needs no
+   label and no growth in a titlebar that has none to spare. The ring keeps it
+   reading as a button rather than a stray dot. */
+.wb.look {
+  position: absolute; left: 7px; z-index: 1;
+  width: 14px; height: 14px; border-radius: 50%;
+  font-size: 0;                                  /* the ❋ glyph is the fallback, not the design */
+  background: var(--night);
+  box-shadow: 0 0 0 2px var(--paper), 0 0 0 3.5px var(--ink);
+}
+.wb.look:hover { background: var(--night); opacity: .7; }
 .wb.lang { position: absolute; left: 29px; z-index: 1; font-size: 8px; width: auto; min-width: 15px; padding: 0 2px; }
-.wb.min:hover, .wb.close:hover, .wb.look:hover, .wb.lang:hover { background: none; color: var(--ink); opacity: .55; }
+.wb.min:hover, .wb.close:hover, .wb.lang:hover { background: none; color: var(--ink); opacity: .55; }
 .hd { color: var(--ink); font-size: 8px; font-style: normal; vertical-align: 2px; opacity: .85; }
 
 /* ---------- the black screen ---------- */
@@ -379,6 +390,22 @@ body::after {
      touch target on a phone */
   .wb::after, .track-remove::after { content: ""; position: absolute; inset: -13px; }
   .track-remove { position: relative; }
+
+  /* A phone is ~700px tall and two stacked cards are already taller than that, so
+     the stack HAS to be reachable by scrolling: absolute (not fixed) makes the cards
+     part of the document, and letting the page scroll is what puts "完成" and the
+     upload button back within reach. Without this the lower half of the stack simply
+     cannot be touched — no scroll, and dragging is off on phones. */
+  html, body { overflow-y: auto; overflow-x: hidden; height: auto; }
+  body { display: block; min-height: 100vh; }
+  .win { position: absolute; }
+
+  /* The desktop defaults park these cards as far right as calc(50% + 178px), which
+     on a phone puts their right edge past 600px. A card revealed at that position —
+     before restackMobile has had a chance to move it — widens the viewport enough
+     that the "am I on a phone" check answers no, and the whole stack silently falls
+     back to the desktop cascade. Start them somewhere harmless instead. */
+  #winMain, #winStation, #winLook, #winShare { left: 8px; top: 8px; }
 
   /* cards auto-stack (see restackMobile in main.js) instead of being dragged —
      this is what actually produces the slide-into-place feel: only `top` ever
