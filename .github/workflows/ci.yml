@@ -34,7 +34,8 @@ jobs:
       - name: Install browser
         run: npx playwright install --with-deps chromium
 
-      - run: npx playwright test tests/boots.spec.js
+      # the network-free ones: booting, i18n, phone reachability, storage failures
+      - run: npx playwright test tests/boots.spec.js tests/storage.spec.js
 
       - uses: actions/upload-artifact@v4
         if: failure()
@@ -61,9 +62,10 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
 
-      # anonymous sign-ins are rate limited per project, so these run one at a time
-      # (see playwright.config.js) and are not worth firing on every branch push
-      - run: npx playwright test tests/core-journey.spec.js tests/anon-identity.spec.js
+      # everything, including the smoke files again: naming the backend specs here
+      # would mean a new one could be added and quietly never run. Anonymous sign-ins
+      # are rate limited per project, so these go one at a time (playwright.config.js).
+      - run: npm test
 
       - uses: actions/upload-artifact@v4
         if: failure()

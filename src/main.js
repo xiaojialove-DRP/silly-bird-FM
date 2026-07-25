@@ -96,7 +96,7 @@ const chNameInput = $("chNameInput"), chIntroInput = $("chIntroInput"), chUpload
 const recordBtn = $("recordBtn"), recordIdle = document.querySelector(".record-idle"), recordLive = document.querySelector(".record-live"), recordTime = document.querySelector(".record-time");
 const recordOut = $("recordOut");
 const trackList = $("trackList"), trackCountLabel = $("trackCountLabel");
-const openShareBtn = $("openShareBtn"), shareBtn = $("shareBtn"), shareOut = $("shareOut");
+const openShareBtn = $("openShareBtn"), shareBtn = $("shareBtn"), shareOut = $("shareOut"), restoreBtn = $("restoreBtn");
 const shareLinkBox = $("shareLinkBox"), shareLinkText = $("shareLinkText"), copyLinkBtn = $("copyLinkBtn");
 const revokeShareBtn = $("revokeShareBtn");
 const stampBtn = $("stampBtn");
@@ -112,30 +112,70 @@ const fmt = (s) => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 
 const trackDur = () => (hasAudio() && isFinite(audio.duration) && audio.duration ? audio.duration : (piece() ? piece().dur : 0));
 
 // ---- tiny IndexedDB layer: my tracks survive reloads ----
+// This is where the station actually lives, so a write failing here is not a detail:
+// the track is in the list and playing, and it will be gone on the next reload. Every
+// path below therefore surfaces its failure rather than swallowing it.
 const idb = {
   db: null,
   open: () => new Promise((res, rej) => {
     const r = indexedDB.open("sbfm", 1);
     r.onupgradeneeded = () => r.result.createObjectStore("tracks", { keyPath: "id", autoIncrement: true });
     r.onsuccess = () => res((idb.db = r.result));
+    // private browsing refuses outright, and some engines throw here rather than
+    // rejecting — either way the app has to keep working without persistence
     r.onerror = () => rej(r.error);
+    r.onblocked = () => rej(new Error("IndexedDB blocked by another open tab"));
   }),
   put: (rec) => new Promise((res, rej) => {
-    const rq = idb.db.transaction("tracks", "readwrite").objectStore("tracks").put(rec);
+    // open() may have failed; without this the caller gets an unhelpful
+    // "cannot read properties of null" instead of the real reason
+    if (!idb.db) return rej(Object.assign(new Error("no local storage available"), { noStorage: true }));
+    let rq;
+    try {
+      rq = idb.db.transaction("tracks", "readwrite").objectStore("tracks").put(rec);
+    } catch (e) { return rej(e); }   // quota can throw synchronously on some engines
     rq.onsuccess = () => res(rq.result);
     rq.onerror = () => rej(rq.error);
   }),
   all: () => new Promise((res, rej) => {
+    if (!idb.db) return res([]);   // nothing stored is not an error, just an empty station
     const rq = idb.db.transaction("tracks").objectStore("tracks").getAll();
     rq.onsuccess = () => res(rq.result);
     rq.onerror = () => rej(rq.error);
   }),
   remove: (id) => new Promise((res, rej) => {
+    if (!idb.db) return res();
     const rq = idb.db.transaction("tracks", "readwrite").objectStore("tracks").delete(id);
     rq.onsuccess = () => res();
     rq.onerror = () => rej(rq.error);
   }),
 };
+
+// Ask the browser to treat this data as worth keeping. Without it, storage is
+// "best effort" and gets evicted under pressure — on iOS that can happen after about
+// a week of not visiting, which for a station that lives locally means it simply
+// disappears. Best effort itself: plenty of engines decline, and there is nothing
+// useful to tell someone about a refusal they cannot act on. The real answer to
+// eviction is being able to pull the station back from its own share link.
+function askForDurableStorage() {
+  try {
+    if (navigator.storage && navigator.storage.persist) {
+      navigator.storage.persist().then(
+        (granted) => { if (!granted) console.info("storage is evictable; a shared link is the way back"); },
+        () => {});
+    }
+  } catch {}
+}
+
+// A save that failed means the track is playing now and gone after a reload. Say so,
+// and say which kind of gone it is, because "out of space" and "this browser will not
+// store anything" have different ways out.
+function noteSaveFailure(e) {
+  const outOfSpace = e && (e.name === "QuotaExceededError" || /quota/i.test(e.message || ""));
+  const noStorage = !!(e && e.noStorage);
+  say(t(outOfSpace ? "saveFailedFull" : noStorage ? "saveFailedNoStorage" : "saveFailed"), recordOut);
+  reportError("idbSave", e);
+}
 
 // ---- personal theme (the LISTENER's preference, not the channel's) ----
 function applyTheme(t) {
@@ -285,9 +325,12 @@ function importFiles(list) {
         // and this put() already wrote whatever p looked like before it resolved
         persistPiece(p);
       })
-      .catch(() => {});
+      // the track is in the list and playing either way — but if this failed it is
+      // only in memory, and a reload loses it. That has to be said out loud.
+      .catch(noteSaveFailure);
   });
   use.forEach((f, i) => readTags(f, pieces[i]));
+  return pieces;   // so a caller that knows more than the filename can fill the rest in
 }
 function readTags(file, p) {
   if (!window.jsmediatags) return;
@@ -340,7 +383,7 @@ function renderTrackList() {
 }
 function persistPiece(p) {
   if (!p.dbId) return;
-  idb.put({ id: p.dbId, title: p.title, artist: p.artist, kind: p.kind || "", cover: p.cover, blob: p.blob, t: Date.now() }).catch(() => {});
+  idb.put({ id: p.dbId, title: p.title, artist: p.artist, kind: p.kind || "", cover: p.cover, blob: p.blob, t: Date.now() }).catch(noteSaveFailure);
 }
 trackList.addEventListener("change", (e) => {
   const sel = e.target.closest(".track-tag");
@@ -562,6 +605,55 @@ async function loadGuestStation() {
     ci = 0; pi = 0;
     renderChannel();
   } catch (e) { reportError("loadGuestStation", e); }
+}
+
+// ---- getting a station back from its own link ----
+// Local storage is not forever: phones evict it, people clear it, and devices get
+// replaced. But a station that has been shared already exists in the cloud, and its
+// owner already has the link — they sent it to someone. So the way back is the link
+// itself, which costs no accounts, no sync and no new format.
+//
+// Offered only when this device has no station of its own, so it can never quietly
+// overwrite one, and worded as recovery rather than "copy this" so a friend who is
+// simply listening has no reason to press it.
+//
+// The restored station deliberately does NOT adopt the old share token. Writes are
+// scoped to whoever created the files, and this browser is not that identity, so
+// keeping the token would only produce a confusing refusal the next time they
+// published. A fresh link gets minted instead, and the copy says so.
+function guestChannel() { return CHANNELS.find((c) => c.guest); }
+function updateRestoreBtn() {
+  const canRestore = !!guestChannel() && !MY.pieces.some((p) => !p.placeholder);
+  restoreBtn.hidden = !canRestore;
+}
+async function restoreFromGuest() {
+  const ch = guestChannel();
+  if (!ch || restoreBtn.disabled) return;
+  restoreBtn.disabled = true;
+  try {
+    const files = [];
+    for (let i = 0; i < ch.pieces.length; i++) {
+      say(t("restoring", i + 1, ch.pieces.length), recordOut);
+      const p = ch.pieces[i];
+      const r = await fetch(p.src);
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const blob = await r.blob();
+      const ext = ((blob.type.split("/")[1] || "bin").replace("mpeg", "mp3")).replace(/[^a-z0-9]/gi, "");
+      files.push(new File([blob], `${p.title || "track"}.${ext || "bin"}`, { type: blob.type }));
+    }
+    MY.name = ch.name; MY.owner = ch.name; MY.intro = ch.intro || "";
+    const added = importFiles(files) || [];
+    // filenames carry the titles, but the tags are only in the manifest
+    added.forEach((p, i) => { if (ch.pieces[i]) { p.kind = ch.pieces[i].kind || ""; persistPiece(p); } });
+    persistStationMeta();
+    chNameInput.value = MY.name; chIntroInput.value = MY.intro;
+    renderChannel(); renderTrackList(); updateRestoreBtn();
+    say(t("restoredNeedsNewLink"), recordOut);
+  } catch (e) {
+    say(t("restoreFailed"), recordOut);
+    reportError("restoreFromGuest", e);
+  }
+  restoreBtn.disabled = false;
 }
 
 // ---- P1.5 · listen stamps: an opt-in, once-a-day postcard a listener can send after
@@ -834,7 +926,7 @@ function closeWin(win) {
   if (isNarrowViewport()) restackMobile();
 }
 dialMid.addEventListener("click", () => {
-  if (winStation.hidden) { chNameInput.value = MY.name; chIntroInput.value = MY.intro; renderTrackList(); }
+  if (winStation.hidden) { chNameInput.value = MY.name; chIntroInput.value = MY.intro; renderTrackList(); updateRestoreBtn(); }
   toggleWin(winStation);
 });
 lookBtn.addEventListener("mousedown", (e) => e.stopPropagation());
@@ -881,6 +973,7 @@ function saveStation() {
   setTimeout(() => { stationSave.textContent = original; stationSave.disabled = false; }, 1100);
 }
 stationSave.addEventListener("click", saveStation);
+restoreBtn.addEventListener("click", restoreFromGuest);
 [chNameInput, chIntroInput].forEach((el) => el.addEventListener("keydown", (e) => { if (e.key === "Enter") saveStation(); }));
 
 // ---- collapse / expand ----
@@ -1000,6 +1093,7 @@ makeDraggable(perch, perch, () => sbfm.classList.remove("collapsed"));
   // decision below sees the final MY.created state)
   try {
     await idb.open();
+    askForDurableStorage();
     const rows = await idb.all();
     if (rows.length) {
       if (MY.pieces[0] && MY.pieces[0].placeholder) MY.pieces.length = 0;
@@ -1009,7 +1103,12 @@ makeDraggable(perch, perch, () => sbfm.classList.remove("collapsed"));
       })));
       MY.created = true;
     }
-  } catch (e) { reportError("idbRestore", e); }
+  } catch (e) {
+    // no local storage at all (private browsing is the usual reason). Listening and
+    // sharing still work, so do not block anything — but the moment someone adds a
+    // track they are owed the warning, and noteSaveFailure will give it to them.
+    reportError("idbRestore", e);
+  }
 
   // turning the radio on should land you on a station that's already playing —
   // like a real radio, not a blank "make your own broadcast" screen. First-time
@@ -1044,4 +1143,10 @@ makeDraggable(perch, perch, () => sbfm.classList.remove("collapsed"));
   // what usually syncs these inputs from MY — sync them here too so the screenshot isn't
   // stuck showing placeholder text
   if (shot === "station") { chNameInput.value = MY.name; chIntroInput.value = MY.intro; renderTrackList(); }
+
+  // restacking only ever ran when a card opened or closed, so on a phone the very
+  // first screen kept the parked default of left:8px and sat visibly off-centre.
+  // Do it once now that the card has its real width, and again if the phone turns.
+  if (isNarrowViewport()) restackMobile();
+  window.addEventListener("resize", () => { if (isNarrowViewport()) restackMobile(); });
 })();

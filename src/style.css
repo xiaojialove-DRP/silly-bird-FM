@@ -261,6 +261,13 @@ body::after {
 }
 .chsetup-upload:hover { background: rgba(0,0,0,.05); }
 .chsetup-upload.share { margin: 10px 0 0; }
+/* a rare way back, not a thing to do — quieter than the buttons above it, and set
+   apart so it does not read as another step in making a station */
+.chsetup-upload.restore {
+  margin-top: 12px; font-size: 10px; padding: 6px;
+  border-color: rgba(0, 0, 0, .22); color: var(--soft);
+}
+.chsetup-upload.restore:hover { border-color: var(--ink); color: var(--ink); }
 .chsetup-upload.danger {
   margin-top: 8px; font-size: 10px; padding: 6px;
   border-color: rgba(153,27,27,.5); color: rgba(153,27,27,.85);
