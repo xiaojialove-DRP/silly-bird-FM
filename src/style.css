@@ -24,6 +24,18 @@
 
 * { box-sizing: border-box; }
 
+/* Nothing interactive in this app carried any focus indicator — several rules
+   below actively strip the browser default (outline: none) with nothing put back,
+   so a keyboard user has no way to tell where they are at all. One ring, applied
+   everywhere: paper first, then ink, so it reads on the paper background and on
+   the ink-filled play button alike, and on any of the seven mount colors — it
+   never has to match a specific one. :focus-visible keeps it out of a mouse
+   click, matching how hover already carries the pointer's own feedback here. */
+:where(button, input, select, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--ink);
+}
+
 body {
   margin: 0; min-height: 100vh; overflow: hidden;
   display: grid; place-items: center;
