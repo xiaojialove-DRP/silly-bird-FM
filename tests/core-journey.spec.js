@@ -65,3 +65,37 @@ test("create, share, a friend listens, then revoke", async ({ page, browser }) =
   await expect(laterPage.locator("#sname")).not.toHaveText(stationName, { timeout: 15_000 });
   await laterCtx.close();
 });
+
+// Every upload here can answer 200 while the link a friend opens still serves
+// something else — that is exactly how days of edits went missing without a word.
+// Sharing reads its own link back afterwards, and this proves it actually looks.
+test("sharing says so when the published link does not match what was sent", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("#dialMid").click();
+  await page.locator("#chNameInput").fill(`Verify ${Date.now() % 100000}`);
+  await page.setInputFiles("#filepick", {
+    name: "test-track.wav",
+    mimeType: "audio/wav",
+    buffer: tinyWavBuffer(),
+  });
+  await expect(page.locator("#trackList .track-row")).toHaveCount(1);
+  await page.locator("#stationSave").click();
+
+  // the upload still really happens; only the public read-back is doctored, standing
+  // in for a stale CDN copy or a write that never actually landed
+  await page.route("**/object/public/**/station.json*", (r) =>
+    r.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ v: 1, name: "something else entirely", intro: "", pieces: [] }),
+    }));
+
+  await page.locator("#openShareBtn").click();
+  await expect(page.locator("#shareOut")).toContainText(/回读检查没通过|reading the link back did not match/, { timeout: 25_000 });
+
+  // the upload succeeded, so there is real data to clean up
+  await page.unroute("**/object/public/**/station.json*");
+  page.once("dialog", (d) => d.accept());
+  await page.locator("#revokeShareBtn").click();
+  await expect(page.locator("#shareOut")).toContainText(/Revoked|已撤回/, { timeout: 20_000 });
+});

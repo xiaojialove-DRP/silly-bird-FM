@@ -49,6 +49,7 @@ const I18N = {
     uploadFailed: "这次没能生成链接，可以再试一次",
     uploadFailedKeepOld: "这次的修改没有发布出去 · 朋友打开看到的还是上一次成功分享的内容",
     cannotSignIn: "暂时没能连上账号服务，所以这次没有发布出去 · 过一会儿再试一次就好",
+    publishedButUnverified: "上传完成了，但回读检查没通过 · 朋友现在打开可能还是旧的，过一会儿再点一次「生成我的电台」",
     shareNotYours: "这条链接已经不认得这个浏览器了（清过网站数据、或换过设备），所以改不动它 · 你这次的修改没有发布出去，朋友看到的还是旧的。想让新内容生效：点下面的「撤回分享」，再生成一条新链接发给朋友。",
     waitingForYou: "在等你收听",
     cloudDeleteBlocked: "云端拒绝了删除（缺少 delete 权限策略）",
@@ -102,6 +103,7 @@ const I18N = {
     uploadFailed: "Could not generate the link this time — feel free to try again",
     uploadFailedKeepOld: "These edits were not published · your friend still sees whatever you last shared successfully",
     cannotSignIn: "Could not reach the sign-in service just now, so nothing was published · try again in a moment",
+    publishedButUnverified: "Uploaded, but reading the link back did not match · a friend opening it now may still get the old version. Give it a moment and click Generate my station again.",
     shareNotYours: "This link no longer recognizes this browser (site data cleared, or a different device), so it cannot be edited · your changes were not published, and your friend still sees the old version. To publish them: hit Revoke share below, then generate a fresh link to send.",
     waitingForYou: "is waiting for you to listen",
     cloudDeleteBlocked: "Cloud rejected the delete (missing a delete policy)",
@@ -660,6 +662,33 @@ async function copyShareLink() {
     setTimeout(() => { shareBtn.textContent = original; shareBtn.disabled = false; }, 1100);
   } catch { say(t("copyFailedSelect")); }
 }
+// Fetch the freshly-published station.json back over the *public* URL — the exact
+// path a friend's browser takes — and confirm it says what we just uploaded. Storage
+// is read-after-write consistent but sits behind a CDN, so a stale copy is the one
+// plausible false alarm; a single retry absorbs that without hiding a real problem.
+// Returns true only when a friend opening the link right now would get this station.
+async function verifyPublished(token, manifest) {
+  const base = `${CLOUD.url}/storage/v1/object/public/${CLOUD.bucket}/${token}`;
+  const matches = async () => {
+    const r = await fetch(`${base}/station.json?v=${Date.now()}`, { cache: "no-store" });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const live = await r.json();
+    const sameShape =
+      live.name === manifest.name &&
+      (live.intro || "") === (manifest.intro || "") &&
+      (live.pieces || []).length === manifest.pieces.length &&
+      manifest.pieces.every((p, i) => (live.pieces[i] || {}).file === p.file && (live.pieces[i] || {}).title === p.title);
+    return sameShape;
+  };
+  try {
+    if (await matches()) return true;
+    await new Promise((r) => setTimeout(r, 900));
+    return await matches();
+  } catch (e) {
+    reportError("verifyPublished", e);
+    return false;
+  }
+}
 async function shareStation() {
   const tracks = MY.pieces.filter((p) => p.blob);
   if (!tracks.length) return say(t("dropOrUploadFirst"));
@@ -686,10 +715,21 @@ async function shareStation() {
     await cloudPut(`${token}/station.json`, new Blob([JSON.stringify(manifest)], { type: "application/json" }));
     const link = shareLinkFor(token);
     renderShareLinkBox();
+    // A 200 on the upload is not proof a friend can actually hear this. Read the
+    // link back the way they will and check it really says what we just sent —
+    // this is the check that would have caught days of edits silently not landing.
+    const live = await verifyPublished(token, manifest);
     const gift = `${MY.name} ${t("waitingForYou")}\n${link}`;
     const successMsg = isUpdate ? t("shareUpdated") : t("shareCopied");
-    try { await navigator.clipboard.writeText(gift); say(successMsg); }
-    catch { say(t("copyFailedLinkBelow")); }
+    if (!live) {
+      // the upload itself did succeed, so do not call this a failed share — but do
+      // not let it pass for a good one either
+      say(t("publishedButUnverified"));
+      try { await navigator.clipboard.writeText(gift); } catch {}
+    } else {
+      try { await navigator.clipboard.writeText(gift); say(successMsg); }
+      catch { say(t("copyFailedLinkBelow")); }
+    }
   } catch (e) {
     // fetch() only rejects with a TypeError when the request never got a response at
     // all (DNS/connection/CORS-level failure) — Safari says "Load failed", Chrome says
