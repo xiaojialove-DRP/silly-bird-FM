@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  # Fast, offline, and the one that would have caught the worst near miss: a stray
+  # brace once left main.js dead while the page still looked perfect, because the
+  # markup is static. Kept separate from the backend tests so a real break can never
+  # be mistaken for a flaky network.
+  smoke:
+    name: Boots and behaves
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Parse every module
+        run: |
+          for f in src/main.js src/cloud.js src/i18n.js; do
+            cp "$f" /tmp/check.mjs
+            node --check /tmp/check.mjs || { echo "::error file=$f::syntax error"; exit 1; }
+          done
+
+      - name: Install browser
+        run: npx playwright install --with-deps chromium
+
+      - run: npx playwright test tests/boots.spec.js
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: smoke-traces
+          path: test-results/
+          retention-days: 7
+
+  # The real create -> share -> listen -> revoke journey, against the real backend,
+  # because that is the only way to know sharing genuinely works. Revoke is also the
+  # cleanup: a passing run leaves nothing behind in the bucket.
+  journey:
+    name: Sharing really works
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: smoke          # no point paying for a backend run if the app does not boot
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+
+      # anonymous sign-ins are rate limited per project, so these run one at a time
+      # (see playwright.config.js) and are not worth firing on every branch push
+      - run: npx playwright test tests/core-journey.spec.js tests/anon-identity.spec.js
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: journey-traces
+          path: test-results/
+          retention-days: 7
