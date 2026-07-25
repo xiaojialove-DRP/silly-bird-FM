@@ -48,6 +48,7 @@ const I18N = {
     uploadFailedNetwork: "上传失败：连不上云端服务器。Supabase 是海外服务，国内网络偶尔连不稳——挂个 VPN 再点一次「生成我的电台」试试；已经开着 VPN 的话，换个节点再试一次。",
     uploadFailed: "这次没能生成链接，可以再试一次",
     uploadFailedKeepOld: "这次的修改没有发布出去 · 朋友打开看到的还是上一次成功分享的内容",
+    cannotSignIn: "暂时没能连上账号服务，所以这次没有发布出去 · 过一会儿再试一次就好",
     shareNotYours: "这条链接已经不认得这个浏览器了（清过网站数据、或换过设备），所以改不动它 · 你这次的修改没有发布出去，朋友看到的还是旧的。想让新内容生效：点下面的「撤回分享」，再生成一条新链接发给朋友。",
     waitingForYou: "在等你收听",
     cloudDeleteBlocked: "云端拒绝了删除（缺少 delete 权限策略）",
@@ -100,6 +101,7 @@ const I18N = {
     uploadFailedNetwork: "Upload failed: can't reach the cloud server. Supabase is hosted overseas, so this can be flaky on some networks — try a VPN and click Generate my station again; if you're already on one, try a different node.",
     uploadFailed: "Could not generate the link this time — feel free to try again",
     uploadFailedKeepOld: "These edits were not published · your friend still sees whatever you last shared successfully",
+    cannotSignIn: "Could not reach the sign-in service just now, so nothing was published · try again in a moment",
     shareNotYours: "This link no longer recognizes this browser (site data cleared, or a different device), so it cannot be edited · your changes were not published, and your friend still sees the old version. To publish them: hit Revoke share below, then generate a fresh link to send.",
     waitingForYou: "is waiting for you to listen",
     cloudDeleteBlocked: "Cloud rejected the delete (missing a delete policy)",
@@ -503,11 +505,16 @@ function say(msg, target = shareOut) { target.hidden = false; target.textContent
 // ---- anonymous auth: each browser gets its own silent, real (if anonymous)
 // identity, so writes can be scoped to "whoever created this" instead of every
 // visitor sharing one all-powerful key. Reads stay on the bare anon key always —
-// listening must stay public. Falls back to the bare key for writes too if
-// anonymous sign-ins aren't enabled on the project yet, so this is safe to ship
-// ahead of that Supabase-side toggle: nothing changes until the project side is
-// flipped on and the RLS policies are tightened to require it.
+// listening must stay public and must never need an identity.
+//
+// This identity is load-bearing: it is the only proof a browser owns the stations
+// it has shared. Lose it and those stations are readable forever but editable never
+// again, which is why the paths below go out of their way not to throw one away.
+// It is also claimed lazily, only when something actually needs to write — sign-ins
+// are rate limited for the whole project, and spending them on listeners would
+// starve the people trying to create.
 let anonSessionPromise = null;
+let anonRetryAfter = 0;
 function loadCachedSession() {
   try { return JSON.parse(localStorage.getItem("sbfm-auth") || "null"); } catch { return null; }
 }
@@ -528,10 +535,16 @@ async function signUpAnon() {
   return session.access_token;
 }
 function ensureAnonSession() {
-  if (anonSessionPromise) return anonSessionPromise;
-  anonSessionPromise = (async () => {
-    const cached = loadCachedSession();
-    if (sessionIsFresh(cached)) return cached.access_token;
+  // storage is the source of truth and costs nothing to read, so consult it on
+  // every call rather than resolving once at boot. An access token lasts about an
+  // hour and this is a radio — the tab stays open far longer than that — so a
+  // session settled at load time is routinely dead by the time anyone shares.
+  const cached = loadCachedSession();
+  if (sessionIsFresh(cached)) return Promise.resolve(cached.access_token);
+  if (anonSessionPromise) return anonSessionPromise;   // one attempt in flight at a time
+  // a failed attempt should not turn every later write into another round trip
+  if (Date.now() < anonRetryAfter) return Promise.resolve(null);
+  const attempt = (async () => {
     try {
       // no identity yet — nothing to protect, just take one
       if (!cached || !cached.refresh_token) return await signUpAnon();
@@ -559,19 +572,29 @@ function ensureAnonSession() {
     } catch (e) {
       // a network-level failure says nothing about whether the identity is still
       // good — replacing it here would silently orphan every station this browser
-      // has ever shared, so keep it and let a later page load retry the refresh
-      console.warn("anonymous session unavailable this page load, identity preserved:", e);
+      // has ever shared, so keep it and let a later attempt retry the refresh
+      console.warn("anonymous session unavailable right now, identity preserved:", e);
+      anonRetryAfter = Date.now() + 60000;
       return null;
     }
   })();
-  return anonSessionPromise;
+  anonSessionPromise = attempt;
+  // release the slot once settled, so a token that expires later in this same page
+  // session can still be renewed instead of being stuck on the first result forever
+  attempt.finally(() => { if (anonSessionPromise === attempt) anonSessionPromise = null; });
+  return attempt;
 }
 async function cloudPut(path, blob) {
   const token = await ensureAnonSession();
+  // writing requires a real identity: the policies only grant insert/update to a
+  // signed-in role, so retrying with the bare public key cannot succeed — it just
+  // comes back as an RLS rejection, which reads as "this is not yours" and sends
+  // everyone hunting for an ownership problem that does not exist
+  if (!token) { const err = new Error("no anonymous session available"); err.noSession = true; throw err; }
   const r = await fetch(`${CLOUD.url}/storage/v1/object/${CLOUD.bucket}/${path}`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${token || CLOUD.anonKey}`, apikey: CLOUD.anonKey,
+      Authorization: `Bearer ${token}`, apikey: CLOUD.anonKey,
       "x-upsert": "true",   // re-sharing reuses the same path on purpose — must overwrite, not conflict
       "Content-Type": blob.type || "application/octet-stream",
     },
@@ -675,6 +698,8 @@ async function shareStation() {
     // "can't reach the server" from "server responded but rejected it".
     const unreachable = e instanceof TypeError;
     if (unreachable) say(t("uploadFailedNetwork"));
+    // never let "we could not sign you in" masquerade as an ownership problem
+    else if (e.noSession) say(t("cannotSignIn"));
     // "not yours" is a dead end, not a retry — saying "try again" here would send
     // someone in circles forever, so name the cause and point at the one way out
     else if (e.blocked) say(t("shareNotYours"));
@@ -695,9 +720,12 @@ function cloudList(prefix) {
 }
 async function cloudDelete(paths) {
   const token = await ensureAnonSession();
+  // same as cloudPut: without an identity this is guaranteed to be refused, and the
+  // refusal is indistinguishable from "someone else owns this"
+  if (!token) { const err = new Error("no anonymous session available"); err.noSession = true; throw err; }
   return fetch(`${CLOUD.url}/storage/v1/object/${CLOUD.bucket}`, {
     method: "DELETE",
-    headers: { Authorization: `Bearer ${token || CLOUD.anonKey}`, apikey: CLOUD.anonKey, "Content-Type": "application/json" },
+    headers: { Authorization: `Bearer ${token}`, apikey: CLOUD.anonKey, "Content-Type": "application/json" },
     body: JSON.stringify({ prefixes: paths }),
   }).then(async (r) => {
     if (!r.ok) {
@@ -736,9 +764,13 @@ async function revokeShare() {
     say(t("revoked"));
   } catch (e) {
     const unreachable = e instanceof TypeError;
-    const notYours = !unreachable && (e.blocked || e.httpStatus === 403);
+    const notYours = !unreachable && !e.noSession && (e.blocked || e.httpStatus === 403);
     if (unreachable) {
       say(t("revokeFailedNetwork"));
+    } else if (e.noSession) {
+      // no identity this time around says nothing about whether the link is still
+      // revocable — keep the token so a later attempt can still take it back
+      say(t("cannotSignIn"));
     } else if (notYours) {
       // this link isn't deletable by this browser anymore (most likely: it predates
       // an ownership rule change) — retrying will never succeed, and there's nothing
@@ -1133,10 +1165,12 @@ makeDraggable(perch, perch, () => sbfm.classList.remove("collapsed"));
   // authored in index.html
   applyStaticI18n();
   document.documentElement.lang = lang === "en" ? "en" : "zh";
-  // fire and forget — by the time anyone actually shares/revokes/stamps, this has
-  // almost certainly already resolved and cached, so it never adds visible latency
-  // to the moment that matters
-  if (CLOUD.url && CLOUD.anonKey) ensureAnonSession();
+  // deliberately NOT claiming an identity here. Anonymous sign-ins are rate limited
+  // for the whole project, and most visitors only ever listen — signing up every one
+  // of them spends that budget on people who will never write, so a link doing the
+  // rounds in a group chat can lock out the friends who actually want to make a
+  // station. cloudPut/cloudDelete claim one on demand instead; the extra round trip
+  // lands inside an upload that already takes seconds.
   // a friend's link takes a real network round-trip to resolve — show that
   // something is happening immediately instead of flashing the default channel
   // first and then swapping to the real one a moment later
