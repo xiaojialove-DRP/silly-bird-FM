@@ -130,3 +130,18 @@ smoke test (create → share → listen → revoke) and a minimal, privacy-respe
 error log (writes an anonymous, no-identity JSON blob to the same Supabase bucket
 on unexpected failures) were added for exactly that gap — not full analytics,
 which the project's privacy stance rules out.
+
+Those tests then had to run without being asked. Twice in a single day a change
+looked perfect in a browser and was in fact broken: a stray brace left the script
+dead while the static markup still rendered, and the phone layout silently fell
+back to the desktop cascade so the stacking never engaged. Both were caught only
+because the suite happened to get run. CI splits this in two on purpose: a smoke
+job that parses every module and boots the app with no network at all, so it
+fails in seconds and can never be mistaken for a flaky backend, and a journey job
+behind it that exercises the real sharing path against the real backend. Anonymous
+sign-ins are rate limited per project, so those run one at a time.
+
+A share reporting success is also not proof a friend can hear anything, so
+sharing reads its own link back over the public URL afterwards and says so when
+what comes back is not what was sent. That check exists because edits went
+unpublished for days while the app reported success every time.
