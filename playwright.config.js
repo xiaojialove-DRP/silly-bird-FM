@@ -25,7 +25,10 @@ export default defineConfig({
   webServer: {
     command: "npm run dev",
     url: "http://localhost:5174",
-    reuseExistingServer: true,
-    timeout: 30_000,
+    // reuse a server you already have open locally; on CI there is never one, and
+    // silently reusing something unexpected is how a mismatched port went unnoticed
+    reuseExistingServer: !process.env.CI,
+    timeout: 60_000,          // a cold CI runner needs longer than a warm laptop
+    stdout: "pipe",           // if it fails to start, say why instead of just timing out
   },
 });
