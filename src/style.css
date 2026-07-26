@@ -186,6 +186,13 @@ body::after {
 }
 .dial .ch { border: none; background: transparent; color: var(--ink); opacity: .5; font-size: 12px; cursor: pointer; padding: 2px 5px; }
 .dial .ch:hover { opacity: 1; }
+/* a single quiet nudge toward the arrow that actually leads to your own empty
+   slot — three short beats, then gone for good until the next fresh visit.
+   Not a standing hint: this project has already turned one of those down once. */
+.tprev.tune-hint { animation: tuneHintLeft .55s ease-in-out 3; }
+.tnext.tune-hint { animation: tuneHintRight .55s ease-in-out 3; }
+@keyframes tuneHintLeft  { 0%, 100% { transform: translateX(0); opacity: .5; } 50% { transform: translateX(-5px); opacity: 1; } }
+@keyframes tuneHintRight { 0%, 100% { transform: translateX(0); opacity: .5; } 50% { transform: translateX(5px);  opacity: 1; } }
 .dial-mid {
   flex: 1; min-width: 0; text-align: center; font-family: "Space Mono", "Songti SC", "STSong", "SimSun", monospace; font-size: 11px;
   color: var(--ink); letter-spacing: .5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -391,7 +398,7 @@ body::after {
 }
 .chsetup-save:active { transform: translate(1px,1px); }
 
-@media (prefers-reduced-motion: reduce) { .bird-body, .note { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .bird-body, .note, .tprev, .tnext { animation: none !important; } }
 
 /* ---------- mobile: bigger tap targets, a stacking ritual instead of free-floating cards ---------- */
 @media (max-width: 600px) {

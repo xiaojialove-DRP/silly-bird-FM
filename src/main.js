@@ -292,6 +292,23 @@ function prev() { if (cur > 3) return seek(0); goPiece(pi - 1); }
 function seek(t) { cur = Math.max(0, Math.min(t, trackDur() || t)); if (hasAudio()) audio.currentTime = cur; updateProgress(); }
 function tune(d) { ci = (ci + d + CHANNELS.length) % CHANNELS.length; pi = 0; renderChannel(); applyPlay(); }
 
+// One quiet nudge, once, toward whichever arrow is actually the short way to your
+// own empty slot — never a standing hint, since a repeating one would be exactly
+// the kind of noise this project has otherwise refused to add. Direction is worked
+// out fresh rather than assumed, because a guest link changes which side is closer.
+function nudgeTowardMyStation() {
+  const myIdx = CHANNELS.indexOf(MY);
+  if (myIdx === ci) return;
+  const len = CHANNELS.length;
+  const viaNext = (myIdx - ci + len) % len;
+  const viaPrev = (ci - myIdx + len) % len;
+  const el = viaNext <= viaPrev ? $("tnext") : $("tprev");
+  setTimeout(() => {
+    el.classList.add("tune-hint");
+    setTimeout(() => el.classList.remove("tune-hint"), 1700);
+  }, 700);   // let the landing screen settle before drawing an eye to the dial
+}
+
 // ---- import: files land in MY station and persist in IndexedDB ----
 // one station = one album, on purpose — a curated handful, not a dumping ground.
 // recording and uploading both funnel through here, so the cap covers both at once.
@@ -1162,6 +1179,14 @@ makeDraggable(perch, perch, () => sbfm.classList.remove("collapsed"));
   // later once the fetch comes back
   await loadGuestStation();
   setLang(lang);   // applies the restored language to static chrome + demo content + dial
+
+  // Nobody arrives already knowing that turning the dial finds their own empty slot
+  // — the invite CTA only ever appears once you tune to it, and nothing before that
+  // moment points there. A friend who followed a link and MY.pieces[0] never
+  // recorded anything reported exactly this. loadGuestStation() may have just
+  // unshifted a guest channel to the front, which flips which physical arrow is
+  // closer to MY — so this asks the current layout rather than assuming a side.
+  if (!MY.created) nudgeTowardMyStation();
 
   // dev helper: ?seed=1 imports a synthetic tone (used to e2e-test IDB persistence and
   // to populate demo content for README screenshots). Idempotent — a second load with
