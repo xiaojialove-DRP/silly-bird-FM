@@ -145,3 +145,35 @@ A share reporting success is also not proof a friend can hear anything, so
 sharing reads its own link back over the public URL afterwards and says so when
 what comes back is not what was sent. That check exists because edits went
 unpublished for days while the app reported success every time.
+
+## Code organization: three files, imports running both ways on purpose
+
+`main.js` (transport, station editing, boot), `share.js` (publish/listen/restore/
+stamps), and `windows.js` (card stacking and dragging) split out of one 1200-line
+file. `windows.js` is one-directional — it knows nothing about stations or
+tracks, main.js just calls it. `share.js` and `main.js` import from *each other*:
+rendering calls into share.js (`renderChannel` shows the stamp button, `setLang`
+shows the share-link box) and share.js calls back into rendering and station
+state (`renderChannel`, `importFiles`, `MY` itself). That cycle is the honest
+shape of the feature, not an accident — forcing it into one direction would mean
+either duplicating render logic or turning every state change into an event bus,
+both worse than two files that import each other. ES modules handle this
+correctly as long as nothing at a module's top level (outside a function body)
+runs before the cycle resolves, which is already true here: every cross-file call
+happens inside a function, fired later by a click or by `boot()`, never at
+load time.
+
+That safety depends on both sides of the cycle resolving to the *same* module
+identity — the browser keys a module on its exact resolved URL, so
+`./main.js` and `./main.js?cb=diag001` are two unrelated instances, each running
+its own copy of every top-level `const` and `addEventListener` call. Splitting
+`share.js` out surfaced exactly this: index.html's script tag still carried a
+`?cb=diag001` query string left over from a Tauri cache-busting diagnostic
+months earlier, so `share.js`'s plain `import ... from "./main.js"` silently
+loaded a second, disconnected copy of the whole player — two boot sequences,
+two sets of click handlers on the same DOM, a click open-ing and instantly
+re-closing itself. The fix was deleting the leftover query string, not the
+circular import. Lesson: an entry point that a circularly-imported module also
+imports must never carry a cache-busting suffix the internal import doesn't
+also carry — plain, matching specifiers everywhere is the only way both sides
+agree on what module they're talking about.
