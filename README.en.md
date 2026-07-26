@@ -23,6 +23,7 @@ Hans Christian Andersen's papercutting art is the only visual reference — whit
 - **Drop to play**: drag audio onto the bird (or upload from the panel), title / artist / cover art read automatically from ID3 tags
 - **Press and hold to record**: not just uploading finished files — you can also record a moment straight from your mic
 - **Nothing lost on refresh**: uploaded tracks are saved in the browser's IndexedDB, still there next time you open it
+- **Lost your local copy? The link brings it back**: phones evict storage, and devices get replaced — paste the share link you already sent to a friend back into the bare site, and your station (tracks, name, intro) comes back exactly as it was, no re-uploading
 - **System media keys**: the play key on your keyboard or headset controls the bird directly (MediaSession)
 - **Fully offline-capable assets**: fonts and parsing libraries are all self-hosted, zero external CDN dependency, holds up on a weak connection
 - **Sharing is revocable**: sending a link isn't a one-way door — the station owner can delete the cloud content and kill an already-sent link at any time. The control stays with whoever shared it, not on an auto-destruct timer, and not gone for good the moment it's sent
@@ -34,11 +35,11 @@ Hans Christian Andersen's papercutting art is the only visual reference — whit
 
 **Your friend doesn't need to install anything.** They open the link you sent, hit play, and they're listening — just like opening a normal webpage. No sign-up, no app, no need to know what's running underneath.
 
-**On your end (as the station owner)**, you only need to "power it on" once: your station (the audio files plus a station.json manifest) gets uploaded to your own cloud storage. After that, every time you click **✉ Share my station** it updates the same `?listen=` link — your friend opens it and the bird tunes straight to your station and starts playing. Edit your station and click the button again, and the link you already sent updates in place — no need to send a new one. Want it back? **Revoke share** on the share card deletes the cloud content entirely and kills the link immediately — this step can't be undone.
+**On your end (as the station owner)**, you only need to "power it on" once: your station (the audio files plus a station.json manifest) gets uploaded to your own cloud storage. After that, every time you click **✉ Share your latest sound** it updates the same `?listen=` link — your friend opens it and the bird tunes straight to your station and starts playing. Edit your station and click the button again, and the link you already sent updates in place — no need to send a new one. Want it back? **Revoke share** on the share card deletes the cloud content entirely and kills the link immediately — this step can't be undone.
 
 If a friend who got your link wants to make their own station and generate their own share link, that just works too, with no extra setup on their end — everyone who opens this site runs on the same cloud config.
 
-> Note: please only share sound you actually own the rights to (self-recorded / original / freely shareable content). Links contain an unguessable random path — only whoever has the link can listen. Sharing one public key also means there's currently no per-person permission isolation — anyone who can open this site can, in principle, write to the same storage bucket. That's a reasonable tradeoff for small friend-circle sharing, but worth knowing.
+> Note: please only share sound you actually own the rights to (self-recorded / original / freely shareable content). Links contain an unguessable random path — only whoever has the link can listen. Writing (sharing, revoking, sending a stamp) requires a real but anonymous browser identity, and can only touch content that identity created — anyone who opens this site can, in principle, start their own station, but cannot touch anyone else's. Reading stays public and needs no identity at all.
 
 ## Roadmap
 
