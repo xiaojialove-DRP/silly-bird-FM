@@ -63,3 +63,30 @@ test("the stack stays reachable on a phone-sized screen", async ({ page }) => {
   const h = page.viewportSize().height;
   expect(done.y >= 0 && done.y + done.height <= h, "Done must be on screen after scrolling").toBe(true);
 });
+
+// Real user feedback: people kept the internal fallback name "My Station" because,
+// pre-filled into the input, it rendered in the same ink as real content and read
+// as already chosen rather than as an example. The intro field never had this
+// problem, since it starts genuinely empty. The name field needed to behave the
+// same way until there is a real station to show.
+test("the station name reads as an example until a station actually exists", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("#dialMid").click();
+
+  const nameInput = page.locator("#chNameInput");
+  await expect(nameInput).toHaveValue("");
+  await expect(nameInput).toHaveAttribute("placeholder", /./);   // a real example, not blank
+
+  // leaving it untouched must still produce a sensible saved name — this changes
+  // what is shown, not the fallback behaviour underneath it
+  await page.setInputFiles("#filepick", { name: "t.wav", mimeType: "audio/wav", buffer: Buffer.alloc(44) });
+  await page.locator("#stationSave").click();
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("sbfm-station")).name);
+  expect(saved, "an untouched name field must still fall back to something usable").toBeTruthy();
+
+  // and now that a station genuinely exists, reopening shows that real value —
+  // this is no longer a placeholder situation
+  await page.locator("#stationClose").click();
+  await page.locator("#dialMid").click();
+  await expect(nameInput).toHaveValue(saved);
+});

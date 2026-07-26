@@ -70,7 +70,10 @@ function setLang(l) {
   MY.pieces.forEach((p) => { if (p.placeholder) Object.assign(p, PLACEHOLDER()); });
   if (!MY.created) {
     MY.name = t("myStation"); MY.owner = t("me");
-    if (!winStation.hidden) { chNameInput.value = MY.name; chIntroInput.value = MY.intro; }
+    // left empty (not pre-filled with the internal default) so the placeholder
+    // example shows in its own muted style — a real-looking value here is
+    // exactly what let testers mistake "My Station" for an already-chosen name
+    if (!winStation.hidden) { chNameInput.value = ""; chIntroInput.value = MY.intro; }
   }
   applyStaticI18n();
   renderChannel();
@@ -983,7 +986,11 @@ function closeWin(win) {
   if (isNarrowViewport()) restackMobile();
 }
 dialMid.addEventListener("click", () => {
-  if (winStation.hidden) { chNameInput.value = MY.name; chIntroInput.value = MY.intro; renderTrackList(); updateRestoreBtn(); }
+  // before a station is actually created, MY.name is only an internal fallback —
+  // showing it as the input's value renders it in the same ink as real content,
+  // which is exactly what let testers read "My Station" as already chosen rather
+  // than as an example. Leave it empty so the placeholder does that job instead.
+  if (winStation.hidden) { chNameInput.value = MY.created ? MY.name : ""; chIntroInput.value = MY.intro; renderTrackList(); updateRestoreBtn(); }
   toggleWin(winStation);
 });
 lookBtn.addEventListener("mousedown", (e) => e.stopPropagation());
@@ -1208,7 +1215,7 @@ makeDraggable(perch, perch, () => sbfm.classList.remove("collapsed"));
   // the ?shot=station debug path bypasses the normal dialMid-click open flow, which is
   // what usually syncs these inputs from MY — sync them here too so the screenshot isn't
   // stuck showing placeholder text
-  if (shot === "station") { chNameInput.value = MY.name; chIntroInput.value = MY.intro; renderTrackList(); }
+  if (shot === "station") { chNameInput.value = MY.created ? MY.name : ""; chIntroInput.value = MY.intro; renderTrackList(); }
 
   // restacking only ever ran when a card opened or closed, so on a phone the very
   // first screen kept the parked default of left:8px and sat visibly off-centre.

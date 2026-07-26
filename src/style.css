@@ -27,13 +27,25 @@
 /* Nothing interactive in this app carried any focus indicator — several rules
    below actively strip the browser default (outline: none) with nothing put back,
    so a keyboard user has no way to tell where they are at all. One ring, applied
-   everywhere: paper first, then ink, so it reads on the paper background and on
-   the ink-filled play button alike, and on any of the seven mount colors — it
-   never has to match a specific one. :focus-visible keeps it out of a mouse
-   click, matching how hover already carries the pointer's own feedback here. */
-:where(button, input, select, [tabindex]):focus-visible {
+   to buttons and selects: paper first, then ink, so it reads on the paper
+   background and on the ink-filled play button alike, and on any of the seven
+   mount colors — it never has to match a specific one. :focus-visible keeps it
+   out of a mouse click, matching how hover already carries the pointer's own
+   feedback here. */
+:where(button, select, [tabindex]):focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--ink);
+}
+/* A text field already has a blinking caret, and most already carry a dotted
+   underline of their own — a ring on top of that is one indicator too many for
+   something you are actively typing into. A solid, ink-colored underline says
+   the same "you are here" without adding a new shape to the field. Anything
+   with its own more specific focus treatment already (.track-name, .track-tag)
+   keeps that instead — this is only a fallback for plain fields that had none. */
+input:focus-visible {
+  outline: none;
+  border-bottom-style: solid;
+  border-bottom-color: var(--ink);
 }
 
 body {

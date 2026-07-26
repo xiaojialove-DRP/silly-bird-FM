@@ -30,6 +30,30 @@ test("a keyboard user can see where focus is, and a mouse click stays quiet", as
   expect(ringAfterMouseClick, "a pointer click should not trigger the keyboard focus ring").toBe("none");
 });
 
+// A text field already has a blinking caret and its own dotted underline, so the
+// same ring used on buttons read as one indicator too many the moment you clicked
+// in to type — real user feedback, not a guess. Buttons keep the ring; text fields
+// get a firmer underline instead.
+test("a text field gets a firmer underline instead of the button ring", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("#dialMid").click();
+
+  // real Tab navigation, same reason as above — walk forward until the name
+  // field itself has focus, rather than assume a fixed step count
+  for (let i = 0; i < 15; i++) {
+    if (await page.evaluate(() => document.activeElement.id) === "chNameInput") break;
+    await page.keyboard.press("Tab");
+  }
+  await expect(page.locator("#chNameInput")).toBeFocused();
+
+  const style = await page.locator("#chNameInput").evaluate((el) => {
+    const cs = getComputedStyle(el);
+    return { boxShadow: cs.boxShadow, borderBottomStyle: cs.borderBottomStyle };
+  });
+  expect(style.boxShadow, "a text field should not get the button ring").toBe("none");
+  expect(style.borderBottomStyle, "focus should still change something visible").toBe("solid");
+});
+
 test("the ring reads on every mount color, not just the default blue", async ({ page }) => {
   await page.goto("/");
   for (const theme of ["blue", "black", "crimson", "green"]) {
