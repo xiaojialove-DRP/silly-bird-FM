@@ -1,60 +1,56 @@
-<p align="center">
-  <img src="assets/icon.svg" width="120" height="120" alt="silly bird fm icon" />
-</p>
-
-<p align="center"><a href="README.en.md">English</a> · 中文</p>
+<p align="center">English · <a href="README.zh.md">中文</a></p>
 
 # silly bird FM
 
-一个朋友之间的声音电台。
+A sound radio between friends.
 
-低门槛：像发语音一样，人人给自己起个频道名（老电台频率的感觉），上传任何和声音有关的东西——一段话、一个故事、自己哼的歌、一场雨——分享给朋友。主打情感链接（听见朋友真实、有体温的声音），不是音质/制作。
+Low barrier to entry: like sending a voice message, everyone picks a channel name for themselves (that old-radio-dial feeling), and uploads anything sound-related — a few spoken words, a story, a hummed tune, the sound of rain — to share with friends. It's about emotional connection (hearing a friend's real, warm voice), not audio quality or production value.
 
-一只常驻屏幕角落的小鸟，点开它就是一台可以在朋友的频道间来回切台的小电台，陪你 vibe-coding 时不再是一个人。
+A little bird perches permanently in the corner of your screen. Click it open and it's a small radio you can tune across your friends' channels — company while you vibe-code alone.
 
 <p align="center">
-  <img src="assets/collage.png" width="100%" alt="silly bird FM 界面：收音机、我的电台、外观、分享四扇窗口" />
+  <img src="assets/screens-en.png" width="100%" alt="silly bird FM windows in English: the radio, my station, look, and share" />
 </p>
 
-## 视觉
+## Look
 
-安徒生的剪纸艺术是唯一的视觉参考——白纸剪影贴在彩色裱纸上。整台机器是一张会响的剪纸：扇贝剪影的纸边、打孔装饰带、锯齿森林夜窗、缝线一样的虚线分隔，中文用宋体铅字。七种裱纸色（绛红 / 赤陶 / 蜜赭 / 墨绿 / 蓝 / 梅紫 / 黑）由听的人自己选，是个人偏好，不随频道变。
+Hans Christian Andersen's papercutting art is the only visual reference — white paper silhouettes mounted on a colored backing. The whole thing reads like a papercut that happens to make sound: scalloped paper edges, a punched-hole trim, a jagged forest against a night window, dashed seams like stitching, Chinese text set in a serif "Song" typeface. Seven mount colors (crimson / rust / ochre / forest green / blue / plum / black) are the listener's own pick — a personal preference, not something that changes with the channel.
 
-## 现在就能做
+## What works right now
 
-- **四扇剪纸小窗**：收音机 / 我的电台（命名 + 一句话介绍 + 上传或录音）/ 外观（颜色 + 音量）/ 分享（生成链接）；桌面上鼠标随意拖动摆放，手机上则像抽卡片一样按顺序滑出、自动排好，小鸟收起时停在屏幕一角，点开恢复原样
-- **策展式收藏**：一个电台最多 7 首——认真挑几首，比塞成一个无限仓库更像这个产品想要的样子
-- **拖入即播**：把音频拖到小鸟身上（或从面板上传），歌名 / 歌手 / 封面自动从 ID3 标签读取
-- **按住录音**：不只是上传现成文件，也能直接对着麦克风录一段现场的声音
-- **刷新不丢**：上传的节目保存在浏览器 IndexedDB 里，下次打开还在
-- **丢了本地记录，链接能救回来**：手机存储被系统清理、或者换了新设备，回到网站粘贴自己发出去的分享链接，就能把电台（曲目、名字、简介）原样取回，不用重新上传
-- **系统媒体键**：键盘播放键 / 耳机线控直接控制小鸟（MediaSession）
-- **完全离线的资源**：字体与解析库全部自托管，零外部 CDN 依赖，弱网也稳
-- **分享随时能撤回**：链接发出去不是有去无回——电台主人可以随时把云端内容删掉、让已经发出去的链接失效，主动权始终在分享的人手上，不是自动定时引爆，也不是永远收不回来
-- **演示频道也是原创**：内置的三个示例电台（深夜胡思乱想 / 雨天限定 / 厨房迪斯科）放的声音全部是代码现场合成的音效和哼唱，不是任何现成录音，跟这个产品对声音版权的态度一致
-- **一键中英文切换**：标题栏的 EN / 中 按钮切换界面语言——按钮文案、演示频道内容都会跟着换；朋友自己起的电台名、节目名不会被机器翻译，永远原样保留
-- **听完了，可以寄一枚邮票**：听完朋友电台里的每一首之后，才会浮现"寄一枚邮票"——不是自动上报，只有愿意盖章的人才盖，一个电台一天最多收一枚。电台主人在「分享」窗口里打开信箱，邮票按听的人当时的裱纸颜色显色，只盖着日期，界面上不会出现任何数字
+- **Four papercut windows**: the radio / my station (name it, write a one-line intro, upload or record) / look (color + volume) / share (generate a link); drag them anywhere on desktop, and on a phone they slide out and stack in sequence instead — the bird still docks to a corner of the screen when collapsed
+- **Curated by design**: a station holds at most 7 tracks — picking a handful with care fits this product better than an unlimited dumping ground
+- **Drop to play**: drag audio onto the bird (or upload from the panel), title / artist / cover art read automatically from ID3 tags
+- **Press and hold to record**: not just uploading finished files — you can also record a moment straight from your mic
+- **Nothing lost on refresh**: uploaded tracks are saved in the browser's IndexedDB, still there next time you open it
+- **Lost your local copy? The link brings it back**: phones evict storage, and devices get replaced — paste the share link you already sent to a friend back into the bare site, and your station (tracks, name, intro) comes back exactly as it was, no re-uploading
+- **System media keys**: the play key on your keyboard or headset controls the bird directly (MediaSession)
+- **Fully offline-capable assets**: fonts and parsing libraries are all self-hosted, zero external CDN dependency, holds up on a weak connection
+- **Sharing is revocable**: sending a link isn't a one-way door — the station owner can delete the cloud content and kill an already-sent link at any time. The control stays with whoever shared it, not on an auto-destruct timer, and not gone for good the moment it's sent
+- **The demo channels are original too**: the sound in the three built-in sample stations (Late Night Overthinking / Rainy Days Only / Kitchen Disco) is all synthesized on the fly from code — tones and hums, not any existing recording — same stance this product takes on sound and copyright generally
+- **One-click 中/EN**: the EN / 中 button in the titlebar switches the interface language — button copy and demo-channel content follow along; a friend's own station name or track titles are never machine-translated, always left exactly as they typed them
+- **Finish listening, send a stamp**: a "send a stamp" button only surfaces once you've heard every track on a friend's station — never auto-reported, only sent if you choose to, and a station can only receive one per day. The owner opens their mailbox in the Share window: each stamp is tinted in whatever color the listener happened to be using and carries nothing but a date postmark — no counts anywhere on screen
 
-## 分享给朋友
+## Sharing with a friend
 
-**朋友那边什么都不用装。** 点开你发的链接，按一下播放键，就在听了——跟打开一个普通网页一样，不用注册、不用装 App、不用知道这背后是什么。
+**Your friend doesn't need to install anything.** They open the link you sent, hit play, and they're listening — just like opening a normal webpage. No sign-up, no app, no need to know what's running underneath.
 
-**你（电台主人）这边**只需要做一次「通电」：把你的电台（节目音频 + 一份 station.json 清单）上传到你自己的云存储，之后每次点 **✉ 把最新的声音分享出去** 都会更新同一条 `?listen=` 链接——朋友打开，小鸟直接把你的电台调到第一频道开始放；你编辑电台之后再点一次，之前发过的旧链接会自动显示最新内容，不用重新发。想收回也可以：分享卡片上的 **撤回分享** 会把云端内容整个删掉，链接立刻失效，这一步做完无法恢复。
+**On your end (as the station owner)**, you only need to "power it on" once: your station (the audio files plus a station.json manifest) gets uploaded to your own cloud storage. After that, every time you click **✉ Share your latest sound** it updates the same `?listen=` link — your friend opens it and the bird tunes straight to your station and starts playing. Edit your station and click the button again, and the link you already sent updates in place — no need to send a new one. Want it back? **Revoke share** on the share card deletes the cloud content entirely and kills the link immediately — this step can't be undone.
 
-朋友收到你的链接后，如果也想建一个自己的电台、生成自己的分享链接，同样不需要任何额外设置，直接就能用——打开这个网站的所有人用的是同一套云端配置。
+If a friend who got your link wants to make their own station and generate their own share link, that just works too, with no extra setup on their end — everyone who opens this site runs on the same cloud config.
 
-> 注意：请只分享自己拥有版权的声音（自录 / 原创 / 可自由传播的内容）。链接含不可猜测的随机路径，拿到链接的人才能收听。写入（分享、撤回、寄回执）需要一个真实但匿名的浏览器身份，且只能改动自己创建的内容——打开这个网站的任何人理论上都能建立自己的电台，但改不动别人的一个字。读取则永远公开，谁都不需要身份就能听。
+> Note: please only share sound you actually own the rights to (self-recorded / original / freely shareable content). Links contain an unguessable random path — only whoever has the link can listen. Writing (sharing, revoking, sending a stamp) requires a real but anonymous browser identity, and can only touch content that identity created — anyone who opens this site can, in principle, start their own station, but cannot touch anyone else's. Reading stays public and needs no identity at all.
 
-## 路线
+## Roadmap
 
-1. ~~播放器 + 剪纸美学~~ · ~~真实播放与持久化~~ · ~~分享链接~~ · ~~收听回执邮票~~（已完成）
-2. **真实朋友测试中** —— 已经收到第一批真实反馈，持续打磨
-3. **仪式层继续** —— 每周换台日
-4. **桌面化（不急）** —— Tauri 包装：置顶、托盘、透明背景、开机自启；等朋友们的反馈更多、真的喜欢这个产品之后再做也不迟
+1. ~~Player + papercut aesthetic~~ · ~~Real playback and persistence~~ · ~~Share links~~ · ~~Listening-receipt stamps~~ (done)
+2. **Real friend-testing, in progress** — already getting real feedback, still refining
+3. **More ritual layer** — a weekly channel-swap day
+4. **Going desktop (no rush)** — wrapped in Tauri: always-on-top, tray icon, transparent background, launch at login; there's no hurry until more friends have tried it and genuinely like it
 
-## 本地运行
+## Running locally
 
-任何静态服务器皆可，例如：
+Any static server works, for example:
 
 ```
 npx serve . -l 5174
@@ -62,4 +58,4 @@ npx serve . -l 5174
 
 ---
 
-版权所有，详见 [LICENSE](LICENSE)。独立项目，与 THE 42 POST 无关。
+All rights reserved, see [LICENSE](LICENSE). Independent project, unrelated to THE 42 POST.
