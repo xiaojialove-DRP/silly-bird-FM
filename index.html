@@ -62,7 +62,7 @@
         <header class="titlebar" id="dragMain" data-tauri-drag-region>
           <button class="wb look" id="lookBtn" data-i18n-title="lookVolume" title="外观与音量">❋</button>
           <button class="wb lang" id="langBtn" title="Switch to English">EN</button>
-          <span class="brand"><i class="hd">♥</i>&nbsp;silly&nbsp;bird <em>fm</em>&nbsp;<i class="hd">♥</i></span>
+          <button class="brand" id="aboutBtn" data-i18n-title="aboutInfo" title="这是什么 · 怎么玩" data-i18n-aria="aboutInfo" aria-label="这是什么 · 怎么玩"><i class="hd">♥</i>&nbsp;silly&nbsp;bird <em>fm</em>&nbsp;<i class="hd">♥</i></button>
           <button class="wb min" id="min" data-i18n-title="collapseToBird" title="收回成小鸟">–</button>
         </header>
 
@@ -219,6 +219,21 @@
             <svg viewBox="0 0 24 24" class="vol-ico"><path d="M4 9v6h4l5 4V5L8 9z"/></svg>
             <input type="range" id="vol" min="0" max="100" value="72" />
           </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- window · about: for a stranger who just opened the link and does not know
+         this is a thing they can tune, or that they can build one of their own -->
+    <div class="win" id="winAbout" hidden>
+      <section class="panel">
+        <header class="titlebar" id="dragAbout">
+          <span class="brand" data-i18n="about">这是什么</span>
+          <button class="wb close" id="aboutClose" data-i18n-title="close" title="关闭">×</button>
+        </header>
+        <div class="panel-body">
+          <p class="about-body" data-i18n="aboutBody1">一个朋友之间的声音电台。</p>
+          <p class="about-body" data-i18n="aboutBody2">◁▷ 调台，能听到不同朋友的频道；调到你自己的空位，就能建一个属于你的电台，发链接给朋友听。</p>
         </div>
       </section>
     </div>

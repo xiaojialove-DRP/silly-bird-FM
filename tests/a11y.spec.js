@@ -10,15 +10,14 @@ test("a keyboard user can see where focus is, and a mouse click stays quiet", as
   await page.goto("/");
   const play = page.locator("#play");
 
-  // real Tab navigation, not .focus() — :focus-visible cares about how focus arrived
-  await page.keyboard.press("Tab"); // lookBtn
-  await page.keyboard.press("Tab"); // langBtn
-  await page.keyboard.press("Tab"); // min
-  await page.keyboard.press("Tab"); // tprev
-  await page.keyboard.press("Tab"); // dialMid
-  await page.keyboard.press("Tab"); // tnext
-  await page.keyboard.press("Tab"); // prev
-  await page.keyboard.press("Tab"); // play
+  // real Tab navigation, not .focus() — :focus-visible cares about how focus arrived.
+  // Walk forward until #play itself has focus, rather than assume a fixed step
+  // count — the exact number of stops before it is an implementation detail of
+  // the title bar, not something this test should know or re-break on.
+  for (let i = 0; i < 15; i++) {
+    if (await page.evaluate(() => document.activeElement.id) === "play") break;
+    await page.keyboard.press("Tab");
+  }
   await expect(play).toBeFocused();
 
   const ringWhenTabbed = await play.evaluate((el) => getComputedStyle(el).boxShadow);

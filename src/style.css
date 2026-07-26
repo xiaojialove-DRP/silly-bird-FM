@@ -79,6 +79,7 @@ body::after {
 #winStation { left: calc(50% + 158px); top: 76px; }
 #winLook    { left: calc(50% + 178px); top: 320px; }
 #winShare   { left: calc(50% + 178px); top: 76px; }
+#winAbout   { left: calc(50% + 158px); top: 76px; }
 #sbfm.collapsed .win { display: none; }
 #sbfm:not(.collapsed) .perch { display: none; }
 
@@ -120,10 +121,14 @@ body::after {
 .deco { color: var(--accent); font-size: 9px; font-style: normal; vertical-align: 1px; }
 .titlebar:active { cursor: grabbing; }
 .brand {
-  background: none; padding: 0 10px; z-index: 1;
+  background: none; border: none; padding: 0 10px; z-index: 1; cursor: pointer;
   font-family: "Fraunces", "Songti SC", "STSong", "SimSun", Georgia, serif; font-style: italic; font-weight: 600;
   font-size: 15px; color: var(--ink);
 }
+/* the only hint this is clickable — no icon, no underline sitting there at rest,
+   just a little give on hover, the same quiet register as the other title-bar
+   buttons dimming on hover */
+.brand:hover { opacity: .7; }
 .brand em {
   font-style: normal; font-family: "Space Mono", monospace; font-size: 9px;
   text-transform: uppercase; letter-spacing: 1px;
@@ -273,6 +278,9 @@ body::after {
 /* ---------- panel bodies (station / look windows) ---------- */
 .panel-body { padding: 6px 4px 8px; }
 .chsetup-label { font-size: 9.5px; text-transform: uppercase; letter-spacing: .5px; color: var(--soft); margin-bottom: 5px; }
+/* full-contrast ink, not --soft — this is the panel's main reading content, not a caption */
+.about-body { font-size: 13px; line-height: 1.6; color: var(--ink); margin: 0 0 12px; }
+.about-body:last-child { margin-bottom: 4px; }
 .chsetup-input {
   width: 100%; box-sizing: border-box; font-family: "Space Mono", "Songti SC", "STSong", "SimSun", monospace; font-size: 12px;
   padding: 5px 2px 7px; margin-bottom: 13px; border: none; border-bottom: 2px dotted var(--ink); border-radius: 0;
@@ -434,7 +442,7 @@ body::after {
      before restackMobile has had a chance to move it — widens the viewport enough
      that the "am I on a phone" check answers no, and the whole stack silently falls
      back to the desktop cascade. Start them somewhere harmless instead. */
-  #winMain, #winStation, #winLook, #winShare { left: 8px; top: 8px; }
+  #winMain, #winStation, #winLook, #winShare, #winAbout { left: 8px; top: 8px; }
 
   /* cards auto-stack (see restackMobile in main.js) instead of being dragged —
      this is what actually produces the slide-into-place feel: only `top` ever

@@ -1,11 +1,11 @@
-// silly bird FM — window chrome: open/close/stack/drag for the four floating cards.
+// silly bird FM — window chrome: open/close/stack/drag for the floating cards.
 // Zero knowledge of stations, tracks, or sharing — purely "where do these
 // rectangles sit and how do they move." Every call site that mixes placement
 // with feature logic (opening Share also renders the link box, for example)
 // stays in main.js; this file only ever answers "where."
 
 const $ = (id) => document.getElementById(id);
-const winMain = $("winMain"), winStation = $("winStation"), winLook = $("winLook"), winShare = $("winShare");
+const winMain = $("winMain"), winStation = $("winStation"), winLook = $("winLook"), winShare = $("winShare"), winAbout = $("winAbout");
 
 // below this width, the four cards can't sit side by side without spilling off
 // screen. Instead of free floating, they stack vertically below whatever is
@@ -19,7 +19,7 @@ const winMain = $("winMain"), winStation = $("winStation"), winLook = $("winLook
 // the whole layout down the wrong branch. One breakpoint, one answer.
 export const isNarrowViewport = () => window.matchMedia("(max-width: 600px)").matches;
 
-const MOBILE_STACK_ORDER = [winMain, winLook, winStation, winShare];
+const MOBILE_STACK_ORDER = [winMain, winAbout, winLook, winStation, winShare];
 export function restackMobile() {
   if (!isNarrowViewport()) return;
   let bottom = 8;
@@ -41,13 +41,54 @@ export function restackMobile() {
     bottom += win.offsetHeight + 14;
   });
 }
+// Share in particular is short when it first opens and grows once the link box
+// (and, later, the stamps grid) appears — well after placeBeside already ran
+// and locked in a position based on the smaller, pre-growth height. Every .win
+// is position:fixed, so a card that grows past the bottom edge afterwards has
+// no scroll path back into view; nothing else here notices when that happens.
+// Watching every window for its own resize catches this regardless of *why* it
+// grew, instead of trying to predict every future content change up front.
+const keepInBoundsObserver = new ResizeObserver((entries) => {
+  for (const { target: win } of entries) {
+    if (win.hidden) continue;
+    const r = win.getBoundingClientRect();
+    const maxTop = window.innerHeight - r.height - 8;
+    const maxLeft = window.innerWidth - r.width - 8;
+    if (r.top > maxTop) win.style.top = Math.max(8, maxTop) + "px";
+    if (r.left > maxLeft) win.style.left = Math.max(8, maxLeft) + "px";
+  }
+});
+[winMain, winStation, winLook, winShare, winAbout].forEach((w) => keepInBoundsObserver.observe(w));
+
 function placeBeside(win, topOf, refWin) {
   if (win.dataset.placed) return;
   const w = win.offsetWidth || 320, h = win.offsetHeight || 200;
   const r = (refWin || winMain).getBoundingClientRect();
   const fitsRight = r.right + 16 + w < window.innerWidth;
-  const left = fitsRight ? r.right + 16 : Math.max(8, r.left + 36);
-  const top = (topOf ? topOf() : r.top) + (fitsRight ? 0 : 36);
+  const fitsBelow = r.bottom + 16 + h < window.innerHeight;
+  let left, top;
+  if (fitsRight) {
+    left = r.right + 16;
+    top = topOf ? topOf() : r.top;
+  } else if (fitsBelow) {
+    // Not enough width to sit beside it, but enough height to sit under it —
+    // a fixed 36px nudge here used to just cascade the new card almost
+    // directly on top of the reference window at exactly this width range
+    // (desktop, but too narrow for two 300px cards side by side), burying
+    // whatever it was covering. topOf doesn't apply once "beside" is off the
+    // table, so it's ignored in this branch.
+    left = r.left;
+    top = r.bottom + 16;
+  } else {
+    // Neither beside nor below fits — this is the case the 36px cascade was
+    // actually written for (e.g. Share opening beside an already-offset
+    // Station, with no room in any direction at a standard viewport height).
+    // Every .win is position:fixed, so unlike normal document flow, no
+    // scroll can ever reach a card pushed past the bottom edge — cascading
+    // near the reference window's own corner is what keeps it reachable.
+    left = Math.max(8, r.left + 36);
+    top = (topOf ? topOf() : r.top) + 36;
+  }
   win.style.left = Math.max(8, Math.min(left, window.innerWidth - w - 8)) + "px";
   win.style.top = Math.max(8, Math.min(top, window.innerHeight - h - 8)) + "px";
   win.dataset.placed = "1";

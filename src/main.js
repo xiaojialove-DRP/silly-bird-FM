@@ -101,9 +101,9 @@ audio.volume = 0.72;
 
 const $ = (id) => document.getElementById(id);
 const sbfm = $("sbfm"), perch = $("perch"), filepick = $("filepick");
-const winMain = $("winMain"), winStation = $("winStation"), winLook = $("winLook"), winShare = $("winShare");
+const winMain = $("winMain"), winStation = $("winStation"), winLook = $("winLook"), winShare = $("winShare"), winAbout = $("winAbout");
 const player = $("player"), screenEl = document.querySelector(".screen");
-const minBtn = $("min"), lookBtn = $("lookBtn"), langBtn = $("langBtn"), stationClose = $("stationClose"), lookClose = $("lookClose"), shareClose = $("shareClose");
+const minBtn = $("min"), lookBtn = $("lookBtn"), langBtn = $("langBtn"), aboutBtn = $("aboutBtn"), stationClose = $("stationClose"), lookClose = $("lookClose"), shareClose = $("shareClose"), aboutClose = $("aboutClose");
 const dialMid = $("dialMid"), elTagline = $("tagline");
 const chNameInput = $("chNameInput"), chIntroInput = $("chIntroInput"), chUpload = $("chUpload"), stationSave = $("stationSave");
 const recordBtn = $("recordBtn"), recordIdle = document.querySelector(".record-idle"), recordLive = document.querySelector(".record-live"), recordTime = document.querySelector(".record-time");
@@ -566,6 +566,9 @@ lookBtn.addEventListener("click", () => {
 });
 langBtn.addEventListener("mousedown", (e) => e.stopPropagation());
 langBtn.addEventListener("click", () => setLang(lang === "zh" ? "en" : "zh"));
+aboutBtn.addEventListener("mousedown", (e) => e.stopPropagation());
+aboutBtn.addEventListener("click", () => toggleWin(winAbout));
+aboutClose.addEventListener("click", () => closeWin(winAbout));
 openShareBtn.addEventListener("click", () => {
   const opening = winShare.hidden;
   renderShareLinkBox();

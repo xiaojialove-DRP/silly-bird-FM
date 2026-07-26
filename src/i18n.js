@@ -16,6 +16,7 @@
 export const I18N = {
   zh: {
     openApp: "打开 silly bird fm", lookVolume: "外观与音量", collapseToBird: "收回成小鸟",
+    aboutInfo: "这是什么 · 怎么玩",
     dropHint: "松手 · 放进小鸟的电台 ♪", openMyStation: "打开我的电台",
     myStation: "我的电台", me: "我", close: "关闭",
     stationName: "电台名", stationNamePlaceholder: "比如：小加的夏日降噪电台",
@@ -24,6 +25,9 @@ export const I18N = {
     uploadAudio: "⊕ 上传音频", holdToRecord: "● 按住录音", releaseToFinish: "松开完成",
     done: "完成", shareLatest: "✉ 把最新的声音分享出去", copyLinkAbove: "复制以上链接",
     look: "外观", interfaceColor: "界面颜色 · 你的偏好", volume: "音量",
+    about: "这是什么",
+    aboutBody1: "一个朋友之间的声音电台。",
+    aboutBody2: "◁▷ 调台，能听到不同朋友的频道；调到你自己的空位，就能建一个属于你的电台，发链接给朋友听。",
     share: "分享", backToStation: "‹ 我的电台", generateShareLink: "✉ 生成分享链接",
     yourLink: "链接如下 · 每次编辑后再点一次「把最新的声音分享出去」即可更新",
     revokeShare: "撤回分享 · 让这条链接失效",
@@ -80,6 +84,7 @@ export const I18N = {
   },
   en: {
     openApp: "Open silly bird fm", lookVolume: "Look & volume", collapseToBird: "Collapse to bird",
+    aboutInfo: "What is this · how to play",
     dropHint: "Let go · into the bird's station ♪", openMyStation: "Open my station",
     myStation: "My Station", me: "Me", close: "Close",
     stationName: "Station name", stationNamePlaceholder: "e.g. Xiaojia's Summer Hush",
@@ -88,6 +93,9 @@ export const I18N = {
     uploadAudio: "⊕ Upload audio", holdToRecord: "● Hold to record", releaseToFinish: "Release when done",
     done: "Done", shareLatest: "✉ Share your latest sound", copyLinkAbove: "Copy the link above",
     look: "Look", interfaceColor: "Interface color · your preference", volume: "Volume",
+    about: "About",
+    aboutBody1: "A sound radio between friends.",
+    aboutBody2: "◁▷ tune the dial to hear different friends' channels; tune to your own empty slot to start your own station and share the link with a friend.",
     share: "Share", backToStation: "‹ My Station", generateShareLink: "✉ Generate share link",
     yourLink: "Your link is below · edit anytime, then click Share your latest sound again to update it",
     revokeShare: "Revoke share · kill this link",

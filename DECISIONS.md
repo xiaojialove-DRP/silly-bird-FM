@@ -146,6 +146,30 @@ sharing reads its own link back over the public URL afterwards and says so when
 what comes back is not what was sent. That check exists because edits went
 unpublished for days while the app reported success every time.
 
+## Window placement: fixed positioning can't rely on measuring once
+
+`placeBeside()` (windows.js) decides where a newly-opened card goes once,
+the moment it opens, and never again — cheap, and fine as long as a card's
+size at that moment is its final size. Adding the About card broke that
+assumption in the other direction: it exposed a real gap in the placement
+math for cards that don't fit beside their reference window, which used to
+fall back to a 36px cascade landing almost directly on top of whatever it
+was covering. Fixed by trying "beside," then "below," and only falling back
+to the cascade when neither fits — a genuine three-way choice instead of a
+two-way one with a bad second option.
+
+That fix alone still broke the real create → share → revoke journey test,
+because Share is *not* a fixed size: it opens short, then grows once the
+link box (and later the stamps grid) appears — well after placement already
+ran and locked in a position sized for the shorter, pre-growth version.
+Every `.win` is `position: fixed`, so a card that grows past the bottom
+edge afterward has no scroll path back into view — normal document flow
+would have just made the page taller. The real fix wasn't a smarter guess
+at final size — it can't be predicted, since it depends on network timing —
+it was a `ResizeObserver` on every window that pulls it back on-screen
+whenever its actual rendered size changes, for whatever reason, regardless
+of whether the code that changed it knew placement was even a concern.
+
 ## Code organization: three files, imports running both ways on purpose
 
 `main.js` (transport, station editing, boot), `share.js` (publish/listen/restore/
