@@ -454,12 +454,11 @@ function shareLinkFor(token) {
   return location.origin + location.pathname + "?listen=" + encodeURIComponent(base);
 }
 function renderShareLinkBox() {
-  // once a link exists, the top button's job shifts from "produce one" to "hand
-  // over the one you already have" — copying it is instant and needs no network
-  // round-trip, unlike re-sharing
-  const hasLink = !!MY.shareToken;
-  shareBtn.textContent = hasLink ? t("copyLink") : t("shareMyStation");
-  if (!hasLink) { shareLinkBox.hidden = true; return; }
+  // shareBtn's label is now fixed (static markup, see index.html) — it always
+  // means "publish", whether this is the first time or the tenth. Each button
+  // has exactly one job: this function only ever decides whether the link box
+  // itself, and the copy button living inside it, are there to show.
+  if (!MY.shareToken) { shareLinkBox.hidden = true; return; }
   shareLinkText.textContent = shareLinkFor(MY.shareToken);
   shareLinkBox.hidden = false;
 }
@@ -467,10 +466,12 @@ async function copyShareLink() {
   const link = shareLinkText.textContent;
   try {
     await navigator.clipboard.writeText(`${MY.name} ${t("waitingForYou")}\n${link}`);
-    const original = shareBtn.textContent;
-    shareBtn.textContent = t("copied");
-    shareBtn.disabled = true;
-    setTimeout(() => { shareBtn.textContent = original; shareBtn.disabled = false; }, 1100);
+    // feedback lives on the button itself, right where the eye already is —
+    // this is the button whose only job is copying, so it owns this feedback
+    const original = copyLinkBtn.textContent;
+    copyLinkBtn.textContent = t("copied");
+    copyLinkBtn.disabled = true;
+    setTimeout(() => { copyLinkBtn.textContent = original; copyLinkBtn.disabled = false; }, 1100);
   } catch { say(t("copyFailedSelect")); }
 }
 // Fetch the freshly-published station.json back over the *public* URL — the exact
@@ -850,7 +851,7 @@ player.addEventListener("dragleave", (e) => { if (!player.contains(e.relatedTarg
 player.addEventListener("drop", (e) => { e.preventDefault(); screenEl.classList.remove("dragging"); if (e.dataTransfer) importFiles(e.dataTransfer.files); });
 filepick.addEventListener("change", () => { importFiles(filepick.files); filepick.value = ""; });
 chUpload.addEventListener("click", () => filepick.click());
-shareBtn.addEventListener("click", () => (MY.shareToken ? copyShareLink() : shareStation()));
+shareBtn.addEventListener("click", shareStation);
 
 // ---- press-and-hold recording: a second door into the exact same pipeline as
 // uploading a file — a held moment (street noise, a passing thought) is just as
@@ -1013,7 +1014,7 @@ openShareBtn.addEventListener("click", () => {
 stationClose.addEventListener("click", () => { stopRecording(); closeWin(winStation); });
 lookClose.addEventListener("click", () => closeWin(winLook));
 shareClose.addEventListener("click", () => closeWin(winShare));
-copyLinkBtn.addEventListener("click", shareStation);
+copyLinkBtn.addEventListener("click", copyShareLink);
 revokeShareBtn.addEventListener("click", revokeShare);
 stampBtn.addEventListener("click", sendStamp);
 
