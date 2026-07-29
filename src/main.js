@@ -628,6 +628,7 @@ if (!isNarrowViewport()) {
   makeDraggable(winStation, $("dragStation"));
   makeDraggable(winLook, $("dragLook"));
   makeDraggable(winShare, $("dragShare"));
+  makeDraggable(winAbout, $("dragAbout"));
 }
 makeDraggable(perch, perch, () => sbfm.classList.remove("collapsed"));
 
@@ -709,8 +710,17 @@ makeDraggable(perch, perch, () => sbfm.classList.remove("collapsed"));
   // later once the fetch comes back. fetchGuestStation() only fetches+validates;
   // splicing it into the dial is the player's job, done here.
   const guestCh = await fetchGuestStation();
-  if (guestCh) { CHANNELS.unshift(guestCh); ci = 0; pi = 0; }
+  if (guestCh && !guestCh.failed) { CHANNELS.unshift(guestCh); ci = 0; pi = 0; }
   setLang(lang);   // applies the restored language to static chrome + demo content + dial
+  // A link that fails to resolve used to fall through in silence, landing on
+  // whatever demo channel setLang() just painted — indistinguishable from the
+  // app simply being broken. Say so instead: this overwrites setLang()'s own
+  // render, on purpose, only in this one case.
+  if (hasGuestLink && (!guestCh || guestCh.failed)) {
+    elSname.textContent = t("guestLoadFailedTitle");
+    elTagline.textContent = t(guestCh && guestCh.network ? "guestLoadFailedNetwork" : "guestLoadFailed");
+    elTagline.hidden = false;
+  }
 
   // Nobody arrives already knowing that turning the dial finds their own empty slot
   // — the invite CTA only ever appears once you tune to it, and nothing before that

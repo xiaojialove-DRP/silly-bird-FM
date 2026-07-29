@@ -181,26 +181,37 @@ export async function revokeShare() {
 // validates, returning a channel-shaped object (or null). Unshifting it into
 // CHANNELS, resetting the dial, and rendering are the player's business, not the
 // network's, so that part stays in main.js's boot().
+//
+// Returning plain null used to mean two very different things at once: "there
+// was never a link to resolve" (silent, correct — most visits) and "there was
+// a link and it failed" (which then landed on an unrelated demo channel with
+// no explanation — indistinguishable from the app just being broken). A friend
+// reported exactly this as "can't open it, do I need a VPN?" — right guess,
+// wrong silence. failed:true (with network:true/false, same TypeError check
+// shareStation() already uses) lets the caller say so instead of guessing.
 export async function fetchGuestStation() {
   const raw = new URLSearchParams(location.search).get("listen");
   if (!raw) return null;
   let base;
-  try { base = new URL(raw).toString().replace(/\/+$/, ""); } catch { return null; }
-  if (!/^https?:/.test(base)) return null;
+  try { base = new URL(raw).toString().replace(/\/+$/, ""); } catch { return { failed: true }; }
+  if (!/^https?:/.test(base)) return { failed: true };
   try {
     const st = await (await fetch(`${base}/station.json`)).json();
     const pieces = (st.pieces || []).map((p) => ({
       title: p.title || t("untitled"), artist: p.artist || "", kind: p.kind || "", dur: 0, cover: p.cover || null,
       src: /^(data|https?):/.test(p.file) ? p.file : `${base}/${p.file}`,
     }));
-    if (!pieces.length) return null;
+    if (!pieces.length) return { failed: true };
     // the last path segment of the public read URL is the same folder token
     // cloudPut() writes under — reused below to file a listen stamp
     return {
       name: st.name || t("friendsStation"), owner: st.owner || st.name || t("friend"), intro: st.intro || "",
       guest: true, pieces, stampToken: base.split("/").pop(),
     };
-  } catch (e) { reportError("loadGuestStation", e); return null; }
+  } catch (e) {
+    reportError("loadGuestStation", e);
+    return { failed: true, network: e instanceof TypeError };
+  }
 }
 
 // ---- getting a station back from its own link ----

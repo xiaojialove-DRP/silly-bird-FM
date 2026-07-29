@@ -28,11 +28,13 @@ export function restackMobile() {
     const w = win.offsetWidth || 320;
     win.style.left = Math.max(8, (window.innerWidth - w) / 2) + "px";
     if (!win.dataset.stacked) {
-      // first appearance in this stack — start a little higher and let the
-      // top transition (see the mobile media query) slide it down into its
-      // real slot, rather than just popping into place
+      // first appearance in this stack — start higher and let the top
+      // transition (see the mobile media query) slide it down into its real
+      // slot, rather than just popping into place. 20px used to read as a
+      // twitch rather than a deliberate slide — big enough to actually see
+      // the motion, not so big it looks like it is falling from off-screen.
       win.style.transition = "none";
-      win.style.top = Math.max(8, bottom - 20) + "px";
+      win.style.top = Math.max(8, bottom - 44) + "px";
       void win.offsetWidth;   // force layout so the browser commits the "from" position first
       win.style.transition = "";
       win.dataset.stacked = "1";
@@ -44,11 +46,20 @@ export function restackMobile() {
 // Share in particular is short when it first opens and grows once the link box
 // (and, later, the stamps grid) appears — well after placeBeside already ran
 // and locked in a position based on the smaller, pre-growth height. Every .win
-// is position:fixed, so a card that grows past the bottom edge afterwards has
-// no scroll path back into view; nothing else here notices when that happens.
-// Watching every window for its own resize catches this regardless of *why* it
-// grew, instead of trying to predict every future content change up front.
+// is position:fixed *on desktop*, so a card that grows past the bottom edge
+// afterwards has no scroll path back into view there; nothing else here
+// notices when that happens. Watching every window for its own resize catches
+// this regardless of *why* it grew, instead of trying to predict every future
+// content change up front.
+//
+// Skipped entirely below the mobile breakpoint: .win switches to
+// position:absolute there (see the mobile media query) inside a page that
+// itself scrolls, and restackMobile() deliberately lets cards extend past
+// the bottom of the current viewport — that is what the fold is for. This
+// same clamp firing there would fight that on-purpose overflow and snap a
+// card back up mid-stack.
 const keepInBoundsObserver = new ResizeObserver((entries) => {
+  if (isNarrowViewport()) return;
   for (const { target: win } of entries) {
     if (win.hidden) continue;
     const r = win.getBoundingClientRect();
@@ -101,18 +112,35 @@ export function toggleWin(win, topOf, refWin) {
       // the stack outgrows a phone screen quickly, so a card can slide into a slot
       // entirely below the fold and opening it looks like nothing happened. Scroll
       // by exactly the shortfall — enough to see the new card, without shoving the
-      // rest of the stack off the top. Waits for the slide to settle first.
-      setTimeout(() => {
-        const shortfall = win.getBoundingClientRect().bottom - window.innerHeight;
-        if (shortfall <= 0) return;
+      // rest of the stack off the top.
+      //
+      // This used to wait 360ms for the card's own slide to visually finish
+      // before even checking, then started a second, separate scroll animation
+      // — a reveal, a pause, then a jump, reported back as "not smooth, pops
+      // out one page at a time." win.style.top was already set synchronously
+      // by restackMobile() above, so the target position is known immediately
+      // without waiting for it to be painted — reading it back here is just a
+      // property read, not a layout measurement. Starting the scroll in the
+      // same tick lets both motions run together as one continuous glide
+      // instead of two separate ones stapled end to end.
+      const targetBottom = parseFloat(win.style.top) + win.offsetHeight;
+      // restackMobile() just changed a position:absolute card's height in the
+      // flow, which changes how far the page *can* scroll — but the browser
+      // does not necessarily recompute that until it next needs to. Reading
+      // any layout property forces it to catch up before scrollTo() below
+      // asks for a target that depends on knowing the new scrollable range.
+      void document.body.offsetHeight;
+      const shortfall = targetBottom - (window.scrollY + window.innerHeight) + 8;
+      if (shortfall > 0) {
         const start = window.scrollY;
-        const target = start + shortfall + 8;
+        const target = start + shortfall;
         window.scrollTo({ top: target, behavior: "smooth" });
-        // not every engine honours smooth scrolling, and some ignore the call
-        // outright — leaving the card stranded below the fold. If nothing moved,
-        // get there anyway; being reachable matters more than the glide.
-        setTimeout(() => { if (window.scrollY === start) window.scrollTo(0, target); }, 400);
-      }, 360);
+        // not every engine honours smooth scrolling, and even this one can
+        // clamp short of the target if it still had not caught up — either
+        // way, closing most of the gap counts as "did not move," so check
+        // distance from the goal rather than only whether anything moved.
+        setTimeout(() => { if (Math.abs(window.scrollY - target) > 2) window.scrollTo(0, target); }, 400);
+      }
     } else placeBeside(win, topOf, refWin);
   } else {
     closeWin(win);
