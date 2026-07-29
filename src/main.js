@@ -581,6 +581,18 @@ openShareBtn.addEventListener("click", () => {
 stationClose.addEventListener("click", () => { stopRecording(); closeWin(winStation); });
 lookClose.addEventListener("click", () => closeWin(winLook));
 shareClose.addEventListener("click", () => closeWin(winShare));
+// a keyboard user reaching a close button meant tabbing all the way to it —
+// Escape is the standard way out of a panel and had no handler at all.
+// Triggers the same close buttons above rather than duplicating their logic,
+// so stationClose's stopRecording() still runs and nothing can drift out of
+// sync between the two paths.
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape") return;
+  if (!winStation.hidden) stationClose.click();
+  if (!winLook.hidden) lookClose.click();
+  if (!winShare.hidden) shareClose.click();
+  if (!winAbout.hidden) aboutClose.click();
+});
 copyLinkBtn.addEventListener("click", copyShareLink);
 revokeShareBtn.addEventListener("click", revokeShare);
 stampBtn.addEventListener("click", sendStamp);

@@ -124,20 +124,30 @@ body::after {
 .deco { color: var(--accent); font-size: 9px; font-style: normal; vertical-align: 1px; }
 .titlebar:active { cursor: grabbing; }
 .brand {
-  background: none; border: none; padding: 0 10px; z-index: 1; cursor: pointer;
+  background: none; border: none; padding: 0 10px; z-index: 1;
   font-family: "Fraunces", "Songti SC", "STSong", "SimSun", Georgia, serif; font-style: italic; font-weight: 600;
   font-size: 15px; color: var(--ink);
 }
-/* the only hint this is clickable — no icon, no underline sitting there at rest,
-   just a little give on hover, the same quiet register as the other title-bar
-   buttons dimming on hover */
-.brand:hover { opacity: .7; }
+/* .brand also labels four plain, non-interactive panel titles (Station, Look,
+   Share, and this panel's own header) — only #aboutBtn is a real <button>, so
+   the clickable affordance is scoped to that one element specifically, not
+   the shared class, or every other panel title would falsely look pressable
+   too. No icon, no underline sitting there at rest — just a little give on
+   hover, the same quiet register as the other title-bar buttons dimming. */
+#aboutBtn { cursor: pointer; }
+#aboutBtn:hover { opacity: .7; }
 .brand em {
   font-style: normal; font-family: "Space Mono", monospace; font-size: 9px;
   text-transform: uppercase; letter-spacing: 1px;
   background: var(--accent); color: var(--paper); padding: 1px 4px; border-radius: 2px; margin-left: 2px; vertical-align: 1.5px;
 }
 .back-hint { display: none; }   /* shown only on narrow viewports — see the mobile media query */
+/* Nothing anywhere styled :disabled before this — a button mid-upload or in
+   its brief post-save cooldown looked pixel-identical to a live one, full
+   opacity and a pointer cursor, for however long that upload actually takes
+   over a real network. One rule, every button, so "busy" reads as busy
+   instead of looking like the click just did not register. */
+button:disabled { opacity: .45; cursor: not-allowed; }
 .wb {
   width: 18px; height: 18px; border: none; border-radius: 3px;
   background: none; display: grid; place-items: center;
@@ -438,6 +448,11 @@ body::after {
      touch target on a phone */
   .wb::after, .track-remove::after { content: ""; position: absolute; inset: -13px; }
   .track-remove { position: relative; }
+  /* #aboutBtn is 21px tall at its visible size — same problem, same fix.
+     Vertical-only inset: it is already wide, so widening further would
+     overlap the language toggle beside it. */
+  #aboutBtn { position: relative; }
+  #aboutBtn::after { content: ""; position: absolute; top: -13px; bottom: -13px; left: 0; right: 0; }
 
   /* A phone is ~700px tall and two stacked cards are already taller than that, so
      the stack HAS to be reachable by scrolling: absolute (not fixed) makes the cards
