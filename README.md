@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/icon.svg" width="120" height="120" alt="silly bird fm icon" />
+</p>
+
 <p align="center">English · <a href="README.zh.md">中文</a></p>
 
 # silly bird FM
