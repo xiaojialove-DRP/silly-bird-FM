@@ -4,6 +4,10 @@
 
 <p align="center">English · <a href="README.zh.md">中文</a></p>
 
+<p align="center">
+  <a href="https://github.com/xiaojialove-DRP/silly-bird-FM/actions/workflows/ci.yml"><img src="https://github.com/xiaojialove-DRP/silly-bird-FM/actions/workflows/ci.yml/badge.svg" alt="CI status" /></a>
+</p>
+
 # silly bird FM
 
 A sound radio between friends.
@@ -22,7 +26,7 @@ Hans Christian Andersen's papercutting art is the only visual reference — whit
 
 ## What works right now
 
-- **Four papercut windows**: the radio / my station (name it, write a one-line intro, upload or record) / look (color + volume) / share (generate a link); drag them anywhere on desktop, and on a phone they slide out and stack in sequence instead — the bird still docks to a corner of the screen when collapsed
+- **Five papercut windows**: the radio / my station (name it, write a one-line intro, upload or record) / look (color + volume) / share (generate a link) / about (click the title, for anyone landing on a link with no idea what this is); drag them anywhere on desktop, and on a phone they slide out and stack in sequence instead — the bird still docks to a corner of the screen when collapsed
 - **Curated by design**: a station holds at most 7 tracks — picking a handful with care fits this product better than an unlimited dumping ground
 - **Drop to play**: drag audio onto the bird (or upload from the panel), title / artist / cover art read automatically from ID3 tags
 - **Press and hold to record**: not just uploading finished files — you can also record a moment straight from your mic
@@ -47,8 +51,8 @@ If a friend who got your link wants to make their own station and generate their
 
 ## Roadmap
 
-1. ~~Player + papercut aesthetic~~ · ~~Real playback and persistence~~ · ~~Share links~~ · ~~Listening-receipt stamps~~ (done)
-2. **Real friend-testing, in progress** — already getting real feedback, still refining
+1. ~~Player + papercut aesthetic~~ · ~~Real playback and persistence~~ · ~~Share links~~ · ~~Listening-receipt stamps~~ · ~~Restore a station from its own link~~ · ~~An About panel for a stranger's first visit~~ (done)
+2. **Real friend-testing, in progress** — several rounds of real feedback so far, each one turned into an actual fix (a friend's link failing to connect, mobile interaction smoothness, among others) — still refining
 3. **More ritual layer** — a weekly channel-swap day
 4. **Going desktop (no rush)** — wrapped in Tauri: always-on-top, tray icon, transparent background, launch at login; there's no hurry until more friends have tried it and genuinely like it
 
