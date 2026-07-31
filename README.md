@@ -38,6 +38,7 @@ Hans Christian Andersen's papercutting art is the only visual reference — whit
 - **The demo channels are original too**: the sound in the three built-in sample stations (Late Night Overthinking / Rainy Days Only / Kitchen Disco) is all synthesized on the fly from code — tones and hums, not any existing recording — same stance this product takes on sound and copyright generally
 - **One-click 中/EN**: the EN / 中 button in the titlebar switches the interface language — button copy and demo-channel content follow along; a friend's own station name or track titles are never machine-translated, always left exactly as they typed them
 - **Finish listening, send a stamp**: a "send a stamp" button only surfaces once you've heard every track on a friend's station — never auto-reported, only sent if you choose to, and a station can only receive one per day. The owner opens their mailbox in the Share window: each stamp is tinted in whatever color the listener happened to be using and carries nothing but a date postmark — no counts anywhere on screen
+- **Also lives on the desktop**: a small always-on-top macOS app (universal — native on both Intel and Apple Silicon, no Rosetta) wraps the same site in a window with the surrounding browser chrome stripped away; the download link is in the "About" panel
 
 ## Sharing with a friend
 
@@ -51,10 +52,9 @@ If a friend who got your link wants to make their own station and generate their
 
 ## Roadmap
 
-1. ~~Player + papercut aesthetic~~ · ~~Real playback and persistence~~ · ~~Share links~~ · ~~Listening-receipt stamps~~ · ~~Restore a station from its own link~~ · ~~An About panel for a stranger's first visit~~ (done)
+1. ~~Player + papercut aesthetic~~ · ~~Real playback and persistence~~ · ~~Share links~~ · ~~Listening-receipt stamps~~ · ~~Restore a station from its own link~~ · ~~An About panel for a stranger's first visit~~ · ~~A native desktop app~~ (done)
 2. **Real friend-testing, in progress** — several rounds of real feedback so far, each one turned into an actual fix (a friend's link failing to connect, mobile interaction smoothness, among others) — still refining
 3. **More ritual layer** — a weekly channel-swap day
-4. **Going desktop (no rush)** — wrapped in Tauri: always-on-top, tray icon, transparent background, launch at login; there's no hurry until more friends have tried it and genuinely like it
 
 ## Running locally
 

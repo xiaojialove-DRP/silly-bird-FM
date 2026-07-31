@@ -302,6 +302,9 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 /* full-contrast ink, not --soft — this is the panel's main reading content, not a caption */
 .about-body { font-size: 13px; line-height: 1.6; color: var(--ink); margin: 0 0 12px; }
 .about-body:last-child { margin-bottom: 4px; }
+.about-download a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+/* already the desktop shell — offering to download it again is noise, not a hint */
+.in-tauri .about-download { display: none; }
 .chsetup-input {
   width: 100%; box-sizing: border-box; font-family: "Space Mono", "Songti SC", "STSong", "SimSun", monospace; font-size: 12px;
   padding: 5px 2px 7px; margin-bottom: 13px; border: none; border-bottom: 2px dotted var(--ink); border-radius: 0;
