@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "silly-bird-fm",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "identifier": "com.xiaojialove.sillybirdfm",
   "build": {
     "frontendDist": "../shell-dist"
