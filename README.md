@@ -39,6 +39,7 @@ Hans Christian Andersen's papercutting art is the only visual reference — whit
 - **One-click 中/EN**: the EN / 中 button in the titlebar switches the interface language — button copy and demo-channel content follow along; a friend's own station name or track titles are never machine-translated, always left exactly as they typed them
 - **Finish listening, send a stamp**: a "send a stamp" button only surfaces once you've heard every track on a friend's station — never auto-reported, only sent if you choose to, and a station can only receive one per day. The owner opens their mailbox in the Share window: each stamp is tinted in whatever color the listener happened to be using and carries nothing but a date postmark — no counts anywhere on screen
 - **Also lives on the desktop**: a small always-on-top macOS app (universal — native on both Intel and Apple Silicon, no Rosetta) wraps the same site in a window with the surrounding browser chrome stripped away; the download link is in the "About" panel
+- **A quiet dot for "something's new"**: re-opening a friend's link later shows a small mark by the station name if they've published since your last visit — only on an actual return visit, never on the first time you ever open a link, and it clears itself the moment you look
 
 ## Sharing with a friend
 

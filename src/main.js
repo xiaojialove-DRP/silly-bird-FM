@@ -116,6 +116,7 @@ const revokeShareBtn = $("revokeShareBtn");
 const stampBtn = $("stampBtn");
 const swatches = [...document.querySelectorAll(".swatch")];
 const elTitle = $("title"), elKind = $("artist"), elDj = $("dj"), elDjWrap = $("djWrap"), elFreq = $("freq"), elSname = $("sname");
+const elNewDot = $("newDot");
 const elCur = $("cur"), elDur = $("dur"), elFill = $("fill"), elBar = $("bar"), elCover = $("cover"), elVol = $("vol");
 
 export const channel  = () => CHANNELS[ci];
@@ -220,6 +221,7 @@ export function renderChannel() {
   const isCta = !!ch.mine && !MY.created;   // fresh users see an invitation, not a name
   elFreq.textContent = isCta ? "★" : stationFreq(ch.freqKey || ch.name);
   elSname.textContent = isCta ? t("inviteMakeYourOwn") : ch.name;
+  elNewDot.hidden = !ch.hasNew;
   dialMid.classList.toggle("cta", isCta);
   elDj.textContent = ch.owner || ch.name;
   // on the empty CTA slot, the tagline line doubles as a legend for the ◁▷ tune

@@ -85,7 +85,7 @@ export async function shareStation() {
     const token = MY.shareToken || crypto.randomUUID();
     MY.shareToken = token;
     persistStationMeta();
-    const manifest = { v: 1, name: MY.name, owner: MY.name, intro: MY.intro, pieces: [] };
+    const manifest = { v: 1, name: MY.name, owner: MY.name, intro: MY.intro, updatedAt: Date.now(), pieces: [] };
     for (let i = 0; i < tracks.length; i++) {
       say(t("uploading", i + 1, tracks.length));
       const p = tracks[i];
@@ -176,6 +176,17 @@ export async function revokeShare() {
   revokeShareBtn.disabled = false;
 }
 
+// this browser's own record of when it last opened each guest station — same
+// naming convention as the stamp throttle key just above, same "quietly do
+// nothing if storage is unavailable" shrug
+const lastHeardKey = (token) => `sbfm-heard-${token}`;
+function getLastHeard(token) {
+  try { return Number(localStorage.getItem(lastHeardKey(token))) || 0; } catch { return 0; }
+}
+function setLastHeard(token) {
+  try { localStorage.setItem(lastHeardKey(token), String(Date.now())); } catch {}
+}
+
 // ---- P1 · listen mode: ?listen=<public folder URL> resolves a friend's station ----
 // Split on purpose from how the player reacts to it: this only fetches and
 // validates, returning a channel-shaped object (or null). Unshifting it into
@@ -196,7 +207,11 @@ export async function fetchGuestStation() {
   try { base = new URL(raw).toString().replace(/\/+$/, ""); } catch { return { failed: true }; }
   if (!/^https?:/.test(base)) return { failed: true };
   try {
-    const st = await (await fetch(`${base}/station.json`)).json();
+    // Every guest visit goes through here, including a friend re-opening the
+    // exact same link later to check for something new — the one path this
+    // matters most for. verifyPublished() and restoreFromLink() already guard
+    // against a stale cached copy this same way; this one had been missing it.
+    const st = await (await fetch(`${base}/station.json?v=${Date.now()}`, { cache: "no-store" })).json();
     const pieces = (st.pieces || []).map((p) => ({
       title: p.title || t("untitled"), artist: p.artist || "", kind: p.kind || "", dur: 0, cover: p.cover || null,
       src: /^(data|https?):/.test(p.file) ? p.file : `${base}/${p.file}`,
@@ -204,9 +219,21 @@ export async function fetchGuestStation() {
     if (!pieces.length) return { failed: true };
     // the last path segment of the public read URL is the same folder token
     // cloudPut() writes under — reused below to file a listen stamp
+    const stampToken = base.split("/").pop();
+    // Same re-sent link, checked again later, has no way to say "I already heard
+    // this" from "the owner added something since" — updatedAt (absent on
+    // stations shared before this existed, so never a false "new") compared
+    // against this browser's own last visit answers exactly that. previouslyHeard
+    // must be a real past visit, not just falsy-but-defined zero — everything is
+    // trivially "new" the very first time anyone opens a link at all, which is not
+    // a signal worth showing. Read once, now, before the visit itself updates the
+    // stored timestamp below — this is the one render this visit gets to show it.
+    const previouslyHeard = getLastHeard(stampToken);
+    const hasNew = !!(st.updatedAt && previouslyHeard && st.updatedAt > previouslyHeard);
+    setLastHeard(stampToken);
     return {
       name: st.name || t("friendsStation"), owner: st.owner || st.name || t("friend"), intro: st.intro || "",
-      guest: true, pieces, stampToken: base.split("/").pop(),
+      guest: true, pieces, stampToken, hasNew,
     };
   } catch (e) {
     reportError("loadGuestStation", e);

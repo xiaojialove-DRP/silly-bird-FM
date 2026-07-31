@@ -31,7 +31,7 @@ test("a fresh visitor with no link is nudged left, toward their own slot", async
 test("arriving via a shared link nudges the other way", async ({ page }) => {
   // stand in for a real shared folder without spending a real upload: only
   // station.json is ever fetched for a guest channel
-  await page.route("**/fake-guest-station/station.json", (route) =>
+  await page.route("**/fake-guest-station/station.json**", (route) =>
     route.fulfill({
       status: 200,
       contentType: "application/json",
