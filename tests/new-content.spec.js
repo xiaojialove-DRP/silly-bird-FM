@@ -28,6 +28,9 @@ test("a new-content dot only appears on a return visit after the owner republish
 
   // owner: make a station and share it
   await page.goto("/");
+  // fresh boot with no station yet tunes away from the empty "mine" slot (see
+  // boot() in main.js) - dialMid only opens winStation for that slot
+  await page.locator("#tprev").click();
   await page.locator("#dialMid").click();
   await page.locator("#chNameInput").fill(stationName);
   await page.setInputFiles("#filepick", { name: "one.wav", mimeType: "audio/wav", buffer: tinyWavBuffer(440) });

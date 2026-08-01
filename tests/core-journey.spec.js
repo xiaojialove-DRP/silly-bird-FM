@@ -28,6 +28,9 @@ test("create, share, a friend listens, then revoke", async ({ page, browser }) =
   await page.goto("/");
 
   // create: name the station and upload a track
+  // fresh boot with no station yet tunes away from the empty "mine" slot (see
+  // boot() in main.js) - dialMid only opens winStation for that slot
+  await page.locator("#tprev").click();
   await page.locator("#dialMid").click();
   await page.locator("#chNameInput").fill(stationName);
   await page.setInputFiles("#filepick", {
@@ -71,6 +74,9 @@ test("create, share, a friend listens, then revoke", async ({ page, browser }) =
 // Sharing reads its own link back afterwards, and this proves it actually looks.
 test("sharing says so when the published link does not match what was sent", async ({ page }) => {
   await page.goto("/");
+  // fresh boot with no station yet tunes away from the empty "mine" slot (see
+  // boot() in main.js) - dialMid only opens winStation for that slot
+  await page.locator("#tprev").click();
   await page.locator("#dialMid").click();
   await page.locator("#chNameInput").fill(`Verify ${Date.now() % 100000}`);
   await page.setInputFiles("#filepick", {

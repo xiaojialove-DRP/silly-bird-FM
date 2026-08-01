@@ -13,6 +13,11 @@ test("the app boots, with no console errors", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator("#winMain")).toBeVisible();
 
+  // fresh boot with no station yet tunes away from the empty "mine" slot (see
+  // boot() in main.js) - dialMid only opens winStation for that slot, so it
+  // has to be tuned back in first
+  await page.locator("#tprev").click();
+
   // scripted behaviour, not just markup: if the module threw on load, no listener
   // was ever attached and this click does nothing
   await page.locator("#dialMid").click();
@@ -42,6 +47,9 @@ test("the stack stays reachable on a phone-sized screen", async ({ page }) => {
   // this is where "the bottom of the card cannot be touched" shows up.
   await page.setViewportSize({ width: 375, height: 667 });
   await page.goto("/");
+  // fresh boot with no station yet tunes away from the empty "mine" slot (see
+  // boot() in main.js) - dialMid only opens winStation for that slot
+  await page.locator("#tprev").click();
   await page.locator("#dialMid").click();
   await expect(page.locator("#winStation")).toBeVisible();
 
@@ -71,6 +79,9 @@ test("the stack stays reachable on a phone-sized screen", async ({ page }) => {
 // same way until there is a real station to show.
 test("the station name reads as an example until a station actually exists", async ({ page }) => {
   await page.goto("/");
+  // fresh boot with no station yet tunes away from the empty "mine" slot (see
+  // boot() in main.js) - dialMid only opens winStation for that slot
+  await page.locator("#tprev").click();
   await page.locator("#dialMid").click();
 
   const nameInput = page.locator("#chNameInput");

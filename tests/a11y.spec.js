@@ -35,6 +35,9 @@ test("a keyboard user can see where focus is, and a mouse click stays quiet", as
 // get a firmer underline instead.
 test("a text field gets a firmer underline instead of the button ring", async ({ page }) => {
   await page.goto("/");
+  // fresh boot with no station yet tunes away from the empty "mine" slot (see
+  // boot() in main.js) - dialMid only opens winStation for that slot
+  await page.locator("#tprev").click();
   await page.locator("#dialMid").click();
 
   // real Tab navigation, same reason as above — walk forward until the name

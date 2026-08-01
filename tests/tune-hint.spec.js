@@ -53,6 +53,9 @@ test("arriving via a shared link nudges the other way", async ({ page }) => {
 
 test("someone who already has a station is never nudged", async ({ page }) => {
   await page.goto("/");
+  // fresh boot with no station yet tunes away from the empty "mine" slot (see
+  // boot() in main.js) - dialMid only opens winStation for that slot
+  await page.locator("#tprev").click();
   await page.locator("#dialMid").click();
   await page.setInputFiles("#filepick", { name: "t.wav", mimeType: "audio/wav", buffer: Buffer.alloc(44) });
   await expect(page.locator("#trackList .track-row")).toHaveCount(1);

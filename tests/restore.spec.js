@@ -29,6 +29,9 @@ test("a friend listening to a shared link is never shown the recovery offer", as
 
 test("someone who already has a station is never offered a restore over it", async ({ page }) => {
   await page.goto("/");
+  // fresh boot with no station yet tunes away from the empty "mine" slot (see
+  // boot() in main.js) - dialMid only opens winStation for that slot
+  await page.locator("#tprev").click();
   await page.locator("#dialMid").click();
   await page.setInputFiles("#filepick", { name: "mine.wav", mimeType: "audio/wav", buffer: tinyWavBuffer(660) });
   await expect(page.locator("#trackList .track-row")).toHaveCount(1);
@@ -40,6 +43,9 @@ test("a lost station comes back from its own link", async ({ page, browser }) =>
 
   // the original device: make a station and share it
   await page.goto("/");
+  // fresh boot with no station yet tunes away from the empty "mine" slot (see
+  // boot() in main.js) - dialMid only opens winStation for that slot
+  await page.locator("#tprev").click();
   await page.locator("#dialMid").click();
   await page.locator("#chNameInput").fill(stationName);
   await page.locator("#chIntroInput").fill("late night radio");
@@ -54,6 +60,9 @@ test("a lost station comes back from its own link", async ({ page, browser }) =>
   const fresh = await browser.newContext();
   const revived = await fresh.newPage();
   await revived.goto("/");
+  // fresh boot with no station yet tunes away from the empty "mine" slot (see
+  // boot() in main.js) - dialMid only opens winStation for that slot
+  await revived.locator("#tprev").click();
   await revived.locator("#dialMid").click();
 
   const restore = revived.locator("#restoreBtn");
@@ -86,6 +95,9 @@ test("a lost station comes back from its own link", async ({ page, browser }) =>
 
 test("pasting something that is not a share link says so instead of failing oddly", async ({ page }) => {
   await page.goto("/");
+  // fresh boot with no station yet tunes away from the empty "mine" slot (see
+  // boot() in main.js) - dialMid only opens winStation for that slot
+  await page.locator("#tprev").click();
   await page.locator("#dialMid").click();
   await page.locator("#restoreBtn").click();
   await page.locator("#restoreInput").fill("just some words");

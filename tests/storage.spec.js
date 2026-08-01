@@ -80,6 +80,11 @@ test("a browser that refuses storage entirely is called out", async ({ page }) =
 
 test("tracks really do survive a reload when storage works", async ({ page }) => {
   await page.goto("/");
+  // fresh boot with no station yet tunes away from the empty "mine" slot (see
+  // boot() in main.js) - dialMid only opens winStation for that slot. The
+  // other two tests in this file break IndexedDB before boot() runs, which
+  // happens to short-circuit that tuning too - only this one needs the fix.
+  await page.locator("#tprev").click();
   await page.locator("#dialMid").click();
   await page.locator("#chNameInput").fill("Persist test");
   await addATrack(page);

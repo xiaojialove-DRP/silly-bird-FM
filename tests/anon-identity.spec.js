@@ -51,6 +51,12 @@ function tinyWavBuffer() {
 
 // something worth uploading, so that sharing actually reaches the network
 async function giveStationATrack(page, label) {
+  // fresh boot with no station yet tunes away from the empty "mine" slot (see
+  // boot() in main.js) - dialMid only opens winStation for that slot. Every
+  // current caller goes straight from a fresh page.goto() to here, so this is
+  // always undoing that same tune - not safe to call from a page already
+  // tuned elsewhere.
+  await page.locator("#tprev").click();
   await page.locator("#dialMid").click();
   await page.locator("#chNameInput").fill(`${label} ${Date.now() % 100000}`);
   await page.setInputFiles("#filepick", { name: "t.wav", mimeType: "audio/wav", buffer: tinyWavBuffer() });

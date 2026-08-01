@@ -553,6 +553,14 @@ recordBtn.addEventListener("contextmenu", (e) => e.preventDefault());
 // ---- windows: open / close / first-open placement beside the main radio ----
 // (stacking/dragging mechanics live in windows.js — this is just the per-window wiring)
 dialMid.addEventListener("click", () => {
+  // Real friend feedback: clicking a demo channel's own name/frequency here
+  // used to open "My Station" too, since this never checked which channel was
+  // actually tuned in - confusing on any channel that is not yours. Gated on
+  // ch.mine (set only on CHANNELS[0]/MY), not on the CTA-only isCta check in
+  // renderChannel(), so someone who already created their station can still
+  // open it here to edit once they have tuned back to their own slot - only
+  // demo/guest channels are excluded.
+  if (!channel().mine) return;
   // before a station is actually created, MY.name is only an internal fallback —
   // showing it as the input's value renders it in the same ink as real content,
   // which is exactly what let testers read "My Station" as already chosen rather
