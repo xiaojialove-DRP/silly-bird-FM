@@ -68,7 +68,11 @@
           <button class="wb min" id="min" data-i18n-title="collapseToBird" title="收回成小鸟">–</button>
         </header>
 
-        <div class="screen">
+        <!-- "deep" (not bare) because a click here almost always lands on a nested
+             SVG path, and SVG elements aren't HTMLElements - Tauri's drag-region
+             walk skips them, so only "deep" (subtree-wide) reaches this div at all.
+             See main.js for why #dragMain itself stays bare. -->
+        <div class="screen" data-tauri-drag-region="deep">
           <svg class="bird lg" viewBox="0 0 200 200" aria-label="silly bird">
             <defs>
               <filter id="rough" x="-12%" y="-12%" width="124%" height="124%">
