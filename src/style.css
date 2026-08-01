@@ -251,7 +251,8 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 .radio.playing .n1 { animation: noteFloat 1.8s ease-in infinite; }
 .radio.playing .n2 { animation: noteFloat 1.8s ease-in .7s infinite; }
 @keyframes noteFloat { 0%{opacity:0;transform:translateY(6px)} 25%{opacity:.9} 100%{opacity:0;transform:translateY(-30px) rotate(14deg)} }
-.screen { cursor: pointer; }
+.screen { cursor: grab; }
+.screen:active { cursor: grabbing; }
 .screenhint {
   position: absolute; inset: 0; display: grid; place-items: center; z-index: 4;
   color: var(--paper); font-size: 11px; letter-spacing: .5px;

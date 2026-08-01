@@ -636,6 +636,12 @@ minBtn.addEventListener("click", (e) => { e.stopPropagation(); sbfm.classList.ad
 // close — skip wiring it there.
 if (!document.documentElement.classList.contains("in-tauri") && !isNarrowViewport()) {
   makeDraggable(winMain, $("dragMain"));
+  // Real feedback: the titlebar strip alone was too easy to miss as a drag
+  // handle. The bird artwork is the obvious, big target, so it can start the
+  // same drag too - a second independent handle on the same card, not a
+  // replacement (makeDraggable() tracks its own start/moved state per
+  // handle, so two handles driving one element don't fight each other).
+  makeDraggable(winMain, screenEl);
 }
 if (!isNarrowViewport()) {
   makeDraggable(winStation, $("dragStation"));
