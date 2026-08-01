@@ -35,8 +35,10 @@
 <body>
   <div id="sbfm">
 
-    <!-- collapsed: the little bird perched on the desktop -->
-    <button class="perch" id="perch" data-i18n-title="openApp" title="打开 silly bird fm">
+    <!-- collapsed: the little bird perched on the desktop. data-tauri-drag-region
+         is a no-op outside the Tauri shell (that runtime script is never present
+         in a plain browser tab) — see main.js for why it's needed there -->
+    <button class="perch" id="perch" data-tauri-drag-region data-i18n-title="openApp" title="打开 silly bird fm">
       <span class="chip">
         <svg class="bird sm" viewBox="0 0 200 172" aria-hidden="true">
           <path class="silh2" d="M64 96 L22 82 L38 100 L18 108 L40 116 L24 134 L66 120 Z" />

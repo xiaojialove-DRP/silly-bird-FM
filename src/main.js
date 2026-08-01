@@ -633,8 +633,7 @@ minBtn.addEventListener("click", (e) => { e.stopPropagation(); sbfm.classList.ad
 // undecorated) for native dragging to work at all — see project memory.
 // On a phone the four cards auto-stack (see restackMobile) instead of floating
 // freely, so dragging them would just fight the stack on the very next open or
-// close — skip wiring it there. The collapsed perch icon is unrelated to the
-// stack and stays draggable everywhere.
+// close — skip wiring it there.
 if (!document.documentElement.classList.contains("in-tauri") && !isNarrowViewport()) {
   makeDraggable(winMain, $("dragMain"));
 }
@@ -644,7 +643,23 @@ if (!isNarrowViewport()) {
   makeDraggable(winShare, $("dragShare"));
   makeDraggable(winAbout, $("dragAbout"));
 }
-makeDraggable(perch, perch, () => sbfm.classList.remove("collapsed"));
+// The collapsed perch is meant to sit anywhere on the real desktop, not just
+// wherever it happens to load — in a browser tab that already works, since
+// makeDraggable()'s CSS positioning is bounded by the tab's own viewport,
+// which is however big the user made it. In the Tauri shell that viewport
+// IS the OS window, and the window is a small fixed 380x500 - so the same
+// code silently confines the bird to a small corner of the screen instead of
+// letting it roam. #perch carries data-tauri-drag-region (see index.html) so
+// a drag there moves the window itself instead; makeDraggable's CSS
+// positioning would just fight that, so it's skipped here the same way
+// #dragMain is. Tapping (rather than dragging) still needs to expand the
+// player, which is the one part makeDraggable was also doing for this
+// element - a plain click listener replaces it.
+if (document.documentElement.classList.contains("in-tauri")) {
+  perch.addEventListener("click", () => sbfm.classList.remove("collapsed"));
+} else {
+  makeDraggable(perch, perch, () => sbfm.classList.remove("collapsed"));
+}
 
 // ---- boot ----
 (async function boot() {
