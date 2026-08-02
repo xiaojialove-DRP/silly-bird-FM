@@ -56,6 +56,7 @@ If a friend who got your link wants to make their own station and generate their
 1. ~~Player + papercut aesthetic~~ · ~~Real playback and persistence~~ · ~~Share links~~ · ~~Listening-receipt stamps~~ · ~~Restore a station from its own link~~ · ~~An About panel for a stranger's first visit~~ · ~~A native desktop app~~ (done)
 2. **Real friend-testing, in progress** — several rounds of real feedback so far, each one turned into an actual fix (a friend's link failing to connect, mobile interaction smoothness, among others) — still refining
 3. **More ritual layer** — a weekly channel-swap day
+4. **A "share house," under consideration** — a separate space you'd click into on purpose (not the front door), where an invite code lets a small circle browse sounds people chose to make public; still just an idea, no start date
 
 ## Running locally
 
