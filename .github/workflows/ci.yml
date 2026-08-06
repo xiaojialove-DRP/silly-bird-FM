@@ -14,7 +14,13 @@ jobs:
   smoke:
     name: Boots and behaves
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    # Was 8 - too tight against reality. The one time this job actually failed, it
+    # never got anywhere near the tests: `playwright install --with-deps` was still
+    # stuck inside `apt-get` fetching font packages from a slow Ubuntu mirror
+    # (21MB at 44.7 kB/s) when the timeout killed it. Nothing here is flaky code,
+    # it's a network dependency this "offline" job still has - giving it real
+    # margin against a bad mirror day beats re-running the workflow by hand.
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
