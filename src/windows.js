@@ -71,14 +71,20 @@ const keepInBoundsObserver = new ResizeObserver((entries) => {
 });
 [winMain, winStation, winLook, winShare, winAbout].forEach((w) => keepInBoundsObserver.observe(w));
 
-function placeBeside(win, topOf, refWin) {
+function placeBeside(win, topOf, refWin, preferBelow) {
   if (win.dataset.placed) return;
   const w = win.offsetWidth || 320, h = win.offsetHeight || 200;
   const r = (refWin || winMain).getBoundingClientRect();
   const fitsRight = r.right + 16 + w < window.innerWidth;
   const fitsBelow = r.bottom + 16 + h < window.innerHeight;
   let left, top;
-  if (fitsRight) {
+  if (preferBelow && fitsBelow) {
+    // Look asks for this specifically - it controls how the radio looks, so
+    // real feedback was that it reads better directly under the radio than
+    // off to the side of it. Everything else still defaults to beside-first.
+    left = r.left;
+    top = r.bottom + 16;
+  } else if (fitsRight) {
     left = r.right + 16;
     top = topOf ? topOf() : r.top;
   } else if (fitsBelow) {
@@ -100,11 +106,40 @@ function placeBeside(win, topOf, refWin) {
     left = Math.max(8, r.left + 36);
     top = (topOf ? topOf() : r.top) + 36;
   }
-  win.style.left = Math.max(8, Math.min(left, window.innerWidth - w - 8)) + "px";
-  win.style.top = Math.max(8, Math.min(top, window.innerHeight - h - 8)) + "px";
+  // Real feedback: About and Look (and Station, when nothing else is open yet)
+  // all fall back to this same "beside Main" spot once nothing has claimed it -
+  // each one is unaware of the others, so whichever opens first plants itself
+  // there and the next one lands right on top of it. Rather than teach every
+  // call site about every other window, nudge away from whatever is already
+  // there - checking real rectangle overlap against the *clamped* candidate
+  // (not the raw one), since on a narrower screen the viewport clamp below
+  // can quietly drag a "cleared" position back into the card it just escaped.
+  // These cards are ~300px square, so a single small nudge also isn't enough -
+  // it takes repeating the same 36px cascade used above several times over.
+  const clampL = (v) => Math.max(8, Math.min(v, window.innerWidth - w - 8));
+  const clampT = (v) => Math.max(8, Math.min(v, window.innerHeight - h - 8));
+  const collidesWith = (l, t) => [winStation, winLook, winShare, winAbout].find((other) => {
+    if (other === win || other.hidden) return false;
+    const ol = parseFloat(other.style.left), ot = parseFloat(other.style.top);
+    const ow = other.offsetWidth || 320, oh = other.offsetHeight || 200;
+    return l < ol + ow && l + w > ol && t < ot + oh && t + h > ot;
+  });
+  let guard = 0, hit;
+  while (guard++ < 10 && (hit = collidesWith(clampL(left), clampT(top)))) { left += 36; top += 36; }
+  if (hit) {
+    // The diagonal cascade ran out of screen before it ran out of overlap -
+    // a small/narrow window with several cards already open. Drop straight
+    // below whatever it's still colliding with instead, the same move Share
+    // already makes beside Station above - if even that overflows, the clamp
+    // below is the same honest last resort the rest of this function accepts.
+    const or_ = hit.getBoundingClientRect();
+    left = or_.left; top = or_.bottom + 16;
+  }
+  win.style.left = clampL(left) + "px";
+  win.style.top = clampT(top) + "px";
   win.dataset.placed = "1";
 }
-export function toggleWin(win, topOf, refWin) {
+export function toggleWin(win, topOf, refWin, preferBelow) {
   if (win.hidden) {
     win.hidden = false;
     if (isNarrowViewport()) {
@@ -141,7 +176,7 @@ export function toggleWin(win, topOf, refWin) {
         // distance from the goal rather than only whether anything moved.
         setTimeout(() => { if (Math.abs(window.scrollY - target) > 2) window.scrollTo(0, target); }, 400);
       }
-    } else placeBeside(win, topOf, refWin);
+    } else placeBeside(win, topOf, refWin, preferBelow);
   } else {
     closeWin(win);
   }

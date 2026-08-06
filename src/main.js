@@ -571,8 +571,11 @@ dialMid.addEventListener("click", () => {
 lookBtn.addEventListener("mousedown", (e) => e.stopPropagation());
 lookBtn.addEventListener("click", () => {
   paintSwatches();
-  toggleWin(winLook, () => (winStation.hidden ? winMain.getBoundingClientRect().top
-                                              : winStation.getBoundingClientRect().bottom + 26));
+  // Directly under the radio, not beside it - real feedback was that "the
+  // thing controlling how the radio looks" reads better sitting right under
+  // the radio itself. placeBeside's own collision-avoidance still nudges it
+  // clear if Station (or anything else) is already sitting there.
+  toggleWin(winLook, null, winMain, true);
 });
 langBtn.addEventListener("mousedown", (e) => e.stopPropagation());
 langBtn.addEventListener("click", () => setLang(lang === "zh" ? "en" : "zh"));
