@@ -24,6 +24,10 @@ A little bird perches permanently in the corner of your screen. Click it open an
 
 Hans Christian Andersen's papercutting art is the only visual reference — white paper silhouettes mounted on a colored backing. The whole thing reads like a papercut that happens to make sound: scalloped paper edges, a punched-hole trim, a jagged forest against a night window, dashed seams like stitching, Chinese text set in a serif "Song" typeface. Seven mount colors (crimson / rust / ochre / forest green / blue / plum / black) are the listener's own pick — a personal preference, not something that changes with the channel.
 
+## What friends have actually used it for
+
+A carefully-kept station was the original idea. But friends have told us about uses we never designed for: recording something and setting it adrift like a message in a bottle, somewhere to say the thing you can't tell anyone else, a couple leaving each other a sound of exactly how they feel right now. All of it came from real feedback, not from us designing it in.
+
 ## What works right now
 
 - **Five papercut windows**: the radio / my station (name it, write a one-line intro, upload or record) / look (color + volume) / share (generate a link) / about (click the title, for anyone landing on a link with no idea what this is); drag them anywhere on desktop, and on a phone they slide out and stack in sequence instead — the bird still docks to a corner of the screen when collapsed
