@@ -15,7 +15,7 @@ import { CLOUD, ensureAnonSession, cloudPut, cloudList, cloudDelete, reportError
 import { I18N, lang, t, setLangValue } from "./i18n.js";
 
 import {
-  renderShareLinkBox, shareStation, copyShareLink, revokeShare, fetchGuestStation,
+  renderShareLinkBox, shareStation, copyShareLink, fetchGuestStation,
   updateRestoreBtn, restoreFromLink, markListened, updateStampButton, sendStamp, loadStamps,
   checkShareExpiry,
 } from "./share.js";
@@ -113,7 +113,6 @@ const trackList = $("trackList"), trackCountLabel = $("trackCountLabel");
 const openShareBtn = $("openShareBtn"), shareBtn = $("shareBtn"), shareOut = $("shareOut");
 const restoreBtn = $("restoreBtn"), restoreInput = $("restoreInput");
 const copyLinkBtn = $("copyLinkBtn");
-const revokeShareBtn = $("revokeShareBtn");
 const stampBtn = $("stampBtn");
 const swatches = [...document.querySelectorAll(".swatch")];
 const elTitle = $("title"), elKind = $("artist"), elDj = $("dj"), elDjWrap = $("djWrap"), elFreq = $("freq"), elSname = $("sname");
@@ -624,7 +623,6 @@ document.addEventListener("keydown", (e) => {
   if (!winAbout.hidden) aboutClose.click();
 });
 copyLinkBtn.addEventListener("click", copyShareLink);
-revokeShareBtn.addEventListener("click", revokeShare);
 stampBtn.addEventListener("click", sendStamp);
 
 swatches.forEach((s) => s.addEventListener("click", () => applyTheme(s.dataset.theme)));

@@ -65,10 +65,15 @@ test("picking a duration on the share panel publishes it and survives a reload",
   await page.locator("#openShareBtn").click();
   await expect(page.locator("#shareTtlSelect")).toHaveValue("7d");
 
-  // cleanup, same as every other real-backend test here
-  page.once("dialog", (d) => d.accept());
-  await page.locator("#revokeShareBtn").click();
-  await expect(page.locator("#shareOut")).toContainText(/Revoked|已撤回/, { timeout: 15_000 });
+  // cleanup: already set to "7d" above, just back-date it the same way the
+  // dedicated expiry test below does, rather than waiting a week for real
+  await page.evaluate(() => {
+    const saved = JSON.parse(localStorage.getItem("sbfm-station"));
+    saved.shareExpiresAt = Date.now() - 60_000;
+    localStorage.setItem("sbfm-station", JSON.stringify(saved));
+  });
+  await page.reload();
+  await expect(page.locator("#shareLinkBox")).toBeHidden({ timeout: 15_000 });
 });
 
 test("a share past its own deadline is revoked for real, quietly, on the next boot", async ({ page }) => {

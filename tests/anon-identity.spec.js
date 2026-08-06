@@ -96,9 +96,16 @@ test("a token that expires while the tab is open is renewed before the next writ
   expect(after.access_token, "storage must hold the renewed token").not.toBe(stale);
   expect(after.expires_at * 1000, "and it must actually be valid again").toBeGreaterThan(Date.now());
 
-  page.once("dialog", (d) => d.accept());
-  await page.locator("#revokeShareBtn").click();
-  await expect(page.locator("#shareOut")).toContainText(/Revoked|已撤回/, { timeout: 20_000 });
+  // no standalone "revoke now" button anymore - schedule the shortest
+  // duration and stand in for that time passing directly in localStorage
+  await page.locator("#shareTtlSelect").selectOption("1d");
+  await page.evaluate(() => {
+    const saved = JSON.parse(localStorage.getItem("sbfm-station"));
+    saved.shareExpiresAt = Date.now() - 60_000;
+    localStorage.setItem("sbfm-station", JSON.stringify(saved));
+  });
+  await page.reload();
+  await expect(page.locator("#shareLinkBox")).toBeHidden({ timeout: 15_000 });
 });
 
 // Supabase rejects a refresh whenever the token has already been rotated, which is
@@ -161,9 +168,16 @@ test("a definitively dead refresh token recovers, and records what was lost", as
   expect(lost, "the orphaned identity must leave a trace").not.toBeNull();
   expect(lost.session.access_token).toBe(before.access_token);
 
-  // this one recovers far enough to really publish, so clean up after itself
+  // this one recovers far enough to really publish, so clean up after itself -
+  // no standalone "revoke now" button anymore, so schedule the shortest
+  // duration and stand in for that time passing directly in localStorage
   await expect(page.locator("#shareLinkBox")).toBeVisible({ timeout: 20_000 });
-  page.once("dialog", (d) => d.accept());
-  await page.locator("#revokeShareBtn").click();
-  await expect(page.locator("#shareOut")).toContainText(/Revoked|已撤回/, { timeout: 20_000 });
+  await page.locator("#shareTtlSelect").selectOption("1d");
+  await page.evaluate(() => {
+    const saved = JSON.parse(localStorage.getItem("sbfm-station"));
+    saved.shareExpiresAt = Date.now() - 60_000;
+    localStorage.setItem("sbfm-station", JSON.stringify(saved));
+  });
+  await page.reload();
+  await expect(page.locator("#shareLinkBox")).toBeHidden({ timeout: 15_000 });
 });

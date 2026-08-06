@@ -55,11 +55,18 @@ test("create, share, a friend listens, then revoke", async ({ page, browser }) =
   await expect(friendPage.locator("#sname")).toHaveText(stationName, { timeout: 15_000 });
   await friendCtx.close();
 
-  // revoke: the owner takes the link back
-  page.once("dialog", (d) => d.accept());
-  await page.locator("#revokeShareBtn").click();
-  await expect(page.locator("#shareOut")).toContainText(/Revoked|已撤回/, { timeout: 15_000 });
-  await expect(page.locator("#shareLinkBox")).toBeHidden();
+  // revoke: there's no standalone "revoke now" button anymore (merged into
+  // the share panel's duration picker) - schedule the shortest duration, then
+  // stand in for that time actually passing the same way ttl.spec.js does,
+  // directly in localStorage, and let the next boot carry the revoke out for real
+  await page.locator("#shareTtlSelect").selectOption("1d");
+  await page.evaluate(() => {
+    const saved = JSON.parse(localStorage.getItem("sbfm-station"));
+    saved.shareExpiresAt = Date.now() - 60_000;
+    localStorage.setItem("sbfm-station", JSON.stringify(saved));
+  });
+  await page.reload();
+  await expect(page.locator("#shareLinkBox")).toBeHidden({ timeout: 15_000 });
 
   // a new visitor using the same old link no longer finds this station
   const laterCtx = await browser.newContext();
@@ -99,9 +106,16 @@ test("sharing says so when the published link does not match what was sent", asy
   await page.locator("#openShareBtn").click();
   await expect(page.locator("#shareOut")).toContainText(/回读检查没通过|reading the link back did not match/, { timeout: 25_000 });
 
-  // the upload succeeded, so there is real data to clean up
+  // the upload succeeded, so there is real data to clean up - no standalone
+  // "revoke now" button anymore, so schedule the shortest duration and stand
+  // in for that time passing directly in localStorage (see ttl.spec.js)
   await page.unroute("**/object/public/**/station.json*");
-  page.once("dialog", (d) => d.accept());
-  await page.locator("#revokeShareBtn").click();
-  await expect(page.locator("#shareOut")).toContainText(/Revoked|已撤回/, { timeout: 20_000 });
+  await page.locator("#shareTtlSelect").selectOption("1d");
+  await page.evaluate(() => {
+    const saved = JSON.parse(localStorage.getItem("sbfm-station"));
+    saved.shareExpiresAt = Date.now() - 60_000;
+    localStorage.setItem("sbfm-station", JSON.stringify(saved));
+  });
+  await page.reload();
+  await expect(page.locator("#shareLinkBox")).toBeHidden({ timeout: 15_000 });
 });

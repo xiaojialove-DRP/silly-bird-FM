@@ -87,10 +87,17 @@ test("a lost station comes back from its own link", async ({ page, browser }) =>
   await expect(revived.locator("#restoreBtn")).toBeHidden();
   await fresh.close();
 
-  // clean up the cloud copy
-  page.once("dialog", (d) => d.accept());
-  await page.locator("#revokeShareBtn").click();
-  await expect(page.locator("#shareOut")).toContainText(/Revoked|已撤回/, { timeout: 20_000 });
+  // clean up the cloud copy - no standalone "revoke now" button anymore, so
+  // schedule the shortest duration and stand in for that time passing
+  // directly in localStorage (see ttl.spec.js)
+  await page.locator("#shareTtlSelect").selectOption("1d");
+  await page.evaluate(() => {
+    const saved = JSON.parse(localStorage.getItem("sbfm-station"));
+    saved.shareExpiresAt = Date.now() - 60_000;
+    localStorage.setItem("sbfm-station", JSON.stringify(saved));
+  });
+  await page.reload();
+  await expect(page.locator("#shareLinkBox")).toBeHidden({ timeout: 15_000 });
 });
 
 test("pasting something that is not a share link says so instead of failing oddly", async ({ page }) => {

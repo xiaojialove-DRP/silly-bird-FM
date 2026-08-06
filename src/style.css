@@ -342,12 +342,32 @@ button:disabled { opacity: .45; cursor: not-allowed; }
   border-color: rgba(153,27,27,.5); color: rgba(153,27,27,.85);
 }
 .chsetup-upload.danger:hover { background: rgba(153,27,27,.08); border-color: #991b1b; color: #991b1b; }
-/* one setting for the whole share, styled like its sibling buttons rather than
-   a native dropdown dropped into a hand-drawn dashed box */
+/* The real <select> stays fully native underneath - click-to-open, keyboard
+   nav, screen readers all still work exactly as they would on their own - but
+   its own text is invisible (color:transparent) so a plain-text overlay on
+   top can show a different sentence in the closed box than what the opened
+   list itself shows (four parallel choices: permanent, 1 day, 7 days, 1
+   month - see index.html). The overlay has pointer-events:none, so every
+   click still lands on the select beneath it, not on the label sitting over it. */
+.share-ttl-wrap { position: relative; margin-top: 8px; }
 .chsetup-upload.share-ttl {
-  text-align: center; -webkit-appearance: none; -moz-appearance: none; appearance: none;
-  background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%), linear-gradient(135deg, var(--ink) 50%, transparent 50%);
+  /* plain color:transparent alone leaves Safari/WebKit still painting the
+     select's own glyph in its native text color - -webkit-text-fill-color is
+     the property that actually controls that paint step there, and without it
+     the real "永久" (or whatever is selected) shows through behind the overlay */
+  margin-top: 0; margin-bottom: 0; color: transparent; -webkit-text-fill-color: transparent; text-align: center;
+  -webkit-appearance: none; -moz-appearance: none; appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, rgba(153,27,27,.85) 50%), linear-gradient(135deg, rgba(153,27,27,.85) 50%, transparent 50%);
   background-position: right 14px center, right 10px center; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat;
+}
+/* the opened list must not inherit the select's own transparent text color -
+   <option> color inheritance is inconsistent enough across engines that this
+   needs to be explicit, not assumed */
+.chsetup-upload.share-ttl option { color: initial; }
+.share-ttl-display {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  padding: 0 20px; pointer-events: none; font-family: "Space Mono", "Songti SC", "STSong", "SimSun", monospace;
+  font-size: 10px; color: rgba(153,27,27,.85); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .chsetup-upload[disabled] { opacity: .5; cursor: wait; }
 

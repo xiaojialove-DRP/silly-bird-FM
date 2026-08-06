@@ -13,7 +13,6 @@ import {
 
 const $ = (id) => document.getElementById(id);
 const shareLinkBox = $("shareLinkBox"), shareLinkText = $("shareLinkText"), shareBtn = $("shareBtn"), copyLinkBtn = $("copyLinkBtn");
-const revokeShareBtn = $("revokeShareBtn");
 const shareTtlSelect = $("shareTtlSelect");
 const restoreBtn = $("restoreBtn"), restoreInput = $("restoreInput"), recordOut = $("recordOut");
 const chNameInput = $("chNameInput"), chIntroInput = $("chIntroInput");
@@ -24,6 +23,9 @@ export function shareLinkFor(token) {
   const base = `${CLOUD.url}/storage/v1/object/public/${CLOUD.bucket}/${token}`;
   return location.origin + location.pathname + "?listen=" + encodeURIComponent(base);
 }
+function renderShareTtl() {
+  shareTtlSelect.value = MY.shareTtl || "";
+}
 export function renderShareLinkBox() {
   // shareBtn's label is fixed (static markup, see index.html) — it always means
   // "publish", whether this is the first time or the tenth. Each button has
@@ -31,13 +33,14 @@ export function renderShareLinkBox() {
   // and the copy button living inside it, are there to show.
   if (!MY.shareToken) { shareLinkBox.hidden = true; return; }
   shareLinkText.textContent = shareLinkFor(MY.shareToken);
-  shareTtlSelect.value = MY.shareTtl || "";
+  renderShareTtl();
   shareLinkBox.hidden = false;
 }
 shareTtlSelect.addEventListener("change", () => {
   MY.shareTtl = shareTtlSelect.value;
   MY.shareExpiresAt = MY.shareTtl ? Date.now() + TTL_MS[MY.shareTtl] : null;
   persistStationMeta();
+  renderShareTtl();
   // Already out in the world - push the new deadline live right now rather than
   // waiting for some future edit to carry it out. Re-publishing through the
   // normal path (not a smaller manifest-only patch) is the only way this stays
@@ -141,9 +144,18 @@ export async function shareStation() {
     if (unreachable) say(t("uploadFailedNetwork"));
     // never let "we could not sign you in" masquerade as an ownership problem
     else if (e.noSession) say(t("cannotSignIn"));
-    // "not yours" is a dead end, not a retry — saying "try again" here would send
-    // someone in circles forever, so name the cause and point at the one way out
-    else if (e.blocked) say(t("shareNotYours"));
+    else if (e.blocked) {
+      // "not yours" is a dead end, not a retry — this token will never publish
+      // again no matter how many more attempts happen, so retrying it forever
+      // would just mean failing forever. There is no revoke button anymore to
+      // clear it by hand (see checkShareExpiry() for the other half of this
+      // same fix), so this is the only place left that can self-heal: clear it
+      // here and the very next click on Share mints a working one instead.
+      MY.shareToken = null;
+      persistStationMeta();
+      renderShareLinkBox();
+      say(t("shareNotYours"));
+    }
     // never imply an update landed when it did not: the link still works, but it
     // is serving the previous content, and only saying "unaffected" reads as success
     else say(isUpdate ? t("uploadFailedKeepOld") : t("uploadFailed"));
@@ -152,65 +164,41 @@ export async function shareStation() {
   shareBtn.disabled = false;
   copyLinkBtn.disabled = false;
 }
-export async function revokeShare() {
-  if (!MY.shareToken) return;
-  if (!confirm(t("confirmRevoke"))) return;
-  revokeShareBtn.disabled = true;
-  try {
-    const files = await cloudList(MY.shareToken);
-    if (files.length) await cloudDelete(files.map((f) => `${MY.shareToken}/${f.name}`));
-    // cloudList() only lists one folder level, so any stamps/ subfolder needs its
-    // own separate list+delete pass — otherwise "revoke deletes everything" would
-    // quietly leave stamp files behind
-    const stamps = await cloudList(`${MY.shareToken}/stamps`);
-    if (stamps.length) await cloudDelete(stamps.map((f) => `${MY.shareToken}/stamps/${f.name}`));
-    MY.shareToken = null;
-    persistStationMeta();
-    renderShareLinkBox();
-    say(t("revoked"));
-  } catch (e) {
-    const unreachable = e instanceof TypeError;
-    const notYours = !unreachable && !e.noSession && (e.blocked || e.httpStatus === 403);
-    if (unreachable) {
-      say(t("revokeFailedNetwork"));
-    } else if (e.noSession) {
-      // no identity this time around says nothing about whether the link is still
-      // revocable — keep the token so a later attempt can still take it back
-      say(t("cannotSignIn"));
-    } else if (notYours) {
-      // this link isn't deletable by this browser anymore (most likely: it predates
-      // an ownership rule change) — retrying will never succeed, and there's nothing
-      // left to protect by keeping it "active" locally, so clear it here too. A fresh
-      // click on generate-share-link then mints a brand new, fully-working link
-      // instead of forever retrying a delete that can't go through.
-      MY.shareToken = null;
-      persistStationMeta();
-      renderShareLinkBox();
-      say(t("revokeFailedButCleared"));
-    } else {
-      say(t("revokeFailed", e && e.message ? e.message : e));
-      reportError("revokeShare", e);
-    }
-  }
-  revokeShareBtn.disabled = false;
-}
-// Scheduled, not clicked - the owner picked a duration on the share panel and
-// isn't sitting there watching for the moment it arrives, so this happens the
-// way "不提示" (no prompt) demands: exactly what revokeShare() above does to
-// the cloud copy, minus everything in that flow meant for someone who's
-// present - no confirm(), no say(), no button to disable.
+// The only way a share ever ends now - there is no separate "revoke right
+// now" button anymore (there used to be; merged into the duration picker on
+// the share panel on purpose, so ending a share is one control instead of two
+// that both claim the same job). Scheduled, not clicked, so this runs the way
+// "不提示" (no prompt) demands: no confirm(), no say(), no button to disable -
+// just the same cloud cleanup a manual revoke always did, quietly, the next
+// time this browser boots past its own deadline.
 export async function checkShareExpiry() {
   if (!MY.shareToken || !isExpired(MY)) return;
   try {
     const files = await cloudList(MY.shareToken);
     if (files.length) await cloudDelete(files.map((f) => `${MY.shareToken}/${f.name}`));
+    // cloudList() only lists one folder level, so any stamps/ subfolder needs
+    // its own separate list+delete pass — otherwise this would quietly leave
+    // stamp files behind
     const stamps = await cloudList(`${MY.shareToken}/stamps`);
     if (stamps.length) await cloudDelete(stamps.map((f) => `${MY.shareToken}/stamps/${f.name}`));
   } catch (e) {
-    // could not sign in, network hiccup, whatever it was - leave the token and
-    // its deadline as they are and let a later visit try again, the same way a
-    // failed manual revoke keeps its token rather than forgetting it was ever due
-    reportError("checkShareExpiry", e);
+    const unreachable = e instanceof TypeError;
+    const notYours = !unreachable && !e.noSession && (e.blocked || e.httpStatus === 403);
+    if (notYours) {
+      // this link predates an ownership rule change, or this browser's identity
+      // was reset — it will never be deletable by this browser no matter how
+      // many more boots go by, so keeping the deadline "active" forever would
+      // just mean retrying, and failing, on every single one. Nothing left to
+      // protect by holding onto it: clear it here too.
+      MY.shareToken = null; MY.shareTtl = ""; MY.shareExpiresAt = null;
+      persistStationMeta();
+      renderShareLinkBox();
+    } else {
+      // network hiccup or no session yet this boot — neither says the delete
+      // itself would fail, only that this attempt couldn't try. Leave the
+      // token and its deadline as they are and let a later visit retry.
+      reportError("checkShareExpiry", e);
+    }
     return;
   }
   MY.shareToken = null; MY.shareTtl = ""; MY.shareExpiresAt = null;
