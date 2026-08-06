@@ -17,6 +17,7 @@ import { I18N, lang, t, setLangValue } from "./i18n.js";
 import {
   renderShareLinkBox, shareStation, copyShareLink, revokeShare, fetchGuestStation,
   updateRestoreBtn, restoreFromLink, markListened, updateStampButton, sendStamp, loadStamps,
+  checkShareExpiry,
 } from "./share.js";
 
 import { toggleWin, closeWin, restackMobile, isNarrowViewport, makeDraggable } from "./windows.js";
@@ -399,6 +400,22 @@ const KIND_DISPLAY = {
 };
 const kindText  = (k) => (k && KIND_DISPLAY[k]) ? KIND_DISPLAY[k][lang] : (k || "");
 const kindLabel = (k) => (k ? kindText(k) : t("addTag"));
+
+// Real feedback: friends have used their station as a drift bottle, a tree-hollow
+// confession, a mood left for a partner - none of that fits a station meant to be
+// curated and kept. First cut of this put the choice on every track (a 7-track
+// upload meant answering the same question 7 times) - moved to a single setting
+// on the share itself instead: one choice, at share time, for the one link that
+// actually goes out. Still opt-in, still defaults to permanent, still the same
+// value as revoke share - the person sharing decides, never an automatic timer
+// applied to everyone regardless of what they're using this for.
+// the four choices themselves are static HTML (index.html, translated via the
+// usual data-i18n scan), so this only has to carry what each one means in ms
+export const TTL_MS = { "1d": 864e5, "7d": 6048e5, "30d": 2592e6 };
+// exported: share.js checks the same clock against MY (this browser's own
+// station) and against a guest's freshly-fetched manifest - one deadline for
+// the whole share, not per track, so either shape works with the same check
+export const isExpired = (o) => !!(o.shareExpiresAt && o.shareExpiresAt <= Date.now());
 export function esc(s) { return s.replace(/[<>&"']/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&#39;" }[c])); }
 export function renderTrackList() {
   const real = MY.pieces.filter((p) => !p.placeholder);
@@ -453,7 +470,7 @@ trackList.addEventListener("click", (e) => {
   if (idx > -1) MY.pieces.splice(idx, 1);
   if (p.dbId) idb.remove(p.dbId).catch(() => {});
   if (p.src && p.src.startsWith("blob:")) URL.revokeObjectURL(p.src);
-  if (!MY.pieces.length) MY.pieces.push({ ...PLACEHOLDER });
+  if (!MY.pieces.length) MY.pieces.push({ ...PLACEHOLDER() });
   if (channel() === MY) { if (pi >= MY.pieces.length) pi = 0; renderChannel(); }
   renderTrackList();
 });
@@ -613,7 +630,12 @@ stampBtn.addEventListener("click", sendStamp);
 swatches.forEach((s) => s.addEventListener("click", () => applyTheme(s.dataset.theme)));
 
 export function persistStationMeta() {
-  try { localStorage.setItem("sbfm-station", JSON.stringify({ name: MY.name, intro: MY.intro, shareToken: MY.shareToken || null })); } catch {}
+  try {
+    localStorage.setItem("sbfm-station", JSON.stringify({
+      name: MY.name, intro: MY.intro, shareToken: MY.shareToken || null,
+      shareTtl: MY.shareTtl || "", shareExpiresAt: MY.shareExpiresAt || null,
+    }));
+  } catch {}
 }
 function saveStation() {
   const name = chNameInput.value.trim();
@@ -719,6 +741,7 @@ if (document.documentElement.classList.contains("in-tauri")) {
       if (saved.name) MY.name = saved.name;
       MY.owner = MY.name; MY.intro = saved.intro || ""; MY.created = true;
       if (saved.shareToken) MY.shareToken = saved.shareToken;
+      MY.shareTtl = saved.shareTtl || ""; MY.shareExpiresAt = saved.shareExpiresAt || null;
     }
   } catch {}
   paintSwatches();
@@ -744,6 +767,12 @@ if (document.documentElement.classList.contains("in-tauri")) {
     // track they are owed the warning, and noteSaveFailure will give it to them.
     reportError("idbRestore", e);
   }
+  // No prompt, no countdown - the duration was chosen once, at share time, and
+  // the rest is silence. Not awaited: this only ever does anything for the rare
+  // visit where this browser's own share has actually come due, and revoking it
+  // late by a few seconds costs nothing - blocking the radio on a cloud round
+  // trip nobody asked to watch for would be a worse trade.
+  checkShareExpiry();
 
   // turning the radio on should land you on a station that's already playing —
   // like a real radio, not a blank "make your own broadcast" screen. First-time
@@ -756,15 +785,17 @@ if (document.documentElement.classList.contains("in-tauri")) {
   // later once the fetch comes back. fetchGuestStation() only fetches+validates;
   // splicing it into the dial is the player's job, done here.
   const guestCh = await fetchGuestStation();
-  if (guestCh && !guestCh.failed) { CHANNELS.unshift(guestCh); ci = 0; pi = 0; }
+  if (guestCh && !guestCh.failed && !guestCh.expired) { CHANNELS.unshift(guestCh); ci = 0; pi = 0; }
   setLang(lang);   // applies the restored language to static chrome + demo content + dial
   // A link that fails to resolve used to fall through in silence, landing on
   // whatever demo channel setLang() just painted — indistinguishable from the
   // app simply being broken. Say so instead: this overwrites setLang()'s own
   // render, on purpose, only in this one case.
-  if (hasGuestLink && (!guestCh || guestCh.failed)) {
-    elSname.textContent = t("guestLoadFailedTitle");
-    elTagline.textContent = t(guestCh && guestCh.network ? "guestLoadFailedNetwork" : "guestLoadFailed");
+  if (hasGuestLink && (!guestCh || guestCh.failed || guestCh.expired)) {
+    elSname.textContent = t(guestCh && guestCh.expired ? "guestExpiredTitle" : "guestLoadFailedTitle");
+    elTagline.textContent = t(
+      guestCh && guestCh.expired ? "guestExpired" : guestCh && guestCh.network ? "guestLoadFailedNetwork" : "guestLoadFailed"
+    );
     elTagline.hidden = false;
   }
 

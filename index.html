@@ -262,6 +262,13 @@
             <div class="chsetup-label" data-i18n="yourLink">你的链接 · 编辑电台后再点一次生成即可更新</div>
             <div class="share-link-text" id="shareLinkText"></div>
             <button class="chsetup-upload" id="copyLinkBtn" data-i18n="copyLinkAbove">复制以上链接</button>
+            <div class="chsetup-label" data-i18n="shareTtlLabel">设置时间 · 让这条分享自己消失</div>
+            <select class="chsetup-upload share-ttl" id="shareTtlSelect" data-i18n-aria="shareTtlLabel" aria-label="设置时间 · 让这条分享自己消失">
+              <option value="" data-i18n="shareTtlForever">永久</option>
+              <option value="1d" data-i18n="shareTtl1d">1 天</option>
+              <option value="7d" data-i18n="shareTtl7d">7 天</option>
+              <option value="30d" data-i18n="shareTtl30d">1 个月</option>
+            </select>
             <button class="chsetup-upload danger" id="revokeShareBtn" data-i18n="revokeShare">撤回分享 · 让这条链接失效</button>
             <div class="stamps-box" id="stampsBox" hidden>
               <div class="chsetup-label" data-i18n="stampsReceived">收到的邮票</div>

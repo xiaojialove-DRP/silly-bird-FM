@@ -7,13 +7,14 @@
 import { CLOUD, cloudPut, cloudList, cloudDelete, reportError, todayStr } from "./cloud.js";
 import { t } from "./i18n.js";
 import {
-  MY, channel, say, esc, currentTheme,
+  MY, channel, say, esc, currentTheme, isExpired, TTL_MS,
   renderChannel, renderTrackList, importFiles, persistPiece, persistStationMeta,
 } from "./main.js";
 
 const $ = (id) => document.getElementById(id);
 const shareLinkBox = $("shareLinkBox"), shareLinkText = $("shareLinkText"), shareBtn = $("shareBtn"), copyLinkBtn = $("copyLinkBtn");
 const revokeShareBtn = $("revokeShareBtn");
+const shareTtlSelect = $("shareTtlSelect");
 const restoreBtn = $("restoreBtn"), restoreInput = $("restoreInput"), recordOut = $("recordOut");
 const chNameInput = $("chNameInput"), chIntroInput = $("chIntroInput");
 const stampBtn = $("stampBtn"), stampsBox = $("stampsBox"), stampsGrid = $("stampsGrid");
@@ -30,8 +31,19 @@ export function renderShareLinkBox() {
   // and the copy button living inside it, are there to show.
   if (!MY.shareToken) { shareLinkBox.hidden = true; return; }
   shareLinkText.textContent = shareLinkFor(MY.shareToken);
+  shareTtlSelect.value = MY.shareTtl || "";
   shareLinkBox.hidden = false;
 }
+shareTtlSelect.addEventListener("change", () => {
+  MY.shareTtl = shareTtlSelect.value;
+  MY.shareExpiresAt = MY.shareTtl ? Date.now() + TTL_MS[MY.shareTtl] : null;
+  persistStationMeta();
+  // Already out in the world - push the new deadline live right now rather than
+  // waiting for some future edit to carry it out. Re-publishing through the
+  // normal path (not a smaller manifest-only patch) is the only way this stays
+  // correct if tracks were added or removed locally since the last real share.
+  if (MY.shareToken) shareStation();
+});
 export async function copyShareLink() {
   const link = shareLinkText.textContent;
   try {
@@ -85,7 +97,14 @@ export async function shareStation() {
     const token = MY.shareToken || crypto.randomUUID();
     MY.shareToken = token;
     persistStationMeta();
-    const manifest = { v: 1, name: MY.name, owner: MY.name, intro: MY.intro, updatedAt: Date.now(), pieces: [] };
+    // One clock for the whole share, not per track - chosen on the share panel
+    // itself, not here. Re-publishing (editing content, or nothing at all)
+    // carries whatever is currently set forward unchanged; only picking a new
+    // duration on the share panel resets it (see setShareTtl below).
+    const manifest = {
+      v: 1, name: MY.name, owner: MY.name, intro: MY.intro, updatedAt: Date.now(),
+      shareTtl: MY.shareTtl || "", shareExpiresAt: MY.shareExpiresAt || null, pieces: [],
+    };
     for (let i = 0; i < tracks.length; i++) {
       say(t("uploading", i + 1, tracks.length));
       const p = tracks[i];
@@ -175,6 +194,29 @@ export async function revokeShare() {
   }
   revokeShareBtn.disabled = false;
 }
+// Scheduled, not clicked - the owner picked a duration on the share panel and
+// isn't sitting there watching for the moment it arrives, so this happens the
+// way "不提示" (no prompt) demands: exactly what revokeShare() above does to
+// the cloud copy, minus everything in that flow meant for someone who's
+// present - no confirm(), no say(), no button to disable.
+export async function checkShareExpiry() {
+  if (!MY.shareToken || !isExpired(MY)) return;
+  try {
+    const files = await cloudList(MY.shareToken);
+    if (files.length) await cloudDelete(files.map((f) => `${MY.shareToken}/${f.name}`));
+    const stamps = await cloudList(`${MY.shareToken}/stamps`);
+    if (stamps.length) await cloudDelete(stamps.map((f) => `${MY.shareToken}/stamps/${f.name}`));
+  } catch (e) {
+    // could not sign in, network hiccup, whatever it was - leave the token and
+    // its deadline as they are and let a later visit try again, the same way a
+    // failed manual revoke keeps its token rather than forgetting it was ever due
+    reportError("checkShareExpiry", e);
+    return;
+  }
+  MY.shareToken = null; MY.shareTtl = ""; MY.shareExpiresAt = null;
+  persistStationMeta();
+  renderShareLinkBox();
+}
 
 // this browser's own record of when it last opened each guest station — same
 // naming convention as the stamp throttle key just above, same "quietly do
@@ -212,6 +254,12 @@ export async function fetchGuestStation() {
     // matters most for. verifyPublished() and restoreFromLink() already guard
     // against a stale cached copy this same way; this one had been missing it.
     const st = await (await fetch(`${base}/station.json?v=${Date.now()}`, { cache: "no-store" })).json();
+    // A guest's own clock decides this, independently of whatever the owner's
+    // browser has or hasn't gotten around to revoking yet - the cloud copy can
+    // still physically exist, but nobody hears any of it past the share's own
+    // deadline, from either side. One check for the whole station, not per
+    // track - a "gone already" link says so before it even looks at pieces.
+    if (isExpired(st)) return { expired: true };
     const pieces = (st.pieces || []).map((p) => ({
       title: p.title || t("untitled"), artist: p.artist || "", kind: p.kind || "", dur: 0, cover: p.cover || null,
       src: /^(data|https?):/.test(p.file) ? p.file : `${base}/${p.file}`,
