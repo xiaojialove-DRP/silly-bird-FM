@@ -69,6 +69,7 @@ function applyStaticI18n() {
 function paintLangBtn() {
   if (!langBtn) return;
   langBtn.textContent = lang === "zh" ? "EN" : "中";
+  langBtn.lang = lang === "zh" ? "en" : "zh";
   langBtn.title = lang === "zh" ? "Switch to English" : "切换到中文";
 }
 // re-renders everything that carries app copy — demo stations, static chrome, the

@@ -155,10 +155,12 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 }
 .wb.close { position: absolute; right: 7px; z-index: 1; }
 .wb.min { position: absolute; right: 7px; z-index: 1; padding-bottom: 3px; }
-/* the ❋ was simply too small to notice at 9px — it keeps the cut-paper feel a
-   filled swatch loses, so it just gets a little more presence */
-.wb.look { position: absolute; left: 7px; z-index: 1; font-size: 12px; }
-.wb.lang { position: absolute; left: 29px; z-index: 1; font-size: 8px; width: auto; min-width: 15px; padding: 0 2px; }
+.wb.look { position: absolute; left: 7px; z-index: 1; }
+/* drawn, not a ❋ character: no bundled font has that glyph, so each OS substituted its own — smaller than 中 and ~1.5px below the bar's center line */
+.look-mark { display: block; width: 10px; height: 10px; fill: currentColor; }
+.wb.lang { position: absolute; left: 27px; z-index: 1; font-size: 8px; width: auto; min-width: 15px; padding: 0 2px; }
+/* Latin caps run ~25% shorter than 中 at the same size */
+.wb.lang:lang(en) { font-size: 9px; }
 .wb.min:hover, .wb.close:hover, .wb.look:hover, .wb.lang:hover { background: none; color: var(--ink); opacity: .55; }
 .hd { color: var(--ink); font-size: 8px; font-style: normal; vertical-align: 2px; opacity: .85; }
 
