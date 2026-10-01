@@ -269,15 +269,11 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 .cover { width: 42px; height: 42px; flex: none; border: 2px solid var(--ink); border-radius: 4px; background-size: cover; background-position: center; display: none; }
 .cover.show { display: block; }
 .title { font-family: "Fraunces", "Songti SC", "STSong", "SimSun", Georgia, serif; font-weight: 600; font-size: 15px; line-height: 1.2; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sub { font-size: 10px; color: var(--soft); margin-top: 3px; text-transform: uppercase; letter-spacing: .4px; }
+/* no text-transform here: this line carries a station's own name, shown exactly as its owner typed it */
+.sub { font-size: 10px; color: var(--soft); margin-top: 3px; letter-spacing: .4px; }
 .sub b { color: var(--ink); font-weight: 700; }
-/* Chinese characters have no case, so text-transform:uppercase is a no-op for
-   them — for Latin text it flattens ascenders/descenders that normally help
-   read a word by its shape, on top of already being the smallest text in the
-   interface. That combination costs English more than it costs Chinese at
-   the same pixel size, so the fix is scoped to English rather than raising
-   size for everyone. */
-:lang(en) .sub { font-size: 11px; letter-spacing: .5px; }
+/* Latin at this size reads smaller than Chinese does, so English gets one size up */
+:lang(en) .sub { font-size: 11px; letter-spacing: 0; }
 
 /* ---------- progress ---------- */
 .progress { display: flex; align-items: center; gap: 8px; padding: 0 6px 10px; }
@@ -307,6 +303,9 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 .panel-body { padding: 6px 4px 8px; }
 .chsetup-label { font-size: 9.5px; text-transform: uppercase; letter-spacing: .5px; color: var(--soft); margin-bottom: 5px; }
 :lang(en) .chsetup-label { font-size: 11px; letter-spacing: .6px; }
+/* capitals are for short labels; a whole instruction set in them is hard to read */
+.chsetup-label.sentence { text-transform: none; }
+:lang(en) .chsetup-label.sentence { letter-spacing: 0; }
 /* full-contrast ink, not --soft — this is the panel's main reading content, not a caption */
 .about-body { font-size: 13px; line-height: 1.6; color: var(--ink); margin: 0 0 12px; }
 .about-body:last-child { margin-bottom: 4px; }

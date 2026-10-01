@@ -393,10 +393,10 @@ function readTags(file, p) {
 // what's persisted. kindText()/kindLabel() are display-only translations of a key.
 const TRACK_KINDS = ["", "声音故事", "自己哼的歌", "环境音", "最近循环播放的歌"];
 const KIND_DISPLAY = {
-  "声音故事":         { zh: "声音故事",         en: "voice story" },
-  "自己哼的歌":       { zh: "自己哼的歌",       en: "hummed tune" },
-  "环境音":           { zh: "环境音",           en: "ambient" },
-  "最近循环播放的歌": { zh: "最近循环播放的歌", en: "on repeat lately" },
+  "声音故事":         { zh: "声音故事",         en: "Voice story" },
+  "自己哼的歌":       { zh: "自己哼的歌",       en: "Hummed tune" },
+  "环境音":           { zh: "环境音",           en: "Ambient" },
+  "最近循环播放的歌": { zh: "最近循环播放的歌", en: "On repeat lately" },
 };
 const kindText  = (k) => (k && KIND_DISPLAY[k]) ? KIND_DISPLAY[k][lang] : (k || "");
 const kindLabel = (k) => (k ? kindText(k) : t("addTag"));
