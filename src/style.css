@@ -368,7 +368,7 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 .chsetup-upload.share-ttl option { color: initial; }
 .share-ttl-display {
   position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-  padding: 0 20px; pointer-events: none; font-family: "Space Mono", "Songti SC", "STSong", "SimSun", monospace;
+  padding: 0 28px; pointer-events: none; font-family: "Space Mono", "Songti SC", "STSong", "SimSun", monospace;
   font-size: 10px; color: rgba(153,27,27,.85); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .chsetup-upload[disabled] { opacity: .5; cursor: wait; }

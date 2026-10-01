@@ -109,7 +109,7 @@ export const I18N = {
     // shareTtlLabel is the select's aria-label only now — its own option list
     // (index.html) needs "Forever" to read as a plain, parallel 4th duration
     // alongside 1/7/30 days, not an instruction standing in the same slot
-    shareTtlLabel: "Revoke share · you can set an expiry",
+    shareTtlLabel: "Revoke share · set an expiry",
     shareTtlForever: "Forever", shareTtl1d: "1 day", shareTtl7d: "7 days", shareTtl30d: "1 month",
     sendStamp: "Send your friend a receipt", stampsReceived: "Stamps received",
     trackName: "Track name", trackTag: "Track tag (optional)", remove: "Remove",
