@@ -375,6 +375,8 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 /* two equal ways to add a program: a carefully-picked file, or a held-down moment */
 .add-row { display: flex; gap: 8px; margin-bottom: 12px; }
 .add-row .chsetup-upload { margin-bottom: 0; }
+/* half-width buttons: at 11px "● Hold to record" overflows its box by 8px and breaks onto two lines */
+:lang(en) .add-row .chsetup-upload { font-size: 10px; padding-left: 6px; padding-right: 6px; }
 .record { touch-action: none; -webkit-user-select: none; user-select: none; }
 .record .record-live { color: inherit; }
 .record .record-time { font-variant-numeric: tabular-nums; }

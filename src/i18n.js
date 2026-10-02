@@ -98,7 +98,7 @@ export const I18N = {
     stationIntro: "One-line intro", stationIntroPlaceholder: "e.g. Can't sleep, telling you about it",
     programs: "Programs", programsCount: (n, max) => `Programs · ${n}/${max}`,
     uploadAudio: "⊕ Upload audio", holdToRecord: "● Hold to record", releaseToFinish: "Release when done",
-    done: "Done", shareLatest: "✉ Share your latest sound", copyLinkAbove: "Copy the link above, send it to a friend",
+    done: "Done", shareLatest: "✉ Share your latest sound", copyLinkAbove: "Copy link, send to a friend",
     look: "Look", interfaceColor: "Interface color · your preference", volume: "Volume",
     about: "About",
     aboutBody1: "A sound radio between friends.",
